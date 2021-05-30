@@ -1,16 +1,21 @@
 #ifndef PSX_MATH_TYPES_H
 #define PSX_MATH_TYPES_H
 
-struct VECTOR_NOPAD {
-	int vx; // size=0, offset=0
-	int vy; // size=0, offset=4
-	int vz; // size=0, offset=8
+#define ONE			4096
+#define ONE_F		float(ONE)
+
+struct VECTOR_NOPAD
+{
+	int vx;
+	int vy;
+	int vz;
 };
 
-struct USVECTOR_NOPAD {
-	ushort vx; // size=0, offset=0
-	ushort vy; // size=0, offset=2
-	ushort vz; // size=0, offset=4
+struct USVECTOR_NOPAD
+{
+	ushort vx;
+	ushort vy;
+	ushort vz;
 };
 
 struct SVECTOR
