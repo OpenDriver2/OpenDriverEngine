@@ -15,6 +15,8 @@ struct modelBatch_t
 	int numIndices;
 };
 
+typedef void (*ModelVertexCb)(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert);
+
 class CRenderModel
 {
 public:
@@ -24,7 +26,7 @@ public:
 	bool				Initialize(ModelRef_t* model);
 	void				Destroy();
 
-	void				Draw();
+	void				Draw(bool fullSetup = true);
 
 	void				GetExtents(Vector3D& outMin, Vector3D& outMax) const;
 
@@ -33,12 +35,15 @@ public:
 	static void			SetupLightingProperties(float ambientScale = 1.0f, float lightScale = 1.0f);
 	static void			InitModelShader();
 
+	// calling it again will regenerate VAO.
+	// Initialize calls it automatically so you don't have to (first time)
+	void				GenerateBuffers(ModelVertexCb vertexModCb = nullptr);
+
 	// callbacks for creating/destroying renderer objects
 	static void			OnModelLoaded(ModelRef_t* ref);
 	static void			OnModelFreed(ModelRef_t* ref);
 	
 protected:
-	void				GenerateBuffers();
 
 	Vector3D			m_extMin;
 	Vector3D			m_extMax;

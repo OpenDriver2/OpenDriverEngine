@@ -1,9 +1,10 @@
 #include "routines/models.h"
 #include "routines/regions.h"
 
-#include "render_model.h"
 #include "renderer/gl_renderer.h"
 #include "renderer/debug_overlay.h"
+
+#include "render_model.h"
 
 #include "core/cmdlib.h"
 
@@ -92,6 +93,7 @@ bool CRenderModel::Initialize(ModelRef_t* model)
 	m_extMax = Vector3D(-V_MAX_COORD);
 	
 	m_sourceModel = model;
+
 	GenerateBuffers();
 
 	return true;
@@ -163,7 +165,7 @@ genBatch_t* FindBatch(Array<genBatch_t*>& batches, int tpageId)
 	return nullptr;
 }
 
-void CRenderModel::GenerateBuffers()
+void CRenderModel::GenerateBuffers(ModelVertexCb vertexModCb /*= nullptr*/)
 {
 	Array<genBatch_t*>		batches;
 	Array<GrVertex>		vertices;
@@ -275,6 +277,9 @@ void CRenderModel::GenerateBuffers()
 				dec_face.nindices[VERT_IDX], 
 				*(ushort*)dec_face.uv[VERT_IDX]);
 
+			if (vertexModCb)
+				index = -1;
+
 			// add new vertex
 			if(index == -1)
 			{
@@ -291,6 +296,9 @@ void CRenderModel::GenerateBuffers()
 				Vector3D fVert = Vector3D(vert->x * RENDER_SCALING, vert->y * -RENDER_SCALING, vert->z * RENDER_SCALING);
 				
 				(*(Vector3D*)&newVert.vx) = fVert;
+
+				// set color
+				newVert.cr = newVert.cg = newVert.cb = newVert.ca = 1.0f;
 
 				AddExtentVertex(m_extMin, m_extMax, fVert);
 
@@ -312,6 +320,10 @@ void CRenderModel::GenerateBuffers()
 				}
 
 				index = vertMap.grVertexIndex = vertices.size();
+
+				if (vertexModCb)
+					(vertexModCb)(i, dec_face, v, newVert);
+
 				vertices.append(newVert);
 
 				// add vertex and a map
@@ -383,6 +395,10 @@ void CRenderModel::GenerateBuffers()
 		delete batches[i];
 	}
 	
+	// if has existing one - regenerate
+	if (m_vao)
+		GR_DestroyVAO(m_vao);
+
 	m_vao = GR_CreateVAO(vertices.size(), indices.size(), (GrVertex*)vertices, (int*)indices, 0);
 
 	if(!m_vao)
@@ -391,18 +407,22 @@ void CRenderModel::GenerateBuffers()
 	}
 }
 
-void CRenderModel::Draw()
+void CRenderModel::Draw(bool fullSetup /*= true*/)
 {
 	extern TextureID GetHWTexture(int tpage, int pal);
 
-	SetupModelShader();
+	if(fullSetup)
+		SetupModelShader();
+
 	GR_SetVAO(m_vao);
 	
 	for(usize i = 0; i < m_batches.size(); i++)
 	{
 		modelBatch_t& batch = m_batches[i];
 		
-		GR_SetTexture(GetHWTexture(batch.tpage, 0));
+		if(fullSetup)
+			GR_SetTexture(GetHWTexture(batch.tpage, 0));
+
 		GR_DrawIndexed(PRIM_TRIANGLES, batch.startIndex, batch.numIndices);
 	}
 }
@@ -536,4 +556,5 @@ void CRenderModel::OnModelFreed(ModelRef_t* ref)
 		model->Destroy();
 
 	delete model;
+	ref->userData = nullptr;
 }

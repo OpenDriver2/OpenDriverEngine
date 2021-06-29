@@ -15,6 +15,7 @@
 
 #include "render_level.h"
 #include "render_model.h"
+#include "render_sky.h"
 
 #include "core/cmdlib.h"
 #include "core/VirtualStream.h"
@@ -31,6 +32,7 @@
 
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
+
 
 bool g_quit = false;
 
@@ -225,6 +227,8 @@ void FreeLevelData()
 void RenderLevelView()
 {
 	Volume frustumVolume;
+
+	RenderSky();
 
 	// setup standard camera
 	CRenderModel::SetupModelShader();
@@ -788,6 +792,8 @@ int ViewerMain()
 		GR_Shutdown();
 		return -1;
 	}
+
+	InitSky(0);
 
 	// this is for filtering purposes
 	PopulateUIModelNames();

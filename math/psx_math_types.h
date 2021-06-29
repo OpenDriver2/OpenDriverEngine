@@ -59,4 +59,12 @@ struct UV_INFO
 	uint8 v;
 };
 
+struct UV
+{
+	uint8 u0, v0;
+	uint8 u1, v1;
+	uint8 u2, v2;
+	uint8 u3, v3;
+};
+
 #endif // PSX_MATH_TYPES_H
