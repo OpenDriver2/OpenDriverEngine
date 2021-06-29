@@ -1,13 +1,12 @@
 
 
-#include "driver_level.h"
-#include "gl_renderer.h"
-#include "renderheightmap.h"
-#include "rendermodel.h"
+#include "game/shared/main.h"
+#include "renderer/gl_renderer.h"
+#include "game/shared/render_heightmap.h"
+#include "game/shared/render_model.h"
 
 #include "math/Volume.h"
-
-#include "convert.h"
+#include "math/convert.h"
 
 extern bool g_displayHeightMap;
 

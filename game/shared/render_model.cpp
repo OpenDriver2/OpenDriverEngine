@@ -1,13 +1,15 @@
-#include "driver_routines/models.h"
-#include "driver_routines/regions.h"
-#include "rendermodel.h"
-#include "gl_renderer.h"
+#include "routines/models.h"
+#include "routines/regions.h"
+
+#include "render_model.h"
+#include "renderer/gl_renderer.h"
+#include "renderer/debug_overlay.h"
+
 #include "core/cmdlib.h"
-#include "debug_overlay.h"
 
 #include <assert.h>
 
-#include "convert.h"
+#include "math/convert.h"
 
 #define MODEL_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\

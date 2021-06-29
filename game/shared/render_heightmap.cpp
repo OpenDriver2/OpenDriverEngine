@@ -1,5 +1,5 @@
-#include "debug_overlay.h"
-#include "driver_routines/regions_d2.h"
+#include "renderer/debug_overlay.h"
+#include "routines/regions_d2.h"
 #include "math/isin.h"
 #include "math/Vector.h"
 

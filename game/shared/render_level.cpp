@@ -1,16 +1,16 @@
-#include "debug_overlay.h"
-#include "gl_renderer.h"
+#include "renderer/debug_overlay.h"
+#include "renderer/gl_renderer.h"
 
 #include "core/VirtualStream.h"
-#include "driver_routines/models.h"
-#include "driver_routines/regions_d1.h"
-#include "driver_routines/regions_d2.h"
-#include "driver_routines/textures.h"
+#include "routines/models.h"
+#include "routines/regions_d1.h"
+#include "routines/regions_d2.h"
+#include "routines/textures.h"
+
+#include "render_model.h"
+
 #include "math/Volume.h"
-
-#include "rendermodel.h"
-
-#include "convert.h"
+#include "math/convert.h"
 
 // extern some vars
 extern String					g_levname;

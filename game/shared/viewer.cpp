@@ -6,25 +6,28 @@
 #include <nstd/String.hpp>
 #include <nstd/Time.hpp>
 
+#include "renderer/debug_overlay.h"
+#include "renderer/gl_renderer.h"
+
+#include "main.h"
+
 #include "camera.h"
-#include "convert.h"
-#include "debug_overlay.h"
-#include "driver_level.h"
-#include "gl_renderer.h"
-#include "renderlevel.h"
-#include "rendermodel.h"
+
+#include "render_level.h"
+#include "render_model.h"
 
 #include "core/cmdlib.h"
 #include "core/VirtualStream.h"
 
-#include "math/Volume.h"
+#include "routines/d2_types.h"
+#include "routines/level.h"
+#include "routines/models.h"
+#include "routines/regions_d1.h"
+#include "routines/regions_d2.h"
+#include "routines/textures.h"
 
-#include "driver_routines/d2_types.h"
-#include "driver_routines/level.h"
-#include "driver_routines/models.h"
-#include "driver_routines/regions_d1.h"
-#include "driver_routines/regions_d2.h"
-#include "driver_routines/textures.h"
+#include "math/convert.h"
+#include "math/Volume.h"
 
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
@@ -334,107 +337,6 @@ void PopulateUIModelNames()
 	memset(g_modelSearchNameBuffer, 0, sizeof(g_modelSearchNameBuffer));
 }
 
-bool g_exportWidget = false;
-int g_exportMode = 0;
-
-//-------------------------------------------------------------
-// Displays export settings UI
-//-------------------------------------------------------------
-void DisplayExportUI()
-{
-	extern bool g_extract_dmodels;
-	extern bool g_export_worldUnityScript;
-	extern bool g_explode_tpages;
-	extern int g_overlaymap_width;
-	
-	if (ImGui::Begin("Export options", &g_exportWidget))
-	{
-		ImGui::SetWindowSize(ImVec2(400, 220));
-
-		if(g_exportMode == 0)
-		{
-			// TODO: Unity export option
-			ImGui::Checkbox("Export for Unity Engine", &g_export_worldUnityScript);
-			
-			if(ImGui::Button("Export world"))
-			{
-				// idk why, but some regions are bugged while exporting
-				SpoolAllAreaDatas();
-				
-				// export model files as well
-				if (g_export_worldUnityScript)
-				{
-					g_extract_dmodels = false;
-					g_explode_tpages = false;
-					
-					Directory::create(g_levname_moddir);
-					Directory::create(g_levname_texdir);
-
-					SaveModelPagesMTL();
-					
-					ExportAllModels();
-					ExportAllTextures();
-				}
-				
-				ExportRegions();
-				MsgInfo("Job done!\n");
-			}
-		}
-		else if(g_exportMode == 1)
-		{
-			ImGui::Checkbox("Only extract as DMODEL", &g_extract_dmodels);
-
-			if (ImGui::Button("Export models"))
-			{
-				g_export_worldUnityScript = false;
-				Directory::create(g_levname_moddir);
-				SaveModelPagesMTL();
-				ExportAllModels();
-				MsgInfo("Job done!\n");
-			}
-		}
-		else if (g_exportMode == 2)
-		{
-			ImGui::Checkbox("Only extract as DMODEL", &g_extract_dmodels);
-
-			if (ImGui::Button("Export models"))
-			{
-				g_export_worldUnityScript = false;
-				Directory::create(g_levname_moddir);
-				SaveModelPagesMTL();
-				ExportAllCarModels();
-				MsgInfo("Job done!\n");
-			}
-		}
-		else if (g_exportMode == 3)
-		{
-			ImGui::Checkbox("Extract as TIM files for REDRIVER2", &g_explode_tpages);
-
-			if (ImGui::Button("Export textures"))
-			{
-				g_export_worldUnityScript = false;
-				Directory::create(g_levname_texdir);
-				ExportAllTextures();
-				MsgInfo("Job done!\n");
-			}
-		}
-		else if (g_exportMode == 4)
-		{
-			ImGui::InputInt("Image width", &g_overlaymap_width);
-
-			if (ImGui::Button("Export textures"))
-			{
-				g_export_worldUnityScript = false;
-				Directory::create(g_levname_texdir);
-				ExportOverlayMap();
-				MsgInfo("Job done!\n");
-			}
-		}
-
-		ImGui::End();
-	}
-}
-
 // stats counters
 extern int g_drawnCells;
 extern int g_drawnModels;
@@ -449,34 +351,9 @@ void DisplayUI(float deltaTime)
 	{
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Export level..."))
+			if (ImGui::MenuItem("Change level..."))
 			{
-				g_exportWidget = true;
-				g_exportMode = 0;
-			}
-
-			if (ImGui::MenuItem("Export models..."))
-			{
-				g_exportWidget = true;
-				g_exportMode = 1;
-			}
-
-			if (ImGui::MenuItem("Export car models..."))
-			{
-				g_exportWidget = true;
-				g_exportMode = 2;
-			}
-
-			if (ImGui::MenuItem("Export textures..."))
-			{
-				g_exportWidget = true;
-				g_exportMode = 3;
-			}
-
-			if (ImGui::MenuItem("Export overhead map..."))
-			{
-				g_exportWidget = true;
-				g_exportMode = 4;
+				MsgWarning("TODO: change level file!");
 			}
 
 			ImGui::EndMenu();
@@ -684,9 +561,6 @@ void DisplayUI(float deltaTime)
 		}
 		ImGui::End();
 	}
-
-	if(g_exportWidget)
-		DisplayExportUI();
 }
 
 //-------------------------------------------------------------
@@ -885,7 +759,7 @@ void ViewerMainLoop()
 //-------------------------------------------------------------
 int ViewerMain()
 {
-	if(!GR_Init("OpenDriver2 Level viewer", 1280, 720, 0))
+	if(!GR_Init("Open Driver Engine 0.001", 1280, 720, 0))
 	{
 		MsgError("Failed to init graphics!\n");
 		return -1;
