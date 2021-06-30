@@ -135,6 +135,8 @@ usage "SDL2"
 			SDL2_DIR.."/lib/x86",
 		}
 		
+include "dependencies/lua54/premake5.lua"
+		
 group "Game"
 
 -- little framework
@@ -161,7 +163,7 @@ project "OpenDriverGame"
     language "C++"
     targetdir "bin/%{cfg.buildcfg}"
 
-	uses { "ImGui", "libnstd", "frameworkLib" }
+	uses { "ImGui", "libnstd", "frameworkLib", "lua" }
 
 	includedirs {
 		"./",
