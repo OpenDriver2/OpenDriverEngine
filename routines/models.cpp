@@ -348,9 +348,9 @@ void SwapValues(T& a, T& b)
 
 // returns size of face and fills dface_t struct
 // TODO: rework, few variants of faces still looks bad
-int decode_poly(const char* polyList, dpoly_t* out)
+int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 {
-	int ptype = *polyList & 0x1f;
+	int ptype = forceType == -1 ? (*polyList & 0x1f) : forceType;
 
 	out->page = 0xFF;
 	out->detail = 0xFF;
@@ -361,7 +361,7 @@ int decode_poly(const char* polyList, dpoly_t* out)
 	switch (ptype)
 	{
 		case 1:
-			// what a strange face type
+			// what a strange face type. Hardcoded?
 			*(uint*)out->vindices = *(uint*)&polyList[3];
 			break;
 		case 0:
@@ -479,5 +479,5 @@ int decode_poly(const char* polyList, dpoly_t* out)
 		}
 	}
 	
-	return PolySizes[ptype];
+	return PolySizes[*polyList & 0x1f];
 }

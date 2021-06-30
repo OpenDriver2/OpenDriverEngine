@@ -134,7 +134,7 @@ protected:
 //------------------------------------------------------------------------------------------------------------
 
 void			PrintUnknownPolys();
-int				decode_poly(const char* face, dpoly_t* out);
+int				decode_poly(const char* face, dpoly_t* out, int forceType = -1);
 
 //-------------------------------------------------------------------------------
 
