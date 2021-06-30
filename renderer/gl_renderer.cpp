@@ -29,8 +29,8 @@ int			g_CurrentBlendMode = BM_NONE;
 int			g_CurrentDepthMode = 0;
 int			g_CurrentCullMode = CULL_NONE;
 GrVAO*		g_CurrentVAO = nullptr;
-TextureID	g_lastBoundTexture = -1;
-ShaderID	g_CurrentShader = -1;
+TextureID	g_lastBoundTexture = 0;
+ShaderID	g_CurrentShader = 0;
 
 GLint		u_MatrixUniforms[MATRIX_MODES];
 Matrix4x4	g_matrices[MATRIX_MODES];
@@ -352,7 +352,7 @@ ShaderID GR_CompileShader(const char* source)
 	GLint sampler = 0;
 	glUseProgram(program);
 	glUniform1iv(glGetUniformLocation(program, "s_texture"), 1, &sampler);
-	glUseProgram(0);
+	glUseProgram(g_CurrentShader);
 
 	return program;
 }
@@ -451,7 +451,8 @@ TextureID GR_CreateRGBATexture(int width, int height, ubyte* data)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	// get back to last bound texture
+	glBindTexture(GL_TEXTURE_2D, g_lastBoundTexture);
 
 	return newTexture;
 }
