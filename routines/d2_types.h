@@ -4,7 +4,7 @@
 #include "core/dktypes.h"
 #include "math/psx_math_types.h"
 
-#define TEXPAGE_SIZE_X	(128)
+#define TEXPAGE_SIZE_X	(128)	// don't ask why. It's 4 bit.
 #define TEXPAGE_SIZE_Y	(256)
 
 #define TEXPAGE_4BIT_SIZE	(TEXPAGE_SIZE_X*TEXPAGE_SIZE_Y)

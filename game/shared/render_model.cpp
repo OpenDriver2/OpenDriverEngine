@@ -107,18 +107,7 @@ void CRenderModel::Destroy()
 	m_batches.clear();
 }
 
-struct vertexTuple_t
-{
-	int		flags;				// store few face flags here
-
-	short	grVertexIndex;
-
-	short	vertexIndex;
-	short	normalIndex;		// point normal index
-	ushort	uvs;
-};
-
-int FindGrVertexIndex(const Array<vertexTuple_t>& whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs)
+int CRenderModel::FindGrVertexIndex(const Array<vertexTuple_t>& whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs)
 {
 	for(usize i = 0; i < whereFind.size(); i++)
 	{
@@ -165,10 +154,13 @@ genBatch_t* FindBatch(Array<genBatch_t*>& batches, int tpageId)
 	return nullptr;
 }
 
-void CRenderModel::GenerateBuffers(ModelVertexCb vertexModCb /*= nullptr*/)
+void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/, ModelVertexCb vertexModCb /*= nullptr*/)
 {
+	if (!lookupFn)
+		lookupFn = FindGrVertexIndex;
+
 	Array<genBatch_t*>		batches;
-	Array<GrVertex>		vertices;
+	Array<GrVertex>			vertices;
 	Array<vertexTuple_t>	verticesMap;
 	
 	MODEL* model = m_sourceModel->model;
@@ -271,14 +263,14 @@ void CRenderModel::GenerateBuffers(ModelVertexCb vertexModCb /*= nullptr*/)
 			int vflags = dec_face.flags & ~(FACE_IS_QUAD | FACE_RGB);
 			
 			// try searching for vertex
-			int index = FindGrVertexIndex(verticesMap,
+			int index = (lookupFn)(verticesMap,
 				vflags,
 				dec_face.vindices[VERT_IDX], 
 				dec_face.nindices[VERT_IDX], 
 				*(ushort*)dec_face.uv[VERT_IDX]);
 
-			if (vertexModCb)
-				index = -1;
+			//if (vertexModCb)
+			//	index = -1;
 
 			// add new vertex
 			if(index == -1)
@@ -300,6 +292,7 @@ void CRenderModel::GenerateBuffers(ModelVertexCb vertexModCb /*= nullptr*/)
 				// set color
 				newVert.cr = newVert.cg = newVert.cb = newVert.ca = 1.0f;
 
+				// add bounding box stuff
 				AddExtentVertex(m_extMin, m_extMax, fVert);
 
 				if (smooth)
@@ -315,12 +308,13 @@ void CRenderModel::GenerateBuffers(ModelVertexCb vertexModCb /*= nullptr*/)
 					UV_INFO uv = *(UV_INFO*)dec_face.uv[VERT_IDX];
 
 					// map to 0..1
-					newVert.tc_u = ((float)uv.u + 0.5f) / 256.0f;
-					newVert.tc_v = ((float)uv.v + 0.5f) / 256.0f;
+					newVert.tc_u = ((float)uv.u + 0.5f) / TEXPAGE_SIZE_Y;
+					newVert.tc_v = ((float)uv.v + 0.5f) / TEXPAGE_SIZE_Y;
 				}
 
 				index = vertMap.grVertexIndex = vertices.size();
 
+				// TODO: pass smooth flag modifier
 				if (vertexModCb)
 					(vertexModCb)(i, dec_face, v, newVert);
 

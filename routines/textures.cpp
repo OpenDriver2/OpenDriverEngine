@@ -98,13 +98,10 @@ void CTexturePage::ConvertIndexedTextureToRGBA(uint* dest_color_data, int detail
 	int h = texInfo.height;
 
 	if (w == 0)
-		w = 256;
+		w = TEXPAGE_SIZE_Y;
 
 	if (h == 0)
-		h = 256;
-
-	//char* textureName = g_textureNamesData + m_details[detail].nameoffset;
-	//MsgWarning("Applying detail %d '%s' (xywh: %d %d %d %d)\n", detail, textureName, ox, oy, w, h);
+		h = TEXPAGE_SIZE_Y;
 
 	int tp_wx = ox + w;
 	int tp_hy = oy + h;
@@ -113,7 +110,7 @@ void CTexturePage::ConvertIndexedTextureToRGBA(uint* dest_color_data, int detail
 	{
 		for (int x = ox; x < tp_wx; x++)
 		{
-			ubyte clindex = bitmap.data[y * 128 + x / 2];
+			ubyte clindex = bitmap.data[y * TEXPAGE_SIZE_X + x / 2];
 
 			if (0 != (x & 1))
 				clindex >>= 4;

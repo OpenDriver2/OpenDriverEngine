@@ -53,13 +53,15 @@ const char* sky_shader =
 	"#endif\n";
 
 const int SKY_CLUT_START_Y = 252;
-const int SKY_SIZE_W = 256 / 4;
-const int SKY_SIZE_H = 84;
+
+const int SKY_SIZE_W = 512 / 4;
+const int SKY_SIZE_H = 252 / 3;
+
+const int SKY_TEXPAGE_SIZE = 512 * 256; // it's treated as 2:1
 
 const int SKY_OFFSET_STEP = 0x10000;
 
 const int SKY_TEX_CHANNELS = 4;
-const int SKY_TEXPAGE_SIZE = 512 * 256;
 
 // TODO: CSkyRenderer
 
@@ -83,7 +85,6 @@ uint8 g_HorizonTextures[40] = {
 	16, 17, 18, 19
 };
 
-
 void CopyTpageImage(ushort* tp_src, ushort* dst, int x, int y, int dst_w, int dst_h)
 {
 	ushort* src = tp_src + x + 128 * y;
@@ -105,9 +106,9 @@ void ConvertIndexedSkyImage(uint* color_data, ubyte* src_indexed, int x_idx, int
 
 	CopyTpageImage((ushort*)src_indexed, (ushort*)imageClut, clut_x, clut_y, 16, 1);
 
-	int ox = x_idx * SKY_SIZE_W * 2;
+	int ox = x_idx * SKY_SIZE_W;
 	int oy = y_idx * SKY_SIZE_H;
-	int w = SKY_SIZE_W * 2;
+	int w = SKY_SIZE_W;
 	int h = SKY_SIZE_H;
 
 	int tp_wx = ox + w;
@@ -191,11 +192,10 @@ void GenerateSkyUVs()
 	int tp_x, clut_x, i;
 
 	i = 0;
-	y = 0;
-
 	flipped = 1;
 
-	do {
+	for (y = 0; y < 7; y++)
+	{
 		if (flipped)
 		{
 			switch (y)
@@ -244,63 +244,57 @@ void GenerateSkyUVs()
 			single = 1;
 		}
 
-		x = 0;
-		y++;
-
-		//clut_x = 320;
 		tp_x = 0;
+		v = ry * SKY_SIZE_H;
 
-		v = ry * 84;
-
-		do {
-			u = x * 128;
+		for (x = 0; x < 4; x++)
+		{
+			u = x * SKY_SIZE_W;
+			UV& uvs = g_skytexuv[i];
 
 			if (single)
 			{
-				g_skytexuv[i].u0 = u;
-				g_skytexuv[i].v0 = v;
-				g_skytexuv[i].u1 = u;
-				g_skytexuv[i].v1 = v;
-				g_skytexuv[i].u2 = u;
-				g_skytexuv[i].v2 = v;
-				g_skytexuv[i].u3 = u;
-				g_skytexuv[i].v3 = v;
+				uvs.u0 = u;
+				uvs.v0 = v;
+				uvs.u1 = u;
+				uvs.v1 = v;
+				uvs.u2 = u;
+				uvs.v2 = v;
+				uvs.u3 = u;
+				uvs.v3 = v;
 			}
 			else if (flipped)
 			{
-				g_skytexuv[i].u0 = u;
-				g_skytexuv[i].v0 = v + 83;
-				g_skytexuv[i].u1 = u + 127;
-				g_skytexuv[i].v1 = v + 83;
-				g_skytexuv[i].u2 = u;
-				g_skytexuv[i].v2 = v;
-				g_skytexuv[i].u3 = u + 127;
-				g_skytexuv[i].v3 = v;
+				uvs.u0 = u;
+				uvs.v0 = v + SKY_SIZE_H - 1;
+				uvs.u1 = u + SKY_SIZE_W - 1;
+				uvs.v1 = v + SKY_SIZE_H - 1;
+				uvs.u2 = u;
+				uvs.v2 = v;
+				uvs.u3 = u + SKY_SIZE_W - 1;
+				uvs.v3 = v;
 			}
 			else
 			{
-				g_skytexuv[i].u0 = u;
-				g_skytexuv[i].v0 = v;
-				g_skytexuv[i].u1 = u + 127;
-				g_skytexuv[i].v1 = v;
-				g_skytexuv[i].u2 = u;
-				g_skytexuv[i].v2 = v + 83;
-				g_skytexuv[i].u3 = u + 127;
-				g_skytexuv[i].v3 = v + 83;
+				uvs.u0 = u;
+				uvs.v0 = v;
+				uvs.u1 = u + SKY_SIZE_W - 1;
+				uvs.v1 = v;
+				uvs.u2 = u;
+				uvs.v2 = v + SKY_SIZE_H - 1;
+				uvs.u3 = u + SKY_SIZE_W - 1;
+				uvs.v3 = v + SKY_SIZE_H - 1;
 			}
 
 			g_skytpage[i][0] = tp_x & 0xffffffc0;
-			g_skytpage[i][1] = ry * 84 & 768;
+			g_skytpage[i][1] = ry * SKY_SIZE_H & 768;
 			
 			tp_x += 32;
-
-			x++;
 			i++;
-		} while (x < 4);
+		}
 
-		flipped = (y < 7);
-
-	} while (y < 7);
+		flipped = y < 7;
+	}
 
 	// pre-process models
 	for (int i = 0; i < 4; i++)
@@ -311,7 +305,7 @@ void GenerateSkyUVs()
 		if (ref && ref->userData)
 		{
 			CRenderModel* renderModel = (CRenderModel*)ref->userData;
-			renderModel->GenerateBuffers(VertexSkyCb);
+			renderModel->GenerateBuffers(nullptr, VertexSkyCb);
 		}
 	}
 }
@@ -325,7 +319,7 @@ void InitSkyShader()
 bool InitSky(int skyNumber)
 {
 	File file;
-	if (!file.open("DRIVER2/DATA/SKY0.RAW"))
+	if (!file.open("DRIVER2/DATA/SKY3.RAW", File::readFlag))
 	{
 		MsgError("Unable to open 'SKY0.RAW'\n");
 		return false;
@@ -345,7 +339,7 @@ bool InitSky(int skyNumber)
 
 	color_data = new uint[imgSize / sizeof(uint)];
 
-	// 3x4 images (128x84 makes 256x252 tpage)
+	// 3x4 images (128x84 makes 512x252 tpage)
 	for (int y = 0; y < 3; y++)
 	{
 		for (int x = 0; x < 4; x++)
@@ -354,6 +348,7 @@ bool InitSky(int skyNumber)
 		}
 	}
 
+	// Notice that it should be treated as 512x256 texture or UVs will be wrong!
 	g_skyTexture = GR_CreateRGBATexture(512, 256, (ubyte*)color_data);
 
 	delete[] data;
@@ -384,8 +379,6 @@ void RenderSky()
 	GR_SetCullMode(CULL_FRONT);
 
 	GR_SetTexture(g_skyTexture);
-
-	GR_UpdateMatrixUniforms();
 
 	// first 4 models are sky models
 	for (int i = 0; i < 4; i++)
