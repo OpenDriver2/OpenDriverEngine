@@ -44,7 +44,12 @@ function StartTestGame()
 	if level:Load( CurrentCityInfo.levPath[CurrentCityType] ) then
 		-- load sky
 		sky:Load( CurrentCityInfo.skyPath, 0 )
+		
+		-- load car models, cosmetics and denting
 		cars:Load( CurrentCityInfo, level )
+		
+		-- TODO: ability to load cars from another city. Need to somehow handle additional model slots
+		--cars:Load()
 	end
 	
 	-- create a car and a player

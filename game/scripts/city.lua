@@ -26,8 +26,8 @@ CityInfo = {
 		
 		events 		= dofile("driver2_chicago_events.lua"),
 		
-		cosmetics 	= dofile("driver2_chicago_cosmetics.lua"), -- "%{DRIVER2}LEVELS/CHICAGO.LCF"
-		denting 	= "%{DRIVER2}LEVELS/CHICAGO.DEN",
+		cosmetics 	= dofile("driver2_chicago_cosmetics.lua"), 	-- "%{DRIVER2}LEVELS/CHICAGO.LCF"
+		-- cosmetics now pull denting out of DEN files.			-- denting 	= "%{DRIVER2}LEVELS/CHICAGO.DEN",
 		
 		-- this is still not decided
 		frontendPath = {
