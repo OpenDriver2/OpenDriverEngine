@@ -52,5 +52,6 @@ Icon
 *.recipe
 *.idb
 
+project_*/
 bin/*
 dependencies/SDL2
