@@ -136,6 +136,7 @@ usage "SDL2"
 		}
 		
 include "dependencies/lua54/premake5.lua"
+include "dependencies/sol2/premake5.lua"
 		
 group "Game"
 
@@ -163,7 +164,7 @@ project "OpenDriverGame"
     language "C++"
     targetdir "bin/%{cfg.buildcfg}"
 
-	uses { "ImGui", "libnstd", "frameworkLib", "lua" }
+	uses { "ImGui", "libnstd", "frameworkLib", "lua", "sol2" }
 
 	includedirs {
 		"./",
