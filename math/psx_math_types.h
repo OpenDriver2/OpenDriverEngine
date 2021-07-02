@@ -6,57 +6,62 @@
 
 struct VECTOR_NOPAD
 {
-	int vx;
-	int vy;
-	int vz;
+	int vx, vy, vz;
+};
+
+struct SVECTOR_NOPAD
+{
+	short vx, vy, vz;
 };
 
 struct USVECTOR_NOPAD
 {
-	ushort vx;
-	ushort vy;
-	ushort vz;
+	uint16 vx, vy, vz;
 };
 
 struct SVECTOR
 {
-	short x;
-	short y;
-	short z;
-	short pad;
+	short x, y, z, pad;
 };
 
 struct CVECTOR
 {
-	ubyte r;
-	ubyte g;
-	ubyte b;
-	ubyte pad;
+	uint8 r, g, b, pad;
 };
 
 struct CVECTOR_NOPAD
 {
-	ubyte r;
-	ubyte g;
-	ubyte b;
+	uint8 r, g, b;
 };
+
+typedef struct {
+	short	m[3][3];	/* 3x3 rotation matrix */
+	long    t[3];		/* transfer vector */
+} MATRIX;
 
 struct XYPAIR
 {
-	int x;
-	int y;
+	int x, y;
 };
 
 struct XZPAIR
 {
-	int x;
-	int z;
+	int x, z;
+};
+
+struct SXYPAIR
+{
+	short x, y;
+};
+
+struct SXZPAIR
+{
+	short x, z;
 };
 
 struct UV_INFO
 {
-	uint8 u;
-	uint8 v;
+	uint8 u, v;
 };
 
 struct UV

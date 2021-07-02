@@ -9,7 +9,7 @@
 #include "renderer/debug_overlay.h"
 #include "renderer/gl_renderer.h"
 
-#include "main.h"
+#include "world.h"
 
 #include "camera.h"
 
@@ -33,6 +33,10 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
 
+OUT_CITYLUMP_INFO		g_levInfo;
+CDriverLevelTextures	g_levTextures;
+CDriverLevelModels		g_levModels;
+CBaseLevelMap*			g_levMap = nullptr;
 
 bool g_quit = false;
 
@@ -45,8 +49,6 @@ bool g_noLod = false;
 int g_cellsDrawDistance = 441;
 
 int g_currentModel = 0;
-
-int g_viewerMode = 0;
 
 bool g_holdLeft = false;
 bool g_holdRight = false;
@@ -246,39 +248,6 @@ void RenderLevelView()
 		DrawLevelDriver1(g_cameraPosition, g_cameraAngles.y, frustumVolume);
 }
 
-float g_cameraDistance = 4.0f;
-
-//-------------------------------------------------------
-// Render model viewer
-//-------------------------------------------------------
-void RenderModelView()
-{
-	Volume frustumVolume;
-	Vector3D forward, right;
-	AngleVectors(g_cameraAngles, &forward, &right);
-
-	// setup orbital camera
-	CRenderModel::SetupModelShader();
-	SetupCameraViewAndMatrices(-forward * g_cameraDistance, g_cameraAngles, frustumVolume);
-
-	CRenderModel::SetupLightingProperties(0.5f, 0.5f);
-
-	GR_SetDepth(1);
-	GR_SetCullMode(CULL_FRONT);
-
-	ModelRef_t* ref = g_levModels.GetModelByIndex(g_currentModel);
-
-	if(ref && ref->userData)
-	{
-		CRenderModel* renderModel = (CRenderModel*)ref->userData;
-
-		renderModel->Draw();
-
-		if (g_displayCollisionBoxes)
-			CRenderModel::DrawModelCollisionBox(ref, {0,0,0}, 0.0f);
-	}
-}
-
 //-------------------------------------------------------------
 // Forcefully spools entire level regions and area datas
 //-------------------------------------------------------------
@@ -335,12 +304,6 @@ int UpdateFPSCounter(float deltaTime)
 
 //-------------------------------------------------------------
 
-char g_modelSearchNameBuffer[64];
-void PopulateUIModelNames()
-{
-	memset(g_modelSearchNameBuffer, 0, sizeof(g_modelSearchNameBuffer));
-}
-
 // stats counters
 extern int g_drawnCells;
 extern int g_drawnModels;
@@ -360,17 +323,6 @@ void DisplayUI(float deltaTime)
 				MsgWarning("TODO: change level file!");
 			}
 
-			ImGui::EndMenu();
-		}
-		
-		if (ImGui::BeginMenu("Mode"))
-		{
-			if (ImGui::MenuItem("Level viewer"))
-				g_viewerMode = 0;
-			
-			if (ImGui::MenuItem("Model viewer"))
-				g_viewerMode = 1;
-			
 			ImGui::EndMenu();
 		}
 
@@ -426,143 +378,16 @@ void DisplayUI(float deltaTime)
 
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "FPS: %d", UpdateFPSCounter(deltaTime));
 
-		if(g_viewerMode == 0)
-		{
-			ImGui::SetWindowSize(ImVec2(400, 120));
+		ImGui::SetWindowSize(ImVec2(400, 120));
 			
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.25f, 1.0f), "Position: X: %d Y: %d Z: %d",
-				int(g_cameraPosition.x * ONE_F), int(g_cameraPosition.y * ONE_F), int(g_cameraPosition.z * ONE_F));
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.25f, 1.0f), "Position: X: %d Y: %d Z: %d",
+			int(g_cameraPosition.x * ONE_F), int(g_cameraPosition.y * ONE_F), int(g_cameraPosition.z * ONE_F));
 
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Draw distance: %d", g_cellsDrawDistance);
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn cells: %d", g_drawnCells);
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn models: %d", g_drawnModels);
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn polygons: %d", g_drawnPolygons);
-		}
-		else if (g_viewerMode == 1)
-		{
-			ImGui::SetWindowSize(ImVec2(400, 720));
-			
-			ModelRef_t* ref = g_levModels.GetModelByIndex(g_currentModel);
-			MODEL* model = ref->model;
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Draw distance: %d", g_cellsDrawDistance);
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn cells: %d", g_drawnCells);
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn models: %d", g_drawnModels);
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn polygons: %d", g_drawnPolygons);
 
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.5f), "Use arrows to change models");
-
-			if(model)
-			{
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Polygons: %d", model->num_polys);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Vertices: %d", model->num_vertices);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Point normals: %d", model->num_point_normals);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Instance number: %d", model->instance_number);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Bounding sphere: %d", model->bounding_sphere);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Z bias: %d", model->zBias);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Collision boxes: %d", model->GetCollisionBoxCount());
-
-				if(ref->lowDetailId != 0xFFFF || ref->highDetailId != 0xFFFF)
-				{
-					ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "LODs:");
-					ImGui::SameLine();
-
-					if(ref->lowDetailId != 0xFFFF)
-					{
-						ImGui::SameLine();
-						if(ImGui::Button("L", ImVec2(14, 14)))
-							g_currentModel = ref->lowDetailId;
-					}
-					
-					if(ref->highDetailId != 0xFFFF)
-					{
-						ImGui::SameLine();
-						if (ImGui::Button("H", ImVec2(14, 14)))
-							g_currentModel = ref->highDetailId;
-					}
-				}
-				else
-				{
-					ImGui::Text("");
-				}
-
-				int shape_flags = model->shape_flags;
-
-				// shape flags
-				ImGui::CheckboxFlags("Lit", &shape_flags, SHAPE_FLAG_LITPOLY); ImGui::SameLine();
-				ImGui::CheckboxFlags("BSP", &shape_flags, SHAPE_FLAG_BSPDATA); ImGui::SameLine();
-				ImGui::CheckboxFlags("Trans", &shape_flags, SHAPE_FLAG_TRANS); ImGui::SameLine();
-
-				ImGui::CheckboxFlags("Water", &shape_flags, SHAPE_FLAG_WATER); ImGui::SameLine();
-				ImGui::CheckboxFlags("Amb2", &shape_flags, SHAPE_FLAG_AMBIENT2);
-				ImGui::CheckboxFlags("Amb1", &shape_flags, SHAPE_FLAG_AMBIENT1); ImGui::SameLine();
-				
-				ImGui::CheckboxFlags("Tile", &shape_flags, SHAPE_FLAG_TILE); ImGui::SameLine();
-				ImGui::CheckboxFlags("Shad", &shape_flags, SHAPE_FLAG_SHADOW); ImGui::SameLine();
-				ImGui::CheckboxFlags("Alpha", &shape_flags, SHAPE_FLAG_ALPHA); ImGui::SameLine();
-				ImGui::CheckboxFlags("Road", &shape_flags, SHAPE_FLAG_ROAD); ImGui::SameLine();
-				ImGui::CheckboxFlags("Spr", &shape_flags, SHAPE_FLAG_SPRITE);
-
-				int flags2 = model->flags2;
-				ImGui::Spacing();
-				ImGui::CheckboxFlags("Junc", &flags2, MODEL_FLAG_JUNC); ImGui::SameLine();
-				ImGui::CheckboxFlags("Alley", &flags2, MODEL_FLAG_ALLEY); ImGui::SameLine();
-				ImGui::CheckboxFlags("Indrs", &flags2, MODEL_FLAG_INDOORS); ImGui::SameLine();
-				ImGui::CheckboxFlags("Chair", &flags2, MODEL_FLAG_CHAIR); ImGui::SameLine();
-				ImGui::CheckboxFlags("Barr", &flags2, MODEL_FLAG_BARRIER);
-				ImGui::CheckboxFlags("Smsh", &flags2, MODEL_FLAG_SMASHABLE); ImGui::SameLine();
-				ImGui::CheckboxFlags("Lamp", &flags2, MODEL_FLAG_LAMP); ImGui::SameLine();
-				ImGui::CheckboxFlags("Tree", &flags2, MODEL_FLAG_TREE); ImGui::SameLine();
-				ImGui::CheckboxFlags("Grass", &flags2, MODEL_FLAG_GRASS); ImGui::SameLine();
-				ImGui::CheckboxFlags("Path", &flags2, MODEL_FLAG_PATH);
-			}
-			else
-			{
-				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.5f), "MODEL NOT SPOOLED YET");
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-				ImGui::Text("");
-			}
-
-			ImGui::InputText("Filter", g_modelSearchNameBuffer, sizeof(g_modelSearchNameBuffer));
-
-			ImGuiTextFilter filter(g_modelSearchNameBuffer);
-
-			Array<ModelRef_t*> modelRefs;
-			
-			for (int i = 0; i < MAX_MODELS; i++)
-			{
-				ModelRef_t* itemRef = g_levModels.GetModelByIndex(i);
-				
-				if(!filter.IsActive() && !itemRef->name || itemRef->name && filter.PassFilter(itemRef->name))
-					modelRefs.append(itemRef);
-			}
-			
-			if (ImGui::ListBoxHeader("", modelRefs.size(), 30))
-			{
-				ImGuiListClipper clipper(modelRefs.size(), ImGui::GetTextLineHeightWithSpacing());
-				
-				while (clipper.Step())
-				{
-					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-					{
-						ModelRef_t* itemRef = modelRefs[i];
-						const bool item_selected = (itemRef->index == g_currentModel);
-						
-						String item = String::fromPrintf("%d: %s%s", itemRef->index, itemRef->name ? itemRef->name : "", itemRef->model ? "" : "(empty slot)");
-
-						ImGui::PushID(i);
-
-						if (ImGui::Selectable(item, item_selected))
-						{
-							g_currentModel = itemRef->index;
-						}
-
-						ImGui::PopID();
-					}
-				}
-				ImGui::ListBoxFooter();
-			}
-		}
 		ImGui::End();
 	}
 }
@@ -611,10 +436,6 @@ void SDLPollEvent()
 				g_cameraAngles.x += event.motion.yrel * 0.25f;
 				g_cameraAngles.y -= event.motion.xrel * 0.25f;
 			}
-			else if (g_holdRight)
-			{
-				g_cameraDistance += event.motion.yrel * 0.01f;
-			}
 
 			break;
 		}
@@ -657,23 +478,11 @@ void SDLPollEvent()
 			}
 			else if (nKey == SDL_SCANCODE_UP)
 			{
-				if (g_viewerMode == 0)
-					g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
-				else if (g_viewerMode == 1 && (event.type == SDL_KEYDOWN))
-				{
-					g_currentModel--;
-					g_currentModel = MAX(0, g_currentModel);
-				}
+				g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
 			}
 			else if (nKey == SDL_SCANCODE_DOWN)
 			{
-				if (g_viewerMode == 0)
-					g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
-				else if (g_viewerMode == 1 && (event.type == SDL_KEYDOWN))
-				{
-					g_currentModel++;
-					g_currentModel = MIN(MAX_MODELS, g_currentModel);
-				}
+				g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
 			}
 			else if (nKey == SDL_SCANCODE_PAGEUP && event.type == SDL_KEYDOWN)
 			{
@@ -731,17 +540,11 @@ void ViewerMainLoop()
 			GR_ClearColor(128 / 255.0f, 158 / 255.0f, 182 / 255.0f);
 
 		// Render stuff
-		if (g_viewerMode == 0)
-		{
-			float cameraSpeedModifier = g_holdShift ? 4.0f : 1.0f;
+		float cameraSpeedModifier = g_holdShift ? 4.0f : 1.0f;
 			
-			UpdateCameraMovement(deltaTime, cameraSpeedModifier);
-			RenderLevelView();
-		}
-		else
-		{
-			RenderModelView();
-		}
+		UpdateCameraMovement(deltaTime, cameraSpeedModifier);
+		RenderLevelView();
+
 
 		DebugOverlay_Draw();
 
@@ -793,10 +596,7 @@ int ViewerMain()
 		return -1;
 	}
 
-	InitSky(0);
-
-	// this is for filtering purposes
-	PopulateUIModelNames();
+	InitSky("DRIVER2/DATA/SKY0.RAW", 0);
 
 	// loop and stuff
 	ViewerMainLoop();

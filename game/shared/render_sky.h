@@ -8,7 +8,7 @@ extern uint8	g_HorizonLookup[4][4];
 extern uint8	g_HorizonTextures[40];
 
 // Initialize sky texture and UVs
-bool InitSky(int skyNumber);
+bool InitSky(const char* filename, int skyNumber);
 
 // Destroy sky and UVs
 void DestroySky();

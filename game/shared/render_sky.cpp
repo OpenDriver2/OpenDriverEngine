@@ -1,6 +1,8 @@
 #include <nstd/String.hpp>
 #include <nstd/File.hpp>
 
+#include "world.h"
+
 #include "math/Vector.h"
 #include "math/Volume.h"
 
@@ -11,7 +13,6 @@
 
 #include "routines/textures.h"
 
-#include "main.h"
 #include "render_model.h"
 #include "camera.h"
 
@@ -316,12 +317,12 @@ void InitSkyShader()
 }
 
 // Initialize sky texture and UVs
-bool InitSky(int skyNumber)
+bool InitSky(const char* filename, int skyNumber)
 {
 	File file;
-	if (!file.open("DRIVER2/DATA/SKY3.RAW", File::readFlag))
+	if (!file.open(String::fromCString(filename), File::readFlag))
 	{
-		MsgError("Unable to open 'SKY0.RAW'\n");
+		MsgError("Unable to open '%s'\n", filename);
 		return false;
 	}
 

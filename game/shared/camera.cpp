@@ -1,6 +1,5 @@
+#include "world.h"
 
-
-#include "game/shared/main.h"
 #include "renderer/gl_renderer.h"
 #include "game/shared/render_heightmap.h"
 #include "game/shared/render_model.h"
