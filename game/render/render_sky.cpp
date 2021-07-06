@@ -1,24 +1,28 @@
 #include <nstd/String.hpp>
 #include <nstd/File.hpp>
 
-#include "world.h"
-
 #include "math/Vector.h"
 #include "math/Volume.h"
 
 #include "core/dktypes.h"
 #include "core/cmdlib.h"
+#include "core/ignore_vc_new.h"
+
+#include <sol/sol.hpp>
 
 #include "renderer/gl_renderer.h"
 
+#include "routines/models.h"
 #include "routines/textures.h"
 
 #include "render_model.h"
-#include "camera.h"
-
 #include "render_sky.h"
 
+#include "game/shared/world.h"
+#include "game/shared/camera.h"
+
 #include <string.h>
+
 
 #define SKY_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\
@@ -316,8 +320,17 @@ void InitSkyShader()
 	g_skyShader = GR_CompileShader(sky_shader);
 }
 
+void CSky::Lua_Init(sol::state& lua)
+{
+	auto engine = lua["engine"].get_or_create<sol::table>();
+
+	auto sky = engine["Sky"].get_or_create<sol::table>();
+
+	sky["Init"] = &Init;
+}
+
 // Initialize sky texture and UVs
-bool InitSky(const char* filename, int skyNumber)
+bool CSky::Init(const char* filename, int skyNumber)
 {
 	File file;
 	if (!file.open(String::fromCString(filename), File::readFlag))
@@ -362,14 +375,14 @@ bool InitSky(const char* filename, int skyNumber)
 }
 
 // Destroys sky texture and UVs
-void DestroySky()
+void CSky::Destroy()
 {
 	GR_DestroyTexture(g_skyTexture);
 	g_skyTexture = -1;
 }
 
 // Renders sky
-void RenderSky()
+void CSky::Draw()
 {
 	Volume dummy;
 	GR_SetShader(g_skyShader);

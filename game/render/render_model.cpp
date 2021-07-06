@@ -5,6 +5,7 @@
 #include "renderer/debug_overlay.h"
 
 #include "render_model.h"
+#include "game/shared/world.h"
 
 #include "core/cmdlib.h"
 
@@ -409,8 +410,6 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 
 void CRenderModel::Draw(bool fullSetup /*= true*/)
 {
-	extern TextureID GetHWTexture(int tpage, int pal);
-
 	if(fullSetup)
 		SetupModelShader();
 
@@ -421,7 +420,7 @@ void CRenderModel::Draw(bool fullSetup /*= true*/)
 		modelBatch_t& batch = m_batches[i];
 		
 		if(fullSetup)
-			GR_SetTexture(GetHWTexture(batch.tpage, 0));
+			GR_SetTexture(CWorld::GetHWTexture(batch.tpage, 0));
 
 		GR_DrawIndexed(PRIM_TRIANGLES, batch.startIndex, batch.numIndices);
 	}
@@ -464,14 +463,14 @@ void CRenderModel::DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& po
 			Vector3D pos(box->xpos, -box->ypos, box->zpos);
 			Vector3D size(box->xsize / 2, box->ysize / 2, box->zsize / 2);
 
-			DebugOverlay_SetTransform(world * translate(pos / ONE_F) * rotateY4(boxRotationRad));
-			DebugOverlay_Box(-size / ONE_F, size / ONE_F, ColorRGBA(1, 1, 0, 0.5f));
+			CDebugOverlay::SetTransform(world * translate(pos / ONE_F) * rotateY4(boxRotationRad));
+			CDebugOverlay::Box(-size / ONE_F, size / ONE_F, ColorRGBA(1, 1, 0, 0.5f));
 		}
 
 		box++;
 	}
 
-	DebugOverlay_SetTransform(identity4());
+	CDebugOverlay::SetTransform(identity4());
 }
 
 struct ModelShaderInfo

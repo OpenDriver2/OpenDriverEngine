@@ -28,22 +28,30 @@ LINE_VERTEX_SHADER
 LINE_FRAGMENT_SHADER
 "#endif\n";
 
-#define MAX_LINE_BUFFER_SIZE		8192
+#include "core/ignore_vc_new.h"
+#include <sol/sol.hpp>
 
-GrVertex g_lineBuffer[MAX_LINE_BUFFER_SIZE];
-int g_numLineVerts;
+#include "debug_overlay.h"
 
-GrVAO* g_linesVAO = nullptr;
-ShaderID g_linesShader = -1;
-Matrix4x4 g_lineTransform = identity3();
+GrVertex	g_lineBuffer[MAX_LINE_BUFFER_SIZE];
+int			g_numLineVerts;
 
-void DebugOverlay_Init()
+GrVAO*		g_linesVAO { nullptr };
+ShaderID	g_linesShader { 0 };
+Matrix4x4	g_lineTransform { identity3() };
+
+void CDebugOverlay::Lua_Init(sol::state& lua)
+{
+
+}
+
+void CDebugOverlay::Init()
 {
 	g_linesVAO = GR_CreateVAO(1024, nullptr, 1);
 	g_linesShader = GR_CompileShader(line_shader);
 }
 
-void DebugOverlay_Destroy()
+void CDebugOverlay::Destroy()
 {
 	GR_DestroyVAO(g_linesVAO);
 	g_linesVAO = nullptr;
@@ -51,12 +59,12 @@ void DebugOverlay_Destroy()
 	//GR_DestroyShader(g_linesShader);
 }
 
-void DebugOverlay_SetTransform(const Matrix4x4& transform)
+void CDebugOverlay::SetTransform(const Matrix4x4& transform)
 {
 	g_lineTransform = transform;
 }
 
-void DebugOverlay_Line(const Vector3D& posA, const Vector3D& posB, const ColorRGBA& color)
+void CDebugOverlay::Line(const Vector3D& posA, const Vector3D& posB, const ColorRGBA& color)
 {
 	if(g_numLineVerts + 2 < MAX_LINE_BUFFER_SIZE)
 	{
@@ -68,46 +76,46 @@ void DebugOverlay_Line(const Vector3D& posA, const Vector3D& posB, const ColorRG
 	}
 }
 
-void DebugOverlay_Box(const Vector3D& mins, const Vector3D& maxs, const ColorRGBA& color)
+void CDebugOverlay::Box(const Vector3D& mins, const Vector3D& maxs, const ColorRGBA& color)
 {
-	DebugOverlay_Line(Vector3D(mins.x, maxs.y, mins.z),
+	Line(Vector3D(mins.x, maxs.y, mins.z),
 		Vector3D(mins.x, maxs.y, maxs.z), color);
 
-	DebugOverlay_Line(Vector3D(maxs.x, maxs.y, maxs.z),
+	Line(Vector3D(maxs.x, maxs.y, maxs.z),
 		Vector3D(maxs.x, maxs.y, mins.z), color);
 
-	DebugOverlay_Line(Vector3D(maxs.x, mins.y, mins.z),
+	Line(Vector3D(maxs.x, mins.y, mins.z),
 		Vector3D(maxs.x, mins.y, maxs.z), color);
 
-	DebugOverlay_Line(Vector3D(mins.x, mins.y, maxs.z),
+	Line(Vector3D(mins.x, mins.y, maxs.z),
 		Vector3D(mins.x, mins.y, mins.z), color);
 
-	DebugOverlay_Line(Vector3D(mins.x, mins.y, maxs.z),
+	Line(Vector3D(mins.x, mins.y, maxs.z),
 		Vector3D(mins.x, maxs.y, maxs.z), color);
 
-	DebugOverlay_Line(Vector3D(maxs.x, mins.y, maxs.z),
+	Line(Vector3D(maxs.x, mins.y, maxs.z),
 		Vector3D(maxs.x, maxs.y, maxs.z), color);
 
-	DebugOverlay_Line(Vector3D(mins.x, mins.y, mins.z),
+	Line(Vector3D(mins.x, mins.y, mins.z),
 		Vector3D(mins.x, maxs.y, mins.z), color);
 
-	DebugOverlay_Line(Vector3D(maxs.x, mins.y, mins.z),
+	Line(Vector3D(maxs.x, mins.y, mins.z),
 		Vector3D(maxs.x, maxs.y, mins.z), color);
 
-	DebugOverlay_Line(Vector3D(mins.x, maxs.y, mins.z),
+	Line(Vector3D(mins.x, maxs.y, mins.z),
 		Vector3D(maxs.x, maxs.y, mins.z), color);
 
-	DebugOverlay_Line(Vector3D(mins.x, maxs.y, maxs.z),
+	Line(Vector3D(mins.x, maxs.y, maxs.z),
 		Vector3D(maxs.x, maxs.y, maxs.z), color);
 
-	DebugOverlay_Line(Vector3D(mins.x, mins.y, mins.z),
+	Line(Vector3D(mins.x, mins.y, mins.z), 
 		Vector3D(maxs.x, mins.y, mins.z), color);
 
-	DebugOverlay_Line(Vector3D(mins.x, mins.y, maxs.z),
+	Line(Vector3D(mins.x, mins.y, maxs.z),
 		Vector3D(maxs.x, mins.y, maxs.z), color);
 }
 
-void DebugOverlay_Draw()
+void CDebugOverlay::Draw()
 {
 	if (g_numLineVerts == 0)
 		return;

@@ -299,27 +299,16 @@ void CDriverLevelLoader::Release()
 //-------------------------------------------------------------
 // Loads the LEV file data
 //-------------------------------------------------------------
-bool CDriverLevelLoader::LoadFromFile(const char* fileName)
+bool CDriverLevelLoader::Load(IVirtualStream* pStream)
 {
-	// try load driver2 lev file
-	FILE* pReadFile = fopen(fileName, "rb");
-
-	if (!pReadFile)
-	{
-		MsgError("Failed to open LEV file!\n");
+	if (!pStream)
 		return false;
-	}
-
-	CFileStream stream(pReadFile);
-
-	// seek to begin
-	MsgWarning("-----------\nLoading LEV file '%s'\n", fileName);
 
 	//-------------------------------------------------------------------
 
 	// perform auto-detection if format is not specified
 	if (m_format == LEV_FORMAT_AUTODETECT)
-		m_format = DetectLevelFormat(&stream);
+		m_format = DetectLevelFormat(pStream);
 
 	if (m_map)
 		m_map->SetFormat(m_format);
@@ -328,17 +317,16 @@ bool CDriverLevelLoader::LoadFromFile(const char* fileName)
 		m_textures->SetFormat(m_format);
 
 	LUMP curLump;
-	stream.Read(&curLump, sizeof(curLump), 1);
+	pStream->Read(&curLump, sizeof(curLump), 1);
 
 	if (curLump.type != LUMP_LUMPDESC)
 	{
 		MsgError("Not a LEV file!\n");
-		fclose(pReadFile);
 		return false;
 	}
 
 	// read chunk offsets
-	stream.Read(m_lumpInfo, sizeof(OUT_CITYLUMP_INFO), 1);
+	pStream->Read(m_lumpInfo, sizeof(OUT_CITYLUMP_INFO), 1);
 
 	DevMsg(SPEW_NORM, "data1_offset = %d\n", m_lumpInfo->loadtime_offset);
 	DevMsg(SPEW_NORM, "data1_size = %d\n", m_lumpInfo->loadtime_size);
@@ -356,53 +344,48 @@ bool CDriverLevelLoader::LoadFromFile(const char* fileName)
 
 	//-----------------------------------------------------
 	// seek to section 1 - lump data 1
-	stream.Seek(m_lumpInfo->loadtime_offset, VS_SEEK_SET);
+	pStream->Seek(m_lumpInfo->loadtime_offset, VS_SEEK_SET);
 
 	// read lump
-	stream.Read(&curLump, sizeof(curLump), 1);
+	pStream->Read(&curLump, sizeof(curLump), 1);
 
 	if (curLump.type != LUMP_LOADTIME_DATA)
 	{
 		MsgError("Not a LUMP_LOADTIME_DATA!\n");
-		fclose(pReadFile);
 		return false;
 	}
 
 	DevMsg(SPEW_INFO, "entering LUMP_LOADTIME_DATA size = %d\n--------------\n", curLump.size);
 
 	// read sublumps
-	ProcessLumps(&stream);
+	ProcessLumps(pStream);
 
 	//-----------------------------------------------------
 	// read global textures
 
 	if (m_textures)
 	{
-		stream.Seek(m_lumpInfo->tpage_offset, VS_SEEK_SET);
-		m_textures->LoadPermanentTPages(&stream);
+		pStream->Seek(m_lumpInfo->tpage_offset, VS_SEEK_SET);
+		m_textures->LoadPermanentTPages(pStream);
 	}
 
 	//-----------------------------------------------------
 	// seek to section 3 - lump data 2
-	stream.Seek(m_lumpInfo->inmem_offset, VS_SEEK_SET);
+	pStream->Seek(m_lumpInfo->inmem_offset, VS_SEEK_SET);
 
 	// read lump
-	stream.Read(&curLump, sizeof(curLump), 1);
+	pStream->Read(&curLump, sizeof(curLump), 1);
 
 	if (curLump.type != LUMP_INMEMORY_DATA)
 	{
 		MsgError("Not a lump LUMP_INMEMORY_DATA!\n");
-		fclose(pReadFile);
 		return false;
 	}
 
 	DevMsg(SPEW_INFO, "entering LUMP_INMEMORY_DATA size = %d\n--------------\n", curLump.size);
 
 	// read sublumps
-	ProcessLumps(&stream);
-
-	// completed!
-	fclose(pReadFile);
+	ProcessLumps(pStream);
 
 	return true;
 }

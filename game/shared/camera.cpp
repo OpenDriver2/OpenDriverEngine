@@ -1,8 +1,13 @@
-#include "world.h"
-
 #include "renderer/gl_renderer.h"
-#include "game/shared/render_heightmap.h"
-#include "game/shared/render_model.h"
+
+#include "routines/models.h"
+#include "routines/textures.h"
+#include "routines/regions.h"
+
+#include "game/render/render_heightmap.h"
+#include "game/render/render_model.h"
+
+#include "world.h"
 
 #include "math/Volume.h"
 #include "math/convert.h"

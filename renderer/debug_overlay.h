@@ -4,17 +4,25 @@
 #include "math/Matrix.h"
 #include "math/Vector.h"
 
-void DebugOverlay_Init();
+#include "core/ignore_vc_new.h"
+#include <sol/forward.hpp>
 
-void DebugOverlay_Destroy();
+#define MAX_LINE_BUFFER_SIZE		8192
 
-void DebugOverlay_SetTransform(const Matrix4x4& transform);
+class CDebugOverlay
+{
+public:
+	static void		Init();
+	static void		Destroy();
 
-void DebugOverlay_Line(const Vector3D& posA, const Vector3D& posB, const ColorRGBA& color);
+	static void		SetTransform(const Matrix4x4& transform);
 
-void DebugOverlay_Box(const Vector3D& mins, const Vector3D& maxs, const ColorRGBA& color);
+	static void		Line(const Vector3D& posA, const Vector3D& posB, const ColorRGBA& color);
+	static void		Box(const Vector3D& mins, const Vector3D& maxs, const ColorRGBA& color);
 
+	static void		Draw();
 
-void DebugOverlay_Draw();
+	static void		Lua_Init(sol::state& lua);
+};
 
 #endif // DEBUG_OVERLAY_H

@@ -83,7 +83,7 @@ public:
 
 	ELevelFormat			GetFormat() const;
 
-	bool					LoadFromFile(const char* fileName);
+	bool					Load(IVirtualStream* pStream);
 
 protected:
 	void					ProcessLumps(IVirtualStream* pFile);

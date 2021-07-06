@@ -94,6 +94,8 @@ public:
 	virtual void				SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell) = 0;
 	virtual void				SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx) = 0;
 
+	bool						IsRegionSpooled(const XZPAIR& cell) const;
+
 	virtual CBaseLevelRegion*	GetRegion(const XZPAIR& cell) const = 0;
 	virtual CBaseLevelRegion*	GetRegion(int regionIdx) const = 0;
 

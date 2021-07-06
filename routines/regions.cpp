@@ -446,6 +446,12 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 	delete[] new_model_numbers;
 }
 
+bool CBaseLevelMap::IsRegionSpooled(const XZPAIR& cell) const
+{
+	CBaseLevelRegion* reg = GetRegion(cell);
+	return reg ? reg->m_loaded : false;
+}
+
 void CBaseLevelMap::InitRegion(CBaseLevelRegion* region, int index) const
 {
 	ushort spoolOffset = m_regionSpoolInfoOffsets[index];

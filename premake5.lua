@@ -163,6 +163,8 @@ project "OpenDriverGame"
     kind "ConsoleApp"
     language "C++"
     targetdir "bin/%{cfg.buildcfg}"
+	
+	cppdialect "C++17"	-- required for sol2
 
 	uses { "ImGui", "libnstd", "frameworkLib", "lua", "sol2" }
 

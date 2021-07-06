@@ -18,7 +18,7 @@ void DebugDrawSdNode(sdNode* node)
 	Vector3D tangent = cross(dir, vec3_up);
 
 	ColorRGBA color(0, 1, 0, 1);
-	DebugOverlay_Line(cpos - dir + tangent * float(node->dist / ONE_F), cpos + dir + tangent * float(node->dist / ONE_F), color);
+	CDebugOverlay::Line(cpos - dir + tangent * float(node->dist / ONE_F), cpos + dir + tangent * float(node->dist / ONE_F), color);
 }
 
 // recursively walks heightmap nodes
@@ -61,16 +61,16 @@ void DebugDrawDriver2HeightmapCell(const VECTOR_NOPAD& cellPos, const ColorRGBA&
 	cpos.vx -= 512;
 	cpos.vz -= 512;
 
-	DebugOverlay_Line(Vector3D(cMax.x, cMin.y, cMin.z),
+	CDebugOverlay::Line(Vector3D(cMax.x, cMin.y, cMin.z),
 		Vector3D(cMax.x, cMin.y, cMax.z), color);
 
-	DebugOverlay_Line(Vector3D(cMin.x, cMin.y, cMax.z),
+	CDebugOverlay::Line(Vector3D(cMin.x, cMin.y, cMax.z),
 		Vector3D(cMin.x, cMin.y, cMin.z), color);
 
-	DebugOverlay_Line(Vector3D(cMin.x, cMin.y, cMin.z),
+	CDebugOverlay::Line(Vector3D(cMin.x, cMin.y, cMin.z),
 		Vector3D(cMax.x, cMin.y, cMin.z), color);
 
-	DebugOverlay_Line(Vector3D(cMin.x, cMin.y, cMax.z),
+	CDebugOverlay::Line(Vector3D(cMin.x, cMin.y, cMax.z),
 		Vector3D(cMax.x, cMin.y, cMax.z), color);
 
 	g_debugCellPos.vx = cellMinX + 512;

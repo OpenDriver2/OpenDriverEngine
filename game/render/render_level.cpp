@@ -14,8 +14,7 @@
 
 // extern some vars
 extern String					g_levname;
-extern String					g_levname_moddir;
-extern String					g_levname_texdir;
+
 extern OUT_CITYLUMP_INFO		g_levInfo;
 extern CDriverLevelTextures		g_levTextures;
 extern CDriverLevelModels		g_levModels;
@@ -93,13 +92,6 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 	VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
 
 	CDriver2LevelMap* levMapDriver2 = (CDriver2LevelMap*)g_levMap;
-	CFileStream spoolStream(g_levFile);
-
-	SPOOL_CONTEXT spoolContext;
-	spoolContext.dataStream = &spoolStream;
-	spoolContext.lumpInfo = &g_levInfo;
-	spoolContext.models = &g_levModels;
-	spoolContext.textures = &g_levTextures;
 
 	levMapDriver2->WorldPositionToCellXZ(cell, cameraPosition);
 
@@ -152,7 +144,19 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 				CELL_ITERATOR_D2 ci;
 				PACKED_CELL_OBJECT* ppco;
 
-				levMapDriver2->SpoolRegion(spoolContext, icell);
+				if (!levMapDriver2->IsRegionSpooled(icell))
+				{
+					SPOOL_CONTEXT spoolContext;
+
+					CFileStream spoolStream(g_levFile);
+
+					spoolContext.dataStream = &spoolStream;
+					spoolContext.lumpInfo = &g_levInfo;
+					spoolContext.models = &g_levModels;
+					spoolContext.textures = &g_levTextures;
+
+					levMapDriver2->SpoolRegion(spoolContext, icell);
+				}
 
 				ppco = levMapDriver2->GetFirstPackedCop(&ci, icell);
 
@@ -316,13 +320,6 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 	VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
 
 	CDriver1LevelMap* levMapDriver1 = (CDriver1LevelMap*)g_levMap;
-	CFileStream spoolStream(g_levFile);
-
-	SPOOL_CONTEXT spoolContext;
-	spoolContext.dataStream = &spoolStream;
-	spoolContext.lumpInfo = &g_levInfo;
-	spoolContext.models = &g_levModels;
-	spoolContext.textures = &g_levTextures;
 
 	levMapDriver1->WorldPositionToCellXZ(cell, cameraPosition);
 
@@ -346,7 +343,19 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 			if (icell.x > -1 && icell.x < levMapDriver1->GetCellsAcross() &&
 				icell.z > -1 && icell.z < levMapDriver1->GetCellsDown())
 			{
-				levMapDriver1->SpoolRegion(spoolContext, icell);
+				if (!levMapDriver1->IsRegionSpooled(icell))
+				{
+					SPOOL_CONTEXT spoolContext;
+
+					CFileStream spoolStream(g_levFile);
+
+					spoolContext.dataStream = &spoolStream;
+					spoolContext.lumpInfo = &g_levInfo;
+					spoolContext.models = &g_levModels;
+					spoolContext.textures = &g_levTextures;
+
+					levMapDriver1->SpoolRegion(spoolContext, icell);
+				}
 
 				pco = levMapDriver1->GetFirstCop(&ci, icell.x, icell.z);
 
