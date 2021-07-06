@@ -9,31 +9,39 @@ CityType = {
 	MPNight = 4
 }
 
+SkyType = {
+	Day = 0,
+	Night = 1,
+	Rain = 2,
+	Dawn = 3,
+	Dusk = 4,
+}
+
 CityInfo = {
 	["Chicago"] = {
 		number 		= 0,		-- city index; For necessary hardcoded stuff
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
-		skyPath		= "%{DRIVER2}DATA/SKY0.RAW",
+		skyPath		= "DRIVER2/DATA/SKY0.RAW",
 
 		-- lev path for all city types
 		levPath		= {
-			Day 		= "%{DRIVER2}LEVELS/CHICAGO.LEV",
-			Night 		= "%{DRIVER2}NLEVELS/CHICAGO.LEV",
-			MPDay 		= "%{DRIVER2}MLEVELS/CHICAGO.LEV",
-			MPNight		= "%{DRIVER2}MNLEVELS/CHICAGO.LEV",
+			"DRIVER2/LEVELS/CHICAGO.LEV",
+			"DRIVER2/NLEVELS/CHICAGO.LEV",
+			"DRIVER2/MLEVELS/CHICAGO.LEV",
+			"DRIVER2/MNLEVELS/CHICAGO.LEV",
 		},
 		
-		events 		= dofile("driver2_chicago_events.lua"),
+		events 		= {},--dofile("driver2_chicago_events.lua"),
 		
-		cosmetics 	= dofile("driver2_chicago_cosmetics.lua"), 	-- "%{DRIVER2}LEVELS/CHICAGO.LCF"
-		-- cosmetics now pull denting out of DEN files.			-- denting 	= "%{DRIVER2}LEVELS/CHICAGO.DEN",
+		cosmetics 	= {},--dofile("driver2_chicago_cosmetics.lua"), 	-- "DRIVER2/LEVELS/CHICAGO.LCF"
+		-- cosmetics now pull denting out of DEN files.			-- denting 	= "DRIVER2/LEVELS/CHICAGO.DEN",
 		
 		-- this is still not decided
 		frontendPath = {
-			Selection = "%{DRIVER2}DATA/CITY.RAW",
-			Cars = "%{DRIVER2}DATA/CARS/CCARS.RAW",
-			Cuts = "%{DRIVER2}DATA/CUTS/CCUTS.RAW",
+			Selection = "DRIVER2/DATA/CITY.RAW",
+			Cars = "DRIVER2/DATA/CARS/CCARS.RAW",
+			Cuts = "DRIVER2/DATA/CUTS/CCUTS.RAW",
 		},
 
 		-- map settings
@@ -50,14 +58,14 @@ CityInfo = {
 		number 		= 1,		-- city index; For necessary hardcoded stuff
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
-		skyPath		= "%{DRIVER2}DATA/SKY1.RAW",
+		skyPath		= "DRIVER2/DATA/SKY1.RAW",
 
 		-- lev path for all city types
 		levPath		= {
-			"%{DRIVER2}LEVELS/HAVANA.LEV",
-			"%{DRIVER2}NLEVELS/HAVANA.LEV",
-			"%{DRIVER2}MLEVELS/HAVANA.LEV",
-			"%{DRIVER2}MNLEVELS/HAVANA.LEV",
+			"DRIVER2/LEVELS/HAVANA.LEV",
+			"DRIVER2/NLEVELS/HAVANA.LEV",
+			"DRIVER2/MLEVELS/HAVANA.LEV",
+			"DRIVER2/MNLEVELS/HAVANA.LEV",
 		},
 
 		-- map settings
@@ -74,14 +82,14 @@ CityInfo = {
 		number 		= 2,		-- city index; For necessary hardcoded stuff
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
-		skyPath		= "%{DRIVER2}DATA/SKY2.RAW",
+		skyPath		= "DRIVER2/DATA/SKY2.RAW",
 
 		-- lev path for all city types
 		levPath		= {
-			"%{DRIVER2}LEVELS/VEGAS.LEV",
-			"%{DRIVER2}NLEVELS/VEGAS.LEV",
-			"%{DRIVER2}MLEVELS/VEGAS.LEV",
-			"%{DRIVER2}MNLEVELS/VEGAS.LEV",
+			"DRIVER2/LEVELS/VEGAS.LEV",
+			"DRIVER2/NLEVELS/VEGAS.LEV",
+			"DRIVER2/MLEVELS/VEGAS.LEV",
+			"DRIVER2/MNLEVELS/VEGAS.LEV",
 		},
 
 		-- map settings
@@ -98,14 +106,14 @@ CityInfo = {
 		number 		= 2,		-- city index; For necessary hardcoded stuff
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
-		skyPath		= "%{DRIVER2}DATA/SKY3.RAW",
+		skyPath		= "DRIVER2/DATA/SKY3.RAW",
 
 		-- lev path for all city types
 		levPath		= {
-			"%{DRIVER2}LEVELS/RIO.LEV",
-			"%{DRIVER2}NLEVELS/RIO.LEV",
-			"%{DRIVER2}MLEVELS/RIO.LEV",
-			"%{DRIVER2}MNLEVELS/RIO.LEV",
+			"DRIVER2/LEVELS/RIO.LEV",
+			"DRIVER2/NLEVELS/RIO.LEV",
+			"DRIVER2/MLEVELS/RIO.LEV",
+			"DRIVER2/MNLEVELS/RIO.LEV",
 		},
 
 		-- map settings

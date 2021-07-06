@@ -1,14 +1,14 @@
 -- state machine setup
 
-dofile "city.lua"
-dofile "updates.lua"
+dofile "scripts/city.lua"
+dofile "scripts/updates.lua"
 
 -- "engine" namespace has everything dynamically updated
 -- "driver" & "driver2" namespace has every class to be used with "engine"
 
 local players = engine.Players				-- local players
 local cars = engine.Cars					-- cars, handling
-local peds = engine.Pedestrians				-- pedestrians and motion capture system
+--local peds = engine.Pedestrians			-- pedestrians and motion capture system
 local world = engine.World					-- collision and rendering world
 local sky = engine.Sky						-- Sky renderer
 
@@ -34,8 +34,9 @@ function StartTestGame()
 	-- We are going to load Driver 2 level TODO: factory
 	local level = driver2.Level.new()
 
-	CurrentCityInfo = CityInfo["Chicago"]
+	CurrentCityInfo = CityInfo["Havana"]
 	CurrentCityType = CityType.Day
+	CurrentSkyType = SkyType.Dusk
 
 	-- set level to be used for rendering, collision etc
 	world:SetLevel(level)
@@ -68,6 +69,18 @@ function StartTestGame()
 	SetUpdateFunc("StepSim", StepSim)
 end
 
+function StartTest()
+	CurrentCityInfo = CityInfo["LasVegas"]
+	CurrentCityType = CityType.Day
+	CurrentSkyType = SkyType.Dusk
+	
+	if world.LoadLevelFile(CurrentCityInfo.levPath[CurrentCityType]) then
+		sky.Init( CurrentCityInfo.skyPath, CurrentSkyType )
+		
+		SetUpdateFunc("StepSim", StepSim)
+	end
+end
+
 --------------------------------------------------
 
 -- This function is called every frame
@@ -76,3 +89,6 @@ function Sys_Frame( dt )
 	DoUpdateFuncs(dt)
 	
 end
+
+-- TEST ROUTINE
+StartTest()
