@@ -39,16 +39,35 @@ int			g_numLineVerts;
 GrVAO*		g_linesVAO { nullptr };
 ShaderID	g_linesShader { 0 };
 Matrix4x4	g_lineTransform { identity3() };
+bool		g_enableDebugOverlay{ false };
 
 void CDebugOverlay::Lua_Init(sol::state& lua)
 {
+	auto engine = lua["engine"].get_or_create<sol::table>();
 
+	auto debugOverlay = engine["DebugOverlay"].get_or_create<sol::table>();
+
+	debugOverlay["SetTransform"] = &SetTransform;
+	debugOverlay["Line"] = &Line;
+	debugOverlay["Box"] = &Box;
+	debugOverlay["Enable"] = &Enable;
+	debugOverlay["Enable"] = &IsEnabled;
 }
 
 void CDebugOverlay::Init()
 {
 	g_linesVAO = GR_CreateVAO(1024, nullptr, 1);
 	g_linesShader = GR_CompileShader(line_shader);
+}
+
+void CDebugOverlay::Enable(bool enable)
+{
+	g_enableDebugOverlay = enable;
+}
+
+bool CDebugOverlay::IsEnabled()
+{
+	return g_enableDebugOverlay;
 }
 
 void CDebugOverlay::Destroy()

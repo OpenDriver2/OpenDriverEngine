@@ -15,6 +15,9 @@ public:
 	static void		Init();
 	static void		Destroy();
 
+	static void		Enable(bool enable);
+	static bool		IsEnabled();
+
 	static void		SetTransform(const Matrix4x4& transform);
 
 	static void		Line(const Vector3D& posA, const Vector3D& posB, const ColorRGBA& color);
