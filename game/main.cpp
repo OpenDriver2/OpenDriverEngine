@@ -33,6 +33,9 @@
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
 
+#include <imgui_internal.h>
+
+#include <sol_ImGui/sol_imgui.h>
 
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -304,25 +307,42 @@ void ViewerMainLoop()
 		GR_BeginScene();
 
 		GR_ClearDepth(1.0f);
+		/*
 		GR_SetCullMode(CULL_NONE);
 		GR_SetBlendMode(BM_NONE);
 		GR_SetDepth(1);
-
+		
 		if (g_nightMode)
 			GR_ClearColor(19 / 255.0f, 23 / 255.0f, 25 / 255.0f);
 		else
 			GR_ClearColor(128 / 255.0f, 158 / 255.0f, 182 / 255.0f);
+			*/
 
 		// Render stuff
 		float cameraSpeedModifier = g_holdShift ? 4.0f : 1.0f;
-
 		UpdateCameraMovement(deltaTime, cameraSpeedModifier);
+
+		try {
+			sol::function updateFunc = g_luaState["Sys_Frame"];
+			updateFunc(deltaTime);
+		}
+		catch (const sol::error& e)
+		{
+		}
 
 		CSky::Draw();
 
 		CWorld::RenderLevelView();
 
 		CDebugOverlay::Draw();
+
+		try {
+			sol::function updateFunc = g_luaState["Sys_PostFrame"];
+			updateFunc(deltaTime);
+		}
+		catch (const sol::error& e)
+		{
+		}
 
 		// Do ImGUI interface
 		DisplayUI(deltaTime);
@@ -355,6 +375,7 @@ int main(int argc, char* argv[])
 	CDebugOverlay::Lua_Init(g_luaState);
 	CWorld::Lua_Init(g_luaState);
 	CSky::Lua_Init(g_luaState);
+	sol_ImGui::InitBindings(g_luaState);
 
 	if (!GR_Init("Open Driver Engine", 1280, 720, 0))
 	{
@@ -391,22 +412,11 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	/*
-	// Load level file
-	if (!CWorld::LoadLevelFile(g_levname))
-	{
-		GR_Shutdown();
-		return -1;
-	}
-
-	//CSky::Init("DRIVER2/DATA/SKY2.RAW", 1);
-	*/
-
 	// loop and stuff
 	ViewerMainLoop();
 
 	// free all
-	CWorld::FreeLevelData();
+	CWorld::UnloadLevel();
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();

@@ -17,8 +17,8 @@ public:
 	static void				InitHWTextures();
 	static void				InitHWModels();
 
-	static bool				LoadLevelFile(const char* fileName);
-	static void				FreeLevelData();
+	static bool				LoadLevel(const char* fileName);
+	static void				UnloadLevel();
 
 	static void				RenderLevelView();
 	static void				SpoolAllAreaDatas();

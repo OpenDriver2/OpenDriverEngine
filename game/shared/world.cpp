@@ -43,8 +43,8 @@ void CWorld::Lua_Init(sol::state& lua)
 	auto world = engine["World"].get_or_create<sol::table>();
 
 	world["GetHWTexture"] = &GetHWTexture;
-	world["LoadLevelFile"] = &LoadLevelFile;
-	world["FreeLevelData"] = &FreeLevelData;
+	world["LoadLevel"] = &LoadLevel;
+	world["UnloadLevel"] = &UnloadLevel;
 	world["SpoolAllAreaDatas"] = &SpoolAllAreaDatas;
 }
 
@@ -179,7 +179,7 @@ FILE* g_levFile = nullptr;
 //-------------------------------------------------------
 // Perorms level loading and renderer data initialization
 //-------------------------------------------------------
-bool CWorld::LoadLevelFile(const char* fileName)
+bool CWorld::LoadLevel(const char* fileName)
 {
 	g_levFile = fopen(fileName, "rb");
 	if (!g_levFile)
@@ -211,7 +211,7 @@ bool CWorld::LoadLevelFile(const char* fileName)
 //-------------------------------------------------------
 // Frees all data
 //-------------------------------------------------------
-void CWorld::FreeLevelData()
+void CWorld::UnloadLevel()
 {
 	MsgWarning("Freeing level data ...\n");
 
