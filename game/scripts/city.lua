@@ -17,6 +17,14 @@ SkyType = {
 	Dusk = 4,
 }
 
+function IsMultiplayerCity(typeVal)
+	return typeVal >= CityType.MPDay
+end
+
+function IsNightCity(typeVal)
+	return typeVal == CityType.Night or typeVal == CityType.MPNight
+end
+
 CityInfo = {
 	["Chicago"] = {
 		number 		= 0,		-- city index; For necessary hardcoded stuff
