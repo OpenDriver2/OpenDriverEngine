@@ -12,6 +12,7 @@ local cars = engine.Cars						-- cars, handling
 local world = engine.World						-- collision and rendering world
 local sky = engine.Sky							-- Sky renderer
 local levRenderProps = engine.LevelRenderProps	-- Level render properties (mode, lighting, etc)
+local camera = engine.Camera
 
 function StepSim(dt)
 	-- TODO: direct port from MAIN.C
@@ -28,6 +29,29 @@ function StepSim(dt)
 	--players:Update()
 	cars:DoScenaryCollisions()
 	--players:CheckMiscFelonies()
+end
+
+function InitCamera( params )
+	-- you can't replace MainView but we can copy all parameters
+	camera.MainView.position = params.position
+	camera.MainView.angles = params.angles
+	camera.MainView.fov = params.fov
+end
+
+local testCamera = engine.CameraViewParams.new()
+
+function GameLoop(dt)
+
+	local position = vec.FIXED_VECTOR.new() -- {vx = 0, vy = 0, vz = 0}
+
+	testCamera.position.z = testCamera.position.z + 1.0 * dt
+	testCamera.position.x = 1
+	testCamera.position.y = math.sin(testCamera.position.z) * 0.5 + 1
+	
+	testCamera.angles.y = math.sin(testCamera.position.z) * 80
+
+	InitCamera(testCamera)
+	--StepSim( dt )
 end
 
 CurrentCityInfo = nil
@@ -69,10 +93,21 @@ function ChangeCity(newCity, newCityType, newWeather)
 
 	levRenderProps.nightMode = (CurrentCityType == CityType.Night)
 	
+	-- TODO: City lighting presets for each mode
+	if levRenderProps.nightMode then
+		levRenderProps.nightAmbientScale = 0.8
+		levRenderProps.nightLightScale = 0
+		levRenderProps.ambientScale = 3
+		levRenderProps.lightScale = 0
+	else
+		levRenderProps.ambientScale = 1
+		levRenderProps.lightScale = 1
+	end
+	
 	if triggerLoading then
 		if world.LoadLevel(CurrentCityInfo.levPath[CurrentCityType]) then
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
-			--SetUpdateFunc("StepSim", StepSim)
+			SetUpdateFunc("GameLoop", GameLoop)
 		end
 	else
 		-- reload sky only
@@ -84,7 +119,11 @@ function StartTest()
 	-- permanently disable lods
 	levRenderProps.noLod = true
 
-	ChangeCity(CityInfo["Chicago"], CityType.Day, SkyType.Day)
+	CurrentCityInfo = {}
+	CurrentCityType = CityType.Day
+	CurrentSkyType = SkyType.Day
+
+	--ChangeCity(CityInfo["Chicago"], CityType.Day, SkyType.Day)
 end
 
 --[[
@@ -124,21 +163,11 @@ function StartTestGame()
 	
 	players:SetLocalPlayer(localPlayer)
 	
-	SetUpdateFunc("StepSim", StepSim)
+	SetUpdateFunc("GameLoop", GameLoop)
 end]]
 
---------------------------------------------------
 
--- This function is called every frame before drawing world
-function Sys_Frame( dt )
-
-	DoUpdateFuncs(dt)
-	
-end
-
--- This function called every frame after drawing world
--- You can draw here ImGUI stuff
-function Sys_PostFrame( dt )
+function RenderUI()
 
 	if ImGui.BeginMainMenuBar() then
 		if ImGui.BeginMenu("Level") then
@@ -154,10 +183,14 @@ function Sys_PostFrame( dt )
 			ImGui.Separator()
 			
 			if ImGui.BeginMenu("Change weather type") then
+				local num = 1
 				for k,v in pairs(SkyType) do
-					if ImGui.MenuItem(k) then
+
+					if ImGui.MenuItem(k, tostring(num)) then
 						ChangeCity(CurrentCityInfo, CurrentCityType, v)
 					end
+					
+					num = num + 1
 				end
 				ImGui.EndMenu()
 			end
@@ -166,6 +199,10 @@ function Sys_PostFrame( dt )
 		
 			if ImGui.MenuItem("Spool all Area Data") then
 				world.SpoolAllAreaDatas();
+			end
+			
+			if ImGui.MenuItem("Unload") then
+				world.UnloadLevel();
 			end
 
 			ImGui.EndMenu()
@@ -213,6 +250,26 @@ function Sys_PostFrame( dt )
 
 		ImGui.EndMainMenuBar();
 	end
+end
+
+-------------------------------------------------
+
+local function errorHandler ( errobj )
+	print("ERROR - "..errobj)
+	print(debug.traceback())
+	return false
+end
+
+-- This function is called every frame before drawing world
+function Sys_Frame( dt )
+
+	xpcall(function() DoUpdateFuncs(dt) end, errorHandler)
+end
+
+-- This function called every frame after drawing world
+-- You can draw here ImGUI stuff
+function Sys_PostFrame( dt )
+	xpcall(RenderUI, errorHandler)
 end
 
 -- TEST ROUTINE

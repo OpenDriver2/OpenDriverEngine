@@ -2,17 +2,37 @@
 #define CAMERA_H
 
 #include "math/Vector.h"
+#include <sol/forward.hpp>
 
-class Volume;
-
+// free camera
 extern Vector3D g_cameraVelocity;
 extern Vector3D g_cameraPosition;
 extern Vector3D g_cameraAngles;
 
-extern Vector3D g_cameraMoveDir;
+//---------------------------------------------------------
 
-void UpdateCameraMovement(float deltaTime, float speedModifier);
+class Volume;
 
-void SetupCameraViewAndMatrices(const Vector3D& cameraPosition, const Vector3D& cameraAngles, Volume& outFrustum);
+struct CameraViewParams
+{
+	Vector3D	position{ 0 };
+	Vector3D	angles{ 0 };
+	float		fov{ 75.0f };
+};
+
+//---------------------------------------------------------
+
+class CCamera
+{
+public:
+	static CameraViewParams		MainView;
+
+	static void SetupViewAndMatrices(const CameraViewParams& cameraParams, Volume& outFrustum);
+
+	static void Lua_Init(sol::state& lua);
+};
+
+// free camera
+void UpdateCameraMovement(float deltaTime, float speedModifier, const Vector3D& moveDir);
 
 #endif // CAMERA_H

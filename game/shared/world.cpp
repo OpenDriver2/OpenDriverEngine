@@ -47,6 +47,11 @@ void CWorld::Lua_Init(sol::state& lua)
 	world["UnloadLevel"] = &UnloadLevel;
 	world["SpoolAllAreaDatas"] = &SpoolAllAreaDatas;
 
+	world["IsLevelLoaded"] = &IsLevelLoaded;
+	world["GetModelByIndex"] = &GetModelByIndex;
+	world["GetModelByName"] = &GetModelByName;
+	world["MapHeight"] = &MapHeight;
+
 	// level properties
 	lua.new_usertype<LevelRenderProps>("LevelRenderProps",
 		"nightAmbientScale", &LevelRenderProps::nightAmbientScale,
@@ -251,13 +256,13 @@ void CWorld::UnloadLevel()
 //-------------------------------------------------------
 // Render level viewer
 //-------------------------------------------------------
-void CWorld::RenderLevelView()
+void CWorld::RenderLevelView(const CameraViewParams& view)
 {
 	Volume frustumVolume;
 
 	// setup standard camera
 	CRenderModel::SetupModelShader();
-	SetupCameraViewAndMatrices(g_cameraPosition, g_cameraAngles, frustumVolume);
+	CCamera::SetupViewAndMatrices(view, frustumVolume);
 
 	GR_SetDepth(1);
 	GR_SetCullMode(CULL_FRONT);
@@ -266,9 +271,14 @@ void CWorld::RenderLevelView()
 	CRenderModel::SetupLightingProperties();
 	
 	if(g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16)
-		DrawLevelDriver2(g_cameraPosition, g_cameraAngles.y, frustumVolume);
+		DrawLevelDriver2(view.position, view.angles.y, frustumVolume);
 	else
-		DrawLevelDriver1(g_cameraPosition, g_cameraAngles.y, frustumVolume);
+		DrawLevelDriver1(view.position, view.angles.y, frustumVolume);
+}
+
+bool CWorld::IsLevelLoaded()
+{
+	return g_levMap;
 }
 
 //-------------------------------------------------------------
@@ -276,6 +286,9 @@ void CWorld::RenderLevelView()
 //-------------------------------------------------------------
 void CWorld::SpoolAllAreaDatas()
 {
+	if (!IsLevelLoaded())
+		return;
+
 	Msg("Spooling ALL regions...\n");
 
 	CFileStream stream(g_levFile);
@@ -294,6 +307,21 @@ void CWorld::SpoolAllAreaDatas()
 	}
 }
 
+ModelRef_t* CWorld::GetModelByIndex(int modelIndex)
+{
+	return g_levModels.GetModelByIndex(modelIndex);
+}
+
+ModelRef_t* CWorld::GetModelByName(const char* name)
+{
+	int modelIndex = g_levModels.FindModelIndexByName(name);
+	return GetModelByIndex(modelIndex);
+}
+
+int CWorld::MapHeight(const VECTOR_NOPAD& position)
+{
+	return g_levMap->MapHeight(position);
+}
 
 //-------------------------------------------------------------
 

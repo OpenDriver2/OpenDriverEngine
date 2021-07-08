@@ -4,6 +4,12 @@
 #include "core/ignore_vc_new.h"
 #include <sol/forward.hpp>
 
+#include "math/psx_math_types.h"
+#include "camera.h"
+
+class CTexturePage;
+struct ModelRef_t;
+
 class CWorld
 {
 public:
@@ -20,8 +26,20 @@ public:
 	static bool				LoadLevel(const char* fileName);
 	static void				UnloadLevel();
 
-	static void				RenderLevelView();
+	static void				RenderLevelView(const CameraViewParams& view);
+
+	//------------------------------------------
+
+	static bool				IsLevelLoaded();
+
 	static void				SpoolAllAreaDatas();
+
+	static ModelRef_t*		GetModelByIndex(int modelIndex);
+	static ModelRef_t*		GetModelByName(const char* name);
+
+	static int				MapHeight(const VECTOR_NOPAD& position);
+
+	//------------------------------------------
 
 	static void				Lua_Init(sol::state& lua);
 
@@ -29,12 +47,6 @@ protected:
 
 
 };
-
-// extern some vars
-extern OUT_CITYLUMP_INFO		g_levInfo;
-extern CDriverLevelTextures		g_levTextures;
-extern CDriverLevelModels		g_levModels;
-extern CBaseLevelMap*			g_levMap;
 
 int ViewerMain();
 

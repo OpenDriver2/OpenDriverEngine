@@ -1,14 +1,16 @@
 local updateFuncs = {}
 
+local function errorHandler ( errobj )
+	print("ERROR - "..errobj)
+	print(debug.traceback())
+	return false
+end
+
 function DoUpdateFuncs(dt)
 	for k,v in pairs(updateFuncs) do
 		v.time = v.time - dt
 		if v.time <= 0 then
-			local ran, errorMsg = pcall( v.fn, v.freq + dt )
-			if not ran then
-				MsgError("Lua error: " .. errorMsg)
-			end
-			
+			xpcall(function() v.fn(v.freq + dt) end, errorHandler)			
 			v.time = v.freq
 		end
 	end

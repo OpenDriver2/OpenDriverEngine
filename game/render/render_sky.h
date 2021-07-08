@@ -1,6 +1,8 @@
 #ifndef RENDER_SKY_H
 #define RENDER_SKY_H
 
+#include "game/shared/camera.h"
+
 class CSky
 {
 public:
@@ -13,7 +15,7 @@ public:
 	static void				Unload();
 
 	// Renders a sky
-	static void				Draw();
+	static void				Draw(const CameraViewParams& view);
 
 	static void				Lua_Init(sol::state& lua);
 };

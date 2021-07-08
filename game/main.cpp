@@ -18,24 +18,18 @@
 #include "core/ignore_vc_new.h"
 #include <sol/sol.hpp>
 
-#include "game/shared/manager_cars.h"
-
 #include "renderer/debug_overlay.h"
 #include "renderer/gl_renderer.h"
 
 #include "shared/world.h"
 #include "shared/camera.h"
 
-#include "game/render/render_level.h"
-#include "game/render/render_model.h"
+#include "shared/lua_init.h"
+
 #include "game/render/render_sky.h"
 
-#include "backends/imgui_impl_opengl3.h"
-#include "backends/imgui_impl_sdl.h"
-
-#include <imgui_internal.h>
-
-#include <sol_ImGui/sol_imgui.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <backends/imgui_impl_sdl.h>
 
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -83,63 +77,8 @@ int UpdateFPSCounter(float deltaTime)
 //-------------------------------------------------------------
 void DisplayUI(float deltaTime)
 {
-	/*
-	if (ImGui::BeginMainMenuBar())
-	{
-		if (ImGui::BeginMenu("File"))
-		{
-			if (ImGui::MenuItem("Change level..."))
-			{
-				MsgWarning("TODO: change level file!");
-			}
+	CameraViewParams& view = CCamera::MainView;
 
-			ImGui::EndMenu();
-		}
-
-		if (ImGui::BeginMenu("Level"))
-		{
-			if (ImGui::MenuItem("Spool all Area Data"))
-				CWorld::SpoolAllAreaDatas();
-
-			ImGui::EndMenu();
-		}
-
-		if (ImGui::BeginMenu("View"))
-		{
-			if (ImGui::MenuItem("Night mode", nullptr, g_nightMode))
-				g_nightMode ^= 1;
-
-			if (ImGui::MenuItem("Disable LODs", nullptr, g_noLod))
-				g_noLod ^= 1;
-
-			ImGui::Separator();
-
-			if (ImGui::MenuItem("Display collision boxes", nullptr, g_displayCollisionBoxes))
-				g_displayCollisionBoxes ^= 1;
-
-			if (ImGui::MenuItem("Display heightmap", nullptr, g_displayHeightMap))
-				g_displayHeightMap ^= 1;
-
-			if (ImGui::MenuItem("Display hidden objects", nullptr, g_displayAllCellLevels))
-				g_displayAllCellLevels ^= 1;
-
-			ImGui::Separator();
-
-			if (ImGui::MenuItem("Reset camera", nullptr, g_noLod))
-			{
-				g_cameraPosition = 0;
-				g_cameraAngles = Vector3D(25.0f, 45.0f, 0);
-
-				//g_cameraPosition = FromFixedVector({ 230347, 372, 704038 });
-				//g_cameraAngles = FromFixedVector({ 0, 3840 - 1024, 0 }) * 360.0f;
-			}
-
-			ImGui::EndMenu();
-		}
-
-		ImGui::EndMainMenuBar();
-	}
-	*/
 	if (ImGui::Begin("HelpFrame", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove | ImGuiInputTextFlags_NoHorizontalScroll |
 		ImGuiWindowFlags_NoSavedSettings | ImGuiColorEditFlags_NoInputs | ImGuiWindowFlags_NoBringToFrontOnFocus))
@@ -151,7 +90,7 @@ void DisplayUI(float deltaTime)
 		ImGui::SetWindowSize(ImVec2(400, 120));
 
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.25f, 1.0f), "Position: X: %d Y: %d Z: %d",
-			int(g_cameraPosition.x * ONE_F), int(g_cameraPosition.y * ONE_F), int(g_cameraPosition.z * ONE_F));
+			int(view.position.x * ONE_F), int(view.position.y * ONE_F), int(view.position.z * ONE_F));
 
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Draw distance: %d", g_cellsDrawDistance);
 		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn cells: %d", g_drawnCells);
@@ -161,6 +100,8 @@ void DisplayUI(float deltaTime)
 		ImGui::End();
 	}
 }
+
+Vector3D g_cameraMoveDir(0);
 
 //-------------------------------------------------------------
 // SDL2 event handling
@@ -276,7 +217,7 @@ extern SDL_Window* g_window;
 //-------------------------------------------------------------
 // Loop
 //-------------------------------------------------------------
-void ViewerMainLoop()
+void MainLoop()
 {
 	int64 oldTicks = Time::microTicks();
 
@@ -311,10 +252,6 @@ void ViewerMainLoop()
 			GR_ClearColor(128 / 255.0f, 158 / 255.0f, 182 / 255.0f);
 			*/
 
-		// Render stuff
-		float cameraSpeedModifier = g_holdShift ? 4.0f : 1.0f;
-		UpdateCameraMovement(deltaTime, cameraSpeedModifier);
-
 		try {
 			sol::function updateFunc = g_luaState["Sys_Frame"];
 			updateFunc(deltaTime);
@@ -323,9 +260,24 @@ void ViewerMainLoop()
 		{
 		}
 
-		CSky::Draw();
+		// render main view
+		if (CWorld::IsLevelLoaded())
+		{
+			CameraViewParams& view = CCamera::MainView;
 
-		CWorld::RenderLevelView();
+			/*
+			// Render stuff
+			float cameraSpeedModifier = g_holdShift ? 4.0f : 1.0f;
+			UpdateCameraMovement(deltaTime, cameraSpeedModifier, g_cameraMoveDir);
+
+			view.position = g_cameraPosition;
+			view.angles = g_cameraAngles;
+			view.fov = 75.0f;
+			*/
+
+			CSky::Draw(view);
+			CWorld::RenderLevelView(view);
+		}
 
 		CDebugOverlay::Draw();
 
@@ -361,14 +313,7 @@ int main(int argc, char* argv[])
 
 	Msg("---------------\nOpenDriverEngine startup\n---------------\n\n");
 
-	// TODO: lua_init.cpp
-	g_luaState.open_libraries(sol::lib::base);
-
-	CManager_Cars::Lua_Init(g_luaState);
-	CDebugOverlay::Lua_Init(g_luaState);
-	CWorld::Lua_Init(g_luaState);
-	CSky::Lua_Init(g_luaState);
-	sol_ImGui::InitBindings(g_luaState);
+	LuaInit(g_luaState);
 
 	if (!GR_Init("Open Driver Engine", 1280, 720, 0))
 	{
@@ -407,7 +352,7 @@ int main(int argc, char* argv[])
 	}
 
 	// loop and stuff
-	ViewerMainLoop();
+	MainLoop();
 
 	// free all
 	CWorld::UnloadLevel();

@@ -304,7 +304,7 @@ void GenerateSkyUVs()
 	// pre-process models
 	for (int i = 0; i < 4; i++)
 	{
-		ModelRef_t* ref = g_levModels.GetModelByIndex(i);
+		ModelRef_t* ref = CWorld::GetModelByIndex(i);
 		vertexSky_horizontaboffset = g_HorizonLookup[/*GameLevel*/0][i];
 
 		if (ref && ref->userData)
@@ -333,6 +333,9 @@ void CSky::Lua_Init(sol::state& lua)
 // Initialize sky texture and UVs
 bool CSky::Load(const char* filename, int skyNumber)
 {
+	if (filename == nullptr)
+		return false;
+
 	File file;
 	if (!file.open(String::fromCString(filename), File::readFlag))
 	{
@@ -384,12 +387,16 @@ void CSky::Unload()
 }
 
 // Renders sky
-void CSky::Draw()
+void CSky::Draw(const CameraViewParams& view)
 {
+	CameraViewParams _view = view;
 	Volume dummy;
 	GR_SetShader(g_skyShader);
 
-	SetupCameraViewAndMatrices(vec3_up * -0.005f, g_cameraAngles, dummy);
+	const float sky_y_offset = 16.0f / 4096.0f;
+	_view.position = vec3_up * -sky_y_offset;
+
+	CCamera::SetupViewAndMatrices(_view, dummy);
 
 	GR_SetDepth(0);
 	GR_SetCullMode(CULL_FRONT);
@@ -399,7 +406,7 @@ void CSky::Draw()
 	// first 4 models are sky models
 	for (int i = 0; i < 4; i++)
 	{
-		ModelRef_t* ref = g_levModels.GetModelByIndex(i);
+		ModelRef_t* ref = CWorld::GetModelByIndex(i);
 
 		if (ref && ref->userData)
 		{

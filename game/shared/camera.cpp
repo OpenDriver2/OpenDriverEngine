@@ -8,10 +8,15 @@
 #include "game/render/render_model.h"
 #include "game/render/render_level.h"
 
+#include "core/ignore_vc_new.h"
+#include <sol/sol.hpp>
+
 #include "world.h"
+#include "camera.h"
 
 #include "math/Volume.h"
 #include "math/convert.h"
+
 
 const float Z_NEAR = 0.01f;
 const float Z_FAR = 100.0f;
@@ -23,25 +28,23 @@ const float CAMERA_MOVEMENT_DECELERATION = 40;
 
 Vector3D g_cameraVelocity(0);
 Vector3D g_cameraPosition(0);
-Vector3D g_cameraAngles(25.0f, 45.0f, 0);
-
-Vector3D g_cameraMoveDir(0);
+Vector3D g_cameraAngles(0);
 
 //-------------------------------------------------------
 // Updates camera movement for level viewer
 //-------------------------------------------------------
-void UpdateCameraMovement(float deltaTime, float speedModifier)
+void UpdateCameraMovement(float deltaTime, float speedModifier, const Vector3D& moveDir)
 {
 	Vector3D forward, right;
 	AngleVectors(g_cameraAngles, &forward, &right);
 
 	const float maxSpeed = CAMERA_MOVEMENT_SPEED_FACTOR * speedModifier;
 
-	if (lengthSqr(g_cameraMoveDir) > 0.1f &&
+	if (lengthSqr(moveDir) > 0.1f &&
 		length(g_cameraVelocity) < maxSpeed)
 	{
-		g_cameraVelocity += g_cameraMoveDir.x * right * deltaTime * CAMERA_MOVEMENT_ACCELERATION * speedModifier;
-		g_cameraVelocity += g_cameraMoveDir.z * forward * deltaTime * CAMERA_MOVEMENT_ACCELERATION * speedModifier;
+		g_cameraVelocity += moveDir.x * right * deltaTime * CAMERA_MOVEMENT_ACCELERATION * speedModifier;
+		g_cameraVelocity += moveDir.z * forward * deltaTime * CAMERA_MOVEMENT_ACCELERATION * speedModifier;
 	}
 	else
 	{
@@ -56,7 +59,7 @@ void UpdateCameraMovement(float deltaTime, float speedModifier)
 
 	VECTOR_NOPAD cameraPosition = ToFixedVector(g_cameraPosition);
 
-	int height = g_levMap->MapHeight(cameraPosition);
+	int height = CWorld::MapHeight(cameraPosition);
 
 	// debug display
 	if (g_levRenderProps.displayHeightMap)
@@ -77,17 +80,34 @@ void UpdateCameraMovement(float deltaTime, float speedModifier)
 extern int g_windowWidth;
 extern int g_windowHeight;
 
+CameraViewParams CCamera::MainView;
+
+void CCamera::Lua_Init(sol::state& lua)
+{
+	auto engine = lua["engine"].get_or_create<sol::table>();
+
+	auto world = engine["Camera"].get_or_create<sol::table>();
+
+	world["MainView"] = &MainView;
+
+	// level properties
+	engine.new_usertype<CameraViewParams>("CameraViewParams",
+		"position", &CameraViewParams::position,
+		"angles", &CameraViewParams::angles,
+		"fov", &CameraViewParams::fov);
+}
+
 //-------------------------------------------------------
 // Sets up the camera matrices
 //-------------------------------------------------------
-void SetupCameraViewAndMatrices(const Vector3D& cameraPosition, const Vector3D& cameraAngles, Volume& outFrustum)
+void CCamera::SetupViewAndMatrices(const CameraViewParams& cameraParams, Volume& outFrustum)
 {
 	// calculate view matrices
 	Matrix4x4 view, proj;
 
-	proj = perspectiveMatrixY(DEG2RAD(CAMERA_FOV), g_windowWidth, g_windowHeight, Z_NEAR, Z_FAR);
-	view = rotateZXY4(-DEG2RAD(cameraAngles.x), -DEG2RAD(cameraAngles.y), -DEG2RAD(cameraAngles.z));
-	view.translate(-cameraPosition);
+	proj = perspectiveMatrixY(DEG2RAD(cameraParams.fov), g_windowWidth, g_windowHeight, Z_NEAR, Z_FAR);
+	view = rotateZXY4(-DEG2RAD(cameraParams.angles.x), -DEG2RAD(cameraParams.angles.y), -DEG2RAD(cameraParams.angles.z));
+	view.translate(-cameraParams.position);
 
 	// calculate frustum volume
 	outFrustum.LoadAsFrustum(proj * view);
