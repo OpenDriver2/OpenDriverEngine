@@ -4,11 +4,13 @@
 class CSky
 {
 public:
+	static void				Init();
+
 	// Initialize sky texture and UVs
-	static bool				Init(const char* filename, int skyNumber);
+	static bool				Load(const char* filename, int skyNumber);
 
 	// Destroy sky and UVs
-	static void				Destroy();
+	static void				Unload();
 
 	// Renders a sky
 	static void				Draw();

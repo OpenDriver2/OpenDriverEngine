@@ -46,6 +46,21 @@ void CWorld::Lua_Init(sol::state& lua)
 	world["LoadLevel"] = &LoadLevel;
 	world["UnloadLevel"] = &UnloadLevel;
 	world["SpoolAllAreaDatas"] = &SpoolAllAreaDatas;
+
+	// level properties
+	lua.new_usertype<LevelRenderProps>("LevelRenderProps",
+		"nightAmbientScale", &LevelRenderProps::nightAmbientScale,
+		"nightLightScale", & LevelRenderProps::nightLightScale,
+		"ambientScale", & LevelRenderProps::ambientScale,
+		"lightScale", & LevelRenderProps::lightScale,
+		"nightMode", & LevelRenderProps::nightMode,
+		"noLod", & LevelRenderProps::noLod,
+
+		"displayCollisionBoxes", & LevelRenderProps::displayCollisionBoxes,
+		"displayHeightMap", & LevelRenderProps::displayHeightMap,
+		"displayAllCellLevels", & LevelRenderProps::displayAllCellLevels);
+
+	engine["LevelRenderProps"] = &g_levRenderProps;
 }
 
 //-----------------------------------------------------------------
@@ -181,12 +196,16 @@ FILE* g_levFile = nullptr;
 //-------------------------------------------------------
 bool CWorld::LoadLevel(const char* fileName)
 {
-	g_levFile = fopen(fileName, "rb");
-	if (!g_levFile)
+	FILE* fp = fopen(fileName, "rb");
+	if (!fp)
 	{
 		MsgError("Cannot open '%s'\n", fileName);
 		return false;
 	}
+
+	UnloadLevel();
+
+	g_levFile = fp;
 
 	// seek to begin
 	MsgWarning("-----------\nLoading LEV file '%s'\n", fileName);
@@ -213,15 +232,20 @@ bool CWorld::LoadLevel(const char* fileName)
 //-------------------------------------------------------
 void CWorld::UnloadLevel()
 {
-	MsgWarning("Freeing level data ...\n");
+	if (g_levMap)
+	{
+		MsgWarning("Freeing level data ...\n");
+		g_levMap->FreeAll();
 
-	g_levMap->FreeAll();
-	g_levTextures.FreeAll();
-	g_levModels.FreeAll();
+		g_levTextures.FreeAll();
+		g_levModels.FreeAll();
 
-	delete g_levMap;
+		delete g_levMap;
+		g_levMap = nullptr;
 
-	fclose(g_levFile);
+		fclose(g_levFile);
+		g_levFile = nullptr;
+	}
 }
 
 //-------------------------------------------------------

@@ -315,7 +315,7 @@ void GenerateSkyUVs()
 	}
 }
 
-void InitSkyShader()
+void CSky::Init()
 {
 	g_skyShader = GR_CompileShader(sky_shader);
 }
@@ -326,11 +326,12 @@ void CSky::Lua_Init(sol::state& lua)
 
 	auto sky = engine["Sky"].get_or_create<sol::table>();
 
-	sky["Init"] = &Init;
+	sky["Load"] = &Load;
+	sky["Unload"] = &Unload;
 }
 
 // Initialize sky texture and UVs
-bool CSky::Init(const char* filename, int skyNumber)
+bool CSky::Load(const char* filename, int skyNumber)
 {
 	File file;
 	if (!file.open(String::fromCString(filename), File::readFlag))
@@ -338,6 +339,10 @@ bool CSky::Init(const char* filename, int skyNumber)
 		MsgError("Unable to open '%s'\n", filename);
 		return false;
 	}
+
+	Unload();
+
+	GenerateSkyUVs();
 
 	int64 fileSize = file.size();
 
@@ -368,14 +373,11 @@ bool CSky::Init(const char* filename, int skyNumber)
 	delete[] data;
 	delete[] color_data;
 
-	InitSkyShader();
-	GenerateSkyUVs();
-
 	return true;
 }
 
 // Destroys sky texture and UVs
-void CSky::Destroy()
+void CSky::Unload()
 {
 	GR_DestroyTexture(g_skyTexture);
 	g_skyTexture = -1;

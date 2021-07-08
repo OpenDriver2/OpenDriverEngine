@@ -8,6 +8,7 @@
 #include "routines/textures.h"
 
 #include "render_model.h"
+#include "render_level.h"
 
 #include "math/Volume.h"
 #include "math/convert.h"
@@ -22,12 +23,9 @@ extern CBaseLevelMap*			g_levMap;
 
 extern FILE* g_levFile;
 
-extern bool g_nightMode;
-extern bool g_displayCollisionBoxes;
-extern bool g_displayHeightMap;
-extern bool g_displayAllCellLevels;
-extern bool g_noLod;
-extern int g_cellsDrawDistance;
+LevelRenderProps g_levRenderProps;
+
+int g_cellsDrawDistance = 441;
 
 //-----------------------------------------------------------------
 
@@ -42,7 +40,7 @@ ModelRef_t* GetModelCheckLods(int index, float distSqr)
 {
 	ModelRef_t* baseRef = g_levModels.GetModelByIndex(index);
 
-	if (g_noLod)
+	if (g_levRenderProps.noLod)
 		return baseRef;
 
 	ModelRef_t* retRef = baseRef;
@@ -166,7 +164,7 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 				// walk each cell object in cell
 				while (ppco)
 				{
-					if (ci.listType != 0 && !g_displayAllCellLevels)
+					if (ci.listType != 0 && !g_levRenderProps.displayAllCellLevels)
 						break;
 					
 					PCO_PAIR_D2 pair;
@@ -274,10 +272,10 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 		GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 		GR_UpdateMatrixUniforms();
 
-		if (isGround && g_nightMode)
-			CRenderModel::SetupLightingProperties(0.35f, 0.0f);
+		if (isGround && g_levRenderProps.nightMode)
+			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
 		else
-			CRenderModel::SetupLightingProperties(1.0f, 1.0f);
+			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
 
 		CRenderModel* renderModel = (CRenderModel*)ref->userData;
 
@@ -290,7 +288,7 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 				g_drawnModels++;
 				g_drawnPolygons += ref->model->num_polys;
 
-				if (g_displayCollisionBoxes)
+				if (g_levRenderProps.displayCollisionBoxes)
 					CRenderModel::DrawModelCollisionBox(ref, co.pos, co.yang);
 			}
 		}
@@ -445,10 +443,10 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 		GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 		GR_UpdateMatrixUniforms();
 
-		if (g_nightMode)
-			CRenderModel::SetupLightingProperties(0.25f, 0.0f);
+		if (g_levRenderProps.nightMode)
+			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
 		else
-			CRenderModel::SetupLightingProperties(0.55f, 0.55f);
+			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
 
 		CRenderModel* renderModel = (CRenderModel*)ref->userData;
 
@@ -461,7 +459,7 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 				g_drawnModels++;
 				g_drawnPolygons += ref->model->num_polys;
 
-				if (g_displayCollisionBoxes)
+				if (g_levRenderProps.displayCollisionBoxes)
 					CRenderModel::DrawModelCollisionBox(ref, pco->pos, pco->yang);
 			}
 		}

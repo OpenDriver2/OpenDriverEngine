@@ -11,13 +11,13 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 /*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
 {
-	auto engine = lua["engine"].get_or_create<sol::table>();
-	
-	engine.new_usertype<CManager_Cars>(
+	lua.new_usertype<CManager_Cars>(
 		"CManager_Cars",
 		"UpdateControl", &CManager_Cars::UpdateControl,
 		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
 		"DoScenaryCollisions", &CManager_Cars::DoScenaryCollisions);
+
+	auto engine = lua["engine"].get_or_create<sol::table>();
 
 	engine["Cars"] = g_cars;
 }

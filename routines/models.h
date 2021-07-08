@@ -123,10 +123,10 @@ protected:
 
 	Array<String>		m_model_names;
 
-	OnModelLoaded_t		m_onModelLoaded;
-	OnModelFreed_t		m_onModelFreed;
-	OnCarModelLoaded_t	m_onCarModelLoaded;
-	OnCarModelFreed_t	m_onCarModelFreed;
+	OnModelLoaded_t		m_onModelLoaded{ nullptr };
+	OnModelFreed_t		m_onModelFreed{ nullptr };
+	OnCarModelLoaded_t	m_onCarModelLoaded{ nullptr };
+	OnCarModelFreed_t	m_onCarModelFreed{ nullptr };
 
 	int					m_numModelsInPack{0};
 };

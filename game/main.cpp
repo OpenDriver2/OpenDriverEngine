@@ -46,17 +46,9 @@ sol::state				g_luaState;
 extern int g_drawnCells;
 extern int g_drawnModels;
 extern int g_drawnPolygons;
+extern int g_cellsDrawDistance;
 
 bool g_quit = false;
-
-bool g_nightMode = false;
-bool g_displayCollisionBoxes = false;
-bool g_displayHeightMap = false;
-bool g_displayAllCellLevels = true;
-bool g_noLod = false;
-
-int g_cellsDrawDistance = 441;
-
 int g_currentModel = 0;
 
 bool g_holdLeft = false;
@@ -91,6 +83,7 @@ int UpdateFPSCounter(float deltaTime)
 //-------------------------------------------------------------
 void DisplayUI(float deltaTime)
 {
+	/*
 	if (ImGui::BeginMainMenuBar())
 	{
 		if (ImGui::BeginMenu("File"))
@@ -146,7 +139,7 @@ void DisplayUI(float deltaTime)
 
 		ImGui::EndMainMenuBar();
 	}
-
+	*/
 	if (ImGui::Begin("HelpFrame", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove | ImGuiInputTextFlags_NoHorizontalScroll |
 		ImGuiWindowFlags_NoSavedSettings | ImGuiColorEditFlags_NoInputs | ImGuiWindowFlags_NoBringToFrontOnFocus))
@@ -399,6 +392,7 @@ int main(int argc, char* argv[])
 
 	CWorld::InitHWTextures();
 	CWorld::InitHWModels();
+	CSky::Init();
 
 	// load lua script
 	try {

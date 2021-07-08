@@ -6,13 +6,12 @@
 
 #include "game/render/render_heightmap.h"
 #include "game/render/render_model.h"
+#include "game/render/render_level.h"
 
 #include "world.h"
 
 #include "math/Volume.h"
 #include "math/convert.h"
-
-extern bool g_displayHeightMap;
 
 const float Z_NEAR = 0.01f;
 const float Z_FAR = 100.0f;
@@ -60,7 +59,7 @@ void UpdateCameraMovement(float deltaTime, float speedModifier)
 	int height = g_levMap->MapHeight(cameraPosition);
 
 	// debug display
-	if (g_displayHeightMap)
+	if (g_levRenderProps.displayHeightMap)
 	{
 		// draw the cell
 		VECTOR_NOPAD cameraCell = cameraPosition;
