@@ -651,11 +651,11 @@ bool CDriver2LevelMap::UnpackCellObject(CELL_OBJECT& co, PACKED_CELL_OBJECT* pco
 	if (!pco)
 		return false;
 
-	co.pos.vx = nearCell.x + (((pco->pos.vx - nearCell.x) << 0x10) >> 0x10);
-	co.pos.vz = nearCell.z + (((pco->pos.vz - nearCell.z) << 0x10) >> 0x10);
+	co.pos.vx = nearCell.x + (short)(pco->pos.vx - nearCell.x);
+	co.pos.vz = nearCell.z + (short)(pco->pos.vz - nearCell.z);
 
 	// cell height should be negated
-	co.pos.vy = ((pco->pos.vy << 0x10) >> 0x11);
+	co.pos.vy = (short)pco->pos.vy >> 1;
 
 	co.yang = pco->value & 0x3f;
 	co.type = (pco->value >> 6) | ((pco->pos.vy & 1) << 10);
