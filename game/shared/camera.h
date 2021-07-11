@@ -4,11 +4,6 @@
 #include "math/Vector.h"
 #include <sol/forward.hpp>
 
-// free camera
-extern Vector3D g_cameraVelocity;
-extern Vector3D g_cameraPosition;
-extern Vector3D g_cameraAngles;
-
 //---------------------------------------------------------
 
 class Volume;
@@ -31,8 +26,5 @@ public:
 
 	static void Lua_Init(sol::state& lua);
 };
-
-// free camera
-void UpdateCameraMovement(float deltaTime, float speedModifier, const Vector3D& moveDir);
 
 #endif // CAMERA_H

@@ -104,9 +104,6 @@ void DisplayUI(float deltaTime)
 	}
 }
 
-Vector3D g_cameraMoveDir(0);
-
-
 //-------------------------------------------------------------
 // SDL2 event handling
 //-------------------------------------------------------------
@@ -143,19 +140,6 @@ void SDLPollEvent(sol::table& engineHostTable)
 				}
 				break;
 			}
-			case SDL_MOUSEMOTION:
-			{
-				if (anyWindowFocused)
-					break;
-
-				if (g_holdLeft)
-				{
-					g_cameraAngles.x += event.motion.yrel * 0.25f;
-					g_cameraAngles.y -= event.motion.xrel * 0.25f;
-				}
-
-				break;
-			}
 			case SDL_MOUSEBUTTONDOWN:
 			case SDL_MOUSEBUTTONUP:
 			{
@@ -184,29 +168,7 @@ void SDLPollEvent(sol::table& engineHostTable)
 				else if (nKey == SDL_SCANCODE_RALT)
 					nKey = SDL_SCANCODE_LALT;
 
-				if (nKey == SDL_SCANCODE_LSHIFT || nKey == SDL_SCANCODE_RSHIFT)
-					g_holdShift = (event.type == SDL_KEYDOWN);
-				else if (nKey == SDL_SCANCODE_LEFT)
-				{
-					g_cameraMoveDir.x = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
-				}
-				else if (nKey == SDL_SCANCODE_RIGHT)
-				{
-					g_cameraMoveDir.x = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
-				}
-				else if (nKey == SDL_SCANCODE_UP)
-				{
-					g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
-				}
-				else if (nKey == SDL_SCANCODE_DOWN)
-				{
-					g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
-				}
-				else if (nKey == SDL_SCANCODE_PAGEUP && event.type == SDL_KEYDOWN)
-				{
-					g_cellsDrawDistance += 441;
-				}
-				else if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
+				if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
 				{
 					g_cellsDrawDistance -= 441;
 					if (g_cellsDrawDistance < 441)
@@ -276,21 +238,6 @@ void MainLoop()
 		if (CWorld::IsLevelLoaded())
 		{
 			CameraViewParams& view = CCamera::MainView;
-
-			// TODO: free camera switch!
-#if 0
-			// Render stuff
-			float cameraSpeedModifier = g_holdShift ? 4.0f : 1.0f;
-			UpdateCameraMovement(deltaTime, cameraSpeedModifier, g_cameraMoveDir);
-
-			view.position = g_cameraPosition;
-			view.angles = g_cameraAngles;
-			view.fov = 75.0f;
-
-			VECTOR_NOPAD vec = ToFixedVector(view.position);
-
-			CWorld::SpoolRegions(vec, 1);
-#endif
 
 			CSky::Draw(view);
 			CWorld::RenderLevelView(view);
