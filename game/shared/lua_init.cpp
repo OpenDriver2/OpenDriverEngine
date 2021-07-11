@@ -1,4 +1,6 @@
 
+#include "core/cmdlib.h"
+
 #include "core/ignore_vc_new.h"
 #include <sol/sol.hpp>
 
@@ -23,6 +25,7 @@
 
 #include "camera.h"
 #include "world.h"
+#include "input.h"
 
 #include "math/Vector.h"
 #include "math/Matrix.h"
@@ -31,6 +34,7 @@
 #include "math/squareroot0.h"
 #include "math/ratan2.h"
 #include "math/convert.h"
+
 
 #define VEC_OPERATORS(vec_type) \
 	/* vec - vec */\
@@ -58,6 +62,26 @@ void LuaInit(sol::state& lua)
 	lua.open_libraries(sol::lib::string);
 
 	sol_ImGui::InitBindings(lua);
+
+	// replace default print with Msg
+	lua["print"] = &Msg;
+
+	// as well as expose all dev messages
+	lua["Msg"] = &Msg;
+	lua["MsgWarning"] = &MsgWarning;
+	lua["MsgError"] = &MsgError;
+	lua["MsgInfo"] = &MsgInfo;
+	lua["MsgAccept"] = &MsgAccept;
+
+	lua["DevMsg"] = &DevMsg;
+
+	lua["Spew"] = lua.create_table_with(
+		"Norm", SPEW_NORM,
+		"Info", SPEW_INFO,
+		"Warning", SPEW_WARNING,
+		"Error", SPEW_ERROR,
+		"Success", SPEW_SUCCESS
+	);
 
 	//-----------------------------------
 	// 3D MATH
@@ -142,6 +166,7 @@ void LuaInit(sol::state& lua)
 
 	//-----------------------------------
 	// MODULES
+	CInput::Lua_Init(lua);
 	CManager_Cars::Lua_Init(lua);
 	CDebugOverlay::Lua_Init(lua);
 	CWorld::Lua_Init(lua);

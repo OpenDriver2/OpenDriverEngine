@@ -25,11 +25,14 @@
 #include "shared/camera.h"
 
 #include "shared/lua_init.h"
+#include "shared/input.h"
 
 #include "game/render/render_sky.h"
 
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_sdl.h>
+
+#include "math/convert.h"
 
 //---------------------------------------------------------------------------------------------------------------------------------
 
@@ -103,10 +106,11 @@ void DisplayUI(float deltaTime)
 
 Vector3D g_cameraMoveDir(0);
 
+
 //-------------------------------------------------------------
 // SDL2 event handling
 //-------------------------------------------------------------
-void SDLPollEvent()
+void SDLPollEvent(sol::table& engineHostTable)
 {
 	SDL_Event event;
 
@@ -116,98 +120,101 @@ void SDLPollEvent()
 
 		bool anyWindowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
 
+		CInput::UpdateEvents(event, engineHostTable, anyWindowFocused);
+
 		switch (event.type)
 		{
-		case SDL_QUIT:
-		{
-			g_quit = 1;
-			break;
-		}
-		case SDL_WINDOWEVENT:
-		{
-			switch (event.window.event)
+			case SDL_QUIT:
 			{
-			case SDL_WINDOWEVENT_RESIZED:
-				GR_UpdateWindowSize(event.window.data1, event.window.data2);
-
-				break;
-			case SDL_WINDOWEVENT_CLOSE:
 				g_quit = 1;
 				break;
 			}
-			break;
-		}
-		case SDL_MOUSEMOTION:
-		{
-			if (anyWindowFocused)
+			case SDL_WINDOWEVENT:
+			{
+				switch (event.window.event)
+				{
+				case SDL_WINDOWEVENT_RESIZED:
+					GR_UpdateWindowSize(event.window.data1, event.window.data2);
+
+					break;
+				case SDL_WINDOWEVENT_CLOSE:
+					g_quit = 1;
+					break;
+				}
 				break;
-
-			if (g_holdLeft)
-			{
-				g_cameraAngles.x += event.motion.yrel * 0.25f;
-				g_cameraAngles.y -= event.motion.xrel * 0.25f;
 			}
-
-			break;
-		}
-		case SDL_MOUSEBUTTONDOWN:
-		case SDL_MOUSEBUTTONUP:
-		{
-			bool down = (event.type == SDL_MOUSEBUTTONDOWN);
-
-			if (anyWindowFocused)
-				down = false;
-
-			if (event.button.button == 1)
-				g_holdLeft = down;
-			else if (event.button.button == 3)
-				g_holdRight = down;
-			break;
-		}
-		case SDL_KEYDOWN:
-		case SDL_KEYUP:
-		{
-			int nKey = event.key.keysym.scancode;
-
-			// lshift/right shift
-			if (nKey == SDL_SCANCODE_RSHIFT)
-				nKey = SDL_SCANCODE_LSHIFT;
-			else if (nKey == SDL_SCANCODE_RCTRL)
-				nKey = SDL_SCANCODE_LCTRL;
-			else if (nKey == SDL_SCANCODE_RALT)
-				nKey = SDL_SCANCODE_LALT;
-
-			if (nKey == SDL_SCANCODE_LSHIFT || nKey == SDL_SCANCODE_RSHIFT)
-				g_holdShift = (event.type == SDL_KEYDOWN);
-			else if (nKey == SDL_SCANCODE_LEFT)
+			case SDL_MOUSEMOTION:
 			{
-				g_cameraMoveDir.x = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
-			}
-			else if (nKey == SDL_SCANCODE_RIGHT)
-			{
-				g_cameraMoveDir.x = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
-			}
-			else if (nKey == SDL_SCANCODE_UP)
-			{
-				g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
-			}
-			else if (nKey == SDL_SCANCODE_DOWN)
-			{
-				g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
-			}
-			else if (nKey == SDL_SCANCODE_PAGEUP && event.type == SDL_KEYDOWN)
-			{
-				g_cellsDrawDistance += 441;
-			}
-			else if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
-			{
-				g_cellsDrawDistance -= 441;
-				if (g_cellsDrawDistance < 441)
-					g_cellsDrawDistance = 441;
-			}
+				if (anyWindowFocused)
+					break;
 
-			break;
-		}
+				if (g_holdLeft)
+				{
+					g_cameraAngles.x += event.motion.yrel * 0.25f;
+					g_cameraAngles.y -= event.motion.xrel * 0.25f;
+				}
+
+				break;
+			}
+			case SDL_MOUSEBUTTONDOWN:
+			case SDL_MOUSEBUTTONUP:
+			{
+				bool down = (event.type == SDL_MOUSEBUTTONDOWN);
+
+				if (anyWindowFocused)
+					down = false;
+
+				if (event.button.button == 1)
+					g_holdLeft = down;
+				else if (event.button.button == 3)
+					g_holdRight = down;
+				break;
+			}
+			case SDL_KEYDOWN:
+			case SDL_KEYUP:
+			{
+				int nKey = event.key.keysym.scancode;
+				bool down = (event.type == SDL_KEYDOWN);
+
+				// lshift/right shift
+				if (nKey == SDL_SCANCODE_RSHIFT)
+					nKey = SDL_SCANCODE_LSHIFT;
+				else if (nKey == SDL_SCANCODE_RCTRL)
+					nKey = SDL_SCANCODE_LCTRL;
+				else if (nKey == SDL_SCANCODE_RALT)
+					nKey = SDL_SCANCODE_LALT;
+
+				if (nKey == SDL_SCANCODE_LSHIFT || nKey == SDL_SCANCODE_RSHIFT)
+					g_holdShift = (event.type == SDL_KEYDOWN);
+				else if (nKey == SDL_SCANCODE_LEFT)
+				{
+					g_cameraMoveDir.x = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
+				}
+				else if (nKey == SDL_SCANCODE_RIGHT)
+				{
+					g_cameraMoveDir.x = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
+				}
+				else if (nKey == SDL_SCANCODE_UP)
+				{
+					g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? 1.0f : 0.0f;
+				}
+				else if (nKey == SDL_SCANCODE_DOWN)
+				{
+					g_cameraMoveDir.z = (event.type == SDL_KEYDOWN) ? -1.0f : 0.0f;
+				}
+				else if (nKey == SDL_SCANCODE_PAGEUP && event.type == SDL_KEYDOWN)
+				{
+					g_cellsDrawDistance += 441;
+				}
+				else if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
+				{
+					g_cellsDrawDistance -= 441;
+					if (g_cellsDrawDistance < 441)
+						g_cellsDrawDistance = 441;
+				}
+
+				break;
+			}
 		}
 	}
 }
@@ -232,7 +239,9 @@ void MainLoop()
 
 		oldTicks = curTicks;
 
-		SDLPollEvent();
+		sol::table& engineHostTable = g_luaState["EngineHost"].get<sol::table>();
+
+		SDLPollEvent(engineHostTable);
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(g_window);
@@ -252,12 +261,15 @@ void MainLoop()
 			GR_ClearColor(128 / 255.0f, 158 / 255.0f, 182 / 255.0f);
 			*/
 
-		try {
-			sol::function updateFunc = g_luaState["Sys_Frame"];
-			updateFunc(deltaTime);
-		}
-		catch (const sol::error& e)
+		if (engineHostTable.valid())
 		{
+			try {
+				sol::function updateFunc = engineHostTable["Frame"];
+				updateFunc(deltaTime);
+			}
+			catch (const sol::error& e)
+			{
+			}
 		}
 
 		// render main view
@@ -265,7 +277,8 @@ void MainLoop()
 		{
 			CameraViewParams& view = CCamera::MainView;
 
-			/*
+			// TODO: free camera switch!
+#if 0
 			// Render stuff
 			float cameraSpeedModifier = g_holdShift ? 4.0f : 1.0f;
 			UpdateCameraMovement(deltaTime, cameraSpeedModifier, g_cameraMoveDir);
@@ -273,7 +286,11 @@ void MainLoop()
 			view.position = g_cameraPosition;
 			view.angles = g_cameraAngles;
 			view.fov = 75.0f;
-			*/
+
+			VECTOR_NOPAD vec = ToFixedVector(view.position);
+
+			CWorld::SpoolRegions(vec, 1);
+#endif
 
 			CSky::Draw(view);
 			CWorld::RenderLevelView(view);
@@ -282,7 +299,7 @@ void MainLoop()
 		CDebugOverlay::Draw();
 
 		try {
-			sol::function updateFunc = g_luaState["Sys_PostFrame"];
+			sol::function updateFunc = engineHostTable["PostFrame"];
 			updateFunc(deltaTime);
 		}
 		catch (const sol::error& e)

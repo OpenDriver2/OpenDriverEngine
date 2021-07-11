@@ -141,7 +141,8 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 			{
 				CELL_ITERATOR_D2 ci;
 				PACKED_CELL_OBJECT* ppco;
-
+				/*
+				// TODO: don't spool here
 				if (!levMapDriver2->IsRegionSpooled(icell))
 				{
 					SPOOL_CONTEXT spoolContext;
@@ -155,7 +156,7 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 
 					levMapDriver2->SpoolRegion(spoolContext, icell);
 				}
-
+				*/
 				ppco = levMapDriver2->GetFirstPackedCop(&ci, icell);
 
 				if (ppco)
@@ -341,6 +342,7 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 			if (icell.x > -1 && icell.x < levMapDriver1->GetCellsAcross() &&
 				icell.z > -1 && icell.z < levMapDriver1->GetCellsDown())
 			{
+				/*
 				if (!levMapDriver1->IsRegionSpooled(icell))
 				{
 					SPOOL_CONTEXT spoolContext;
@@ -353,7 +355,7 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 					spoolContext.textures = &g_levTextures;
 
 					levMapDriver1->SpoolRegion(spoolContext, icell);
-				}
+				}*/
 
 				pco = levMapDriver1->GetFirstCop(&ci, icell.x, icell.z);
 
