@@ -6,7 +6,8 @@
 
 inline Vector3D FromFixedVector(const VECTOR_NOPAD& vec)
 {
-	return Vector3D(vec.vx / ONE_F, vec.vy / ONE_F, vec.vz / ONE_F);
+	float one_by_fixed = 1.0f / ONE_F;
+	return Vector3D(vec.vx * one_by_fixed, vec.vy * one_by_fixed, vec.vz * one_by_fixed);
 }
 
 inline VECTOR_NOPAD ToFixedVector(const Vector3D& vec)
