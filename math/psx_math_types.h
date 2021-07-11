@@ -21,7 +21,7 @@ struct USVECTOR_NOPAD
 
 struct SVECTOR
 {
-	short x, y, z, pad;
+	short vx, vy, vz, pad;
 };
 
 struct CVECTOR
