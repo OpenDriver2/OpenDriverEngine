@@ -336,31 +336,20 @@ struct sdHeightmapHeader
 
 struct DRIVER2_CURVE
 {
-	int Midx;
-	int Midz;
-	short start;
-	short end;
+	int Midx, Midz;
+	short start, end;
 	short ConnectIdx[4];
-	short gradient;
-	short height;
-	char NumLanes;
-	char LaneDirs;
-	char inside;
-	char AILanes;
+	short gradient, height;
+	int8 NumLanes, LaneDirs, inside, AILanes;
 };
 
 struct DRIVER2_STRAIGHT
 {
-	int Midx;
-	int Midz;
+	int Midx, Midz;
 	ushort length;
-	short bing;
-	short angle;
+	short bing, angle;
 	short ConnectIdx[4];
-	char NumLanes;
-	char LaneDirs;
-	char AILanes;
-	char packing;
+	int8 NumLanes, LaneDirs, AILanes, packing;
 };
 
 struct OLD_DRIVER2_JUNCTION

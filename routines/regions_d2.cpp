@@ -11,6 +11,10 @@
 #include <malloc.h>
 #include <string.h>
 
+#define IS_STRAIGHT_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0 && ((surfid) & 0x1FFF) < m_numStraights)
+#define IS_CURVED_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x4000 && ((surfid) & 0x1FFF) < m_numCurves)
+#define IS_JUNCTION_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x2000 && ((surfid) & 0x1FFF) < m_numJunctions)
+
 sdPlane g_defaultPlane	= { 0, 0, 0, 0, 2048 };
 sdPlane g_seaPlane		= { 9, 0, 16384, 0, 2048 };
 
@@ -69,6 +73,29 @@ short* SdGetBSP(sdNode* node, XZPAIR* pos)
 	}
 
 	return (short*)node;
+}
+
+sdPlane* FindRoadInBSP(sdNode* node, sdPlane* base)
+{
+	sdPlane* plane;
+
+	while (true)
+	{
+		if (*(int*)node > -1)
+		{
+			base += *(int*)node;
+			return (base->surfaceType < 32) ? nullptr : base;
+		}
+
+		plane = FindRoadInBSP(node + 1, base);
+
+		if (plane != nullptr)
+			break;
+
+		node += node->offset;
+	}
+
+	return plane;
 }
 
 // walk the heightmap to get a cPosition
@@ -160,6 +187,139 @@ sdPlane* CDriver2LevelRegion::SdGetCell(const VECTOR_NOPAD& cPosition, int& sdLe
 		plane = &g_seaPlane;
 
 	return plane;
+}
+
+// walk heightmap for nearest road
+int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
+{
+	int moreLevels;
+	sdPlane* plane;
+	short* check;
+	short* buffer;
+
+	XYPAIR cellPos;
+
+	cellPos.x = position.vx - 512;
+	cellPos.y = position.vz - 512;
+
+	sdPlane* planeData = (sdPlane*)((char*)buffer + buffer[1]);
+	short* bspData = (short*)((char*)buffer + buffer[2]);
+	sdNode* nodeData = (sdNode*)((char*)buffer + buffer[3]);
+
+	check = &buffer[(cellPos.x >> 10 & 63) +
+					(cellPos.y >> 10 & 63) * 64 + 4];
+
+	if (*check == -1)
+		return -1;
+
+	if (m_owner->m_format == LEV_FORMAT_DRIVER2_ALPHA16)
+	{
+		// FIXME: check if this is redundant!
+		if (*check & 0xE000)
+		{
+			if (*check & 0x2000)
+			{
+				// check surface has overlapping planes flag (aka multiple levels)
+				moreLevels = (*check & 0x8000) != 0;
+
+				if (moreLevels)
+					check = &bspData[(*check & 0x1fff) + 1];
+
+				do
+				{
+					if (moreLevels && check[-1] == -0x8000)
+						moreLevels = 0;
+
+					// check if it's has BSP properties
+					// basically it determines surface bounds
+					if (*check & 0x4000)
+					{
+						sdNode* search = &nodeData[*check & 0x1fff];		// 0x3fff in final
+
+						while (search->node < 0)
+						{
+							plane = FindRoadInBSP(search + 1, planeData);
+
+							if (plane != nullptr)
+								break;
+
+							search += search->offset;
+						}
+
+						if (plane != nullptr)
+							break;
+					}
+					else
+					{
+						plane = &planeData[*check];
+
+						if (plane->surfaceType >= 32)
+							break;
+					}
+
+					check += 2;
+				} while (true);
+			}
+			else
+			{
+				plane = nullptr;
+			}
+		}
+		else
+		{
+			plane = &planeData[*check];
+		}
+	}
+	else
+	{
+		if (*check & 0x8000)
+		{
+			moreLevels = (*check & 0x6000) == 0x2000;
+
+			if (moreLevels)
+				check = &bspData[(*check & 0x1fff) + 1];
+
+			do
+			{
+				if (moreLevels && check[-1] == 0x8000)
+					moreLevels = 0;
+
+				if (*check & 0x4000)
+				{
+					plane = FindRoadInBSP(&nodeData[*check & 0x3fff], planeData);
+
+					if (plane != nullptr)
+						break;
+				}
+				else
+				{
+					plane = &planeData[*check];
+
+					if (plane->surfaceType >= 32)
+						break;
+				}
+
+				check += 2;
+			} while (true);
+		}
+		else if (!(*check & 0xE000))
+		{
+			plane = &planeData[*check];
+		}
+		else
+			plane = nullptr;
+	}
+
+	if (plane == nullptr)
+		return -1;
+
+	if (plane->surfaceType >= 32)
+	{
+		position.vy = SdHeightOnPlane(position, plane, ((CDriver2LevelMap*)m_owner)->m_curves) + 256;
+		return plane->surfaceType - 32;
+	}
+
+	return -1;
 }
 
 void CDriver2LevelRegion::FreeAll()
@@ -289,7 +449,7 @@ void CDriver2LevelRegion::ReadHeightmapData(const SPOOL_CONTEXT& ctx)
 	}
 	else
 	{
-		MsgError("Incorrect format or read error\n");
+		MsgError("Incorrect road map format or read error\n");
 	}
 }
 
@@ -526,6 +686,99 @@ int CDriver2LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 		return SdHeightOnPlane(position, plane, m_curves);
 
 	return 0;
+}
+
+int	CDriver2LevelMap::GetRoadIndex(VECTOR_NOPAD& position) const
+{
+	VECTOR_NOPAD cellPos;
+	XZPAIR cell;
+	int level = 0;
+
+	cellPos.vx = position.vx - 512;	// FIXME: is that a quarter of a cell?
+	cellPos.vy = position.vy;
+	cellPos.vz = position.vz - 512;
+
+	WorldPositionToCellXZ(cell, cellPos);
+	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
+
+	return region->RoadInCell(position);
+}
+
+// [A] custom function for working with roads in very optimized way
+bool CDriver2LevelMap::GetSurfaceRoadInfo(DRIVER2_ROAD_INFO& outRoadInfo, int surfId) const
+{
+	DRIVER2_CURVE* curve;
+	DRIVER2_STRAIGHT* straight;
+	DRIVER2_JUNCTION* junction;
+
+	outRoadInfo.surfId = surfId;
+
+	if (IS_CURVED_SURFACE(surfId))
+	{
+		outRoadInfo.curve = curve = GetCurve(surfId);
+		outRoadInfo.ConnectIdx = &curve->ConnectIdx;
+		outRoadInfo.NumLanes = curve->NumLanes;
+		outRoadInfo.LaneDirs = curve->LaneDirs;
+		outRoadInfo.AILanes = curve->AILanes;
+		return true;
+	}
+	else if (IS_STRAIGHT_SURFACE(surfId))
+	{
+		outRoadInfo.straight = straight = GetStraight(surfId);
+		outRoadInfo.ConnectIdx = &straight->ConnectIdx;
+		outRoadInfo.NumLanes = straight->NumLanes;
+		outRoadInfo.LaneDirs = straight->LaneDirs;
+		outRoadInfo.AILanes = straight->AILanes;
+		return true;
+	}
+	else if (IS_JUNCTION_SURFACE(surfId))
+	{
+		outRoadInfo.junction = junction = GetJunction(surfId);
+		outRoadInfo.ConnectIdx = &junction->ExitIdx;
+		outRoadInfo.flags = junction->flags;
+		return true;
+	}
+
+	return false;
+}
+
+DRIVER2_STRAIGHT* CDriver2LevelMap::GetStraight(int index) const
+{
+	if(IS_STRAIGHT_SURFACE(index))
+		return &m_straights[index & 0x1fff];
+
+	return nullptr;
+}
+
+DRIVER2_CURVE* CDriver2LevelMap::GetCurve(int index) const
+{
+	if (IS_CURVED_SURFACE(index))
+		return &m_curves[index & 0x1fff];
+
+	return nullptr;
+}
+
+DRIVER2_JUNCTION* CDriver2LevelMap::GetJunction(int index) const
+{
+	if (IS_JUNCTION_SURFACE(index))
+		return &m_junctions[index & 0x1fff];
+
+	return nullptr;
+}
+
+int CDriver2LevelMap::GetNumStraights() const
+{
+	return m_numStraights;
+}
+
+int CDriver2LevelMap::GetNumCurves() const
+{
+	return m_numCurves;
+}
+
+int CDriver2LevelMap::GetNumJunctions() const
+{
+	return m_numJunctions;
 }
 
 //-------------------------------------------------------------
