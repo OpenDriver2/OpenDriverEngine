@@ -9,6 +9,7 @@
 #include <nstd/Directory.hpp>
 #include <nstd/String.hpp>
 #include <nstd/Time.hpp>
+#include <nstd/Math.hpp>
 
 #include "lua_init.h"
 
@@ -43,7 +44,17 @@
 	sol::meta_function::multiplication, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator*),\
 	sol::meta_function::division, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator/),\
 	/* negate */\
-	sol::meta_function::unary_minus, sol::resolve<vec_type(const vec_type&)>(&operator-),
+	sol::meta_function::unary_minus, sol::resolve<vec_type(const vec_type&)>(&operator-),\
+	/* common functions */ \
+	"dot", sol::resolve<float(const vec_type&, const vec_type&)>(dot),\
+	"normalize", sol::resolve<vec_type(const vec_type&)>(normalize),\
+	"length", sol::resolve<float(const vec_type&)>(length),\
+	"lengthSqr", sol::resolve<float(const vec_type&)>(lengthSqr),\
+	"distance", sol::resolve<float(const vec_type&, const vec_type&)>(distance),\
+	"lerp", sol::resolve<vec_type(const vec_type&, const vec_type&, float)>(lerp),\
+	"cerp", sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&, const vec_type&, float)>(cerp),\
+	"sign", sol::resolve<vec_type(const vec_type&)>(sign),\
+	"clamp", sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&)>(clamp),
 
 // NOT USED - conflicting (SAD)
 #define VEC_FLOAT_OPERATORS(vec_type) \
@@ -111,6 +122,7 @@ void LuaInit(sol::state& lua)
 			}),
 		sol::call_constructor, sol::constructors<Vector3D(const float&, const float&, const float&), Vector3D(const float&)>(),
 		VEC_OPERATORS(Vector3D)
+		"cross", sol::resolve<Vector3D(const Vector3D&, const Vector3D&)>(cross),
 		// members
 		"x", &Vector3D::x,
 		"y", &Vector3D::y,
@@ -133,7 +145,7 @@ void LuaInit(sol::state& lua)
 		"w", &Vector4D::w);
 
 	//
-	// Vector 2D
+	// Fixed Vector 3D
 	//
 	vec.new_usertype<VECTOR_NOPAD>("FVECTOR",
 		sol::call_constructor, sol::factories(
@@ -145,9 +157,20 @@ void LuaInit(sol::state& lua)
 		"vy", &VECTOR_NOPAD::vy,
 		"vz", &VECTOR_NOPAD::vz);
 
+	//----------------------------------------------------
+
+	vec["AngleVectors"] = [](const Vector3D& v) {
+		Vector3D forward, right, up;
+		AngleVectors(v, &forward, &right, &up);
+		return std::make_tuple(forward, right, up);
+	};
+
+	//
+	// FIXED MATH
+	//
 	auto& fix = lua["fix"].get_or_create<sol::table>();
 
-	vec["ONE"] = ONE;
+	fix["ONE"] = ONE;
 
 	fix["ToFixed"]		= [](const float& a)	{ return int(a * ONE_F); };
 	fix["FromFixed"]	= [](const int& a)		{ return float(a) / ONE_F; };

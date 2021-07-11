@@ -721,43 +721,43 @@ T approachValue(T v, T t, T s)
 template <typename T, typename T2>
 inline T clamp(const T v, const T2 c0, const T2 c1)
 {
-	return min((T)max((T)v, (T)c0), (T)c1);
+	return Math::min((T)Math::max((T)v, (T)c0), (T)c1);
 }
 
 template <typename T, typename T2>
 inline TVec2D<T> clamp(const TVec2D<T> &v, const T2 c0, const T2 c1)
 {
-	return TVec2D<T>(min(max(v.x, c0), c1), min(max(v.y, c0), c1));
+	return TVec2D<T>(Math::min(Math::max(v.x, c0), c1), Math::min(Math::max(v.y, c0), c1));
 }
 
 template <typename T>
 inline TVec2D<T> clamp(const TVec2D<T> &v, const TVec2D<T> &c0, const TVec2D<T> &c1)
 {
-	return TVec2D<T>(min(max(v.x, c0.x), c1.x), min(max(v.y, c0.y), c1.y));
+	return TVec2D<T>(Math::min(Math::max(v.x, c0.x), c1.x), Math::min(Math::max(v.y, c0.y), c1.y));
 }
 
 template <typename T, typename T2>
 inline TVec3D<T> clamp(const TVec3D<T> &v, const T2 c0, const T2 c1)
 {
-	return TVec3D<T>(min(max(v.x, c0), c1), min(max(v.y, c0), c1), min(max(v.z, c0), c1));
+	return TVec3D<T>(Math::min(Math::max(v.x, c0), c1), Math::min(Math::max(v.y, c0), c1), Math::min(Math::max(v.z, c0), c1));
 }
 
 template <typename T>
 inline TVec3D<T> clamp(const TVec3D<T> &v, const TVec3D<T> &c0, const TVec3D<T> &c1)
 {
-	return TVec3D<T>(min(max(v.x, c0.x), c1.x), min(max(v.y, c0.y), c1.y), min(max(v.z, c0.z), c1.z));
+	return TVec3D<T>(Math::min(Math::max(v.x, c0.x), c1.x), Math::min(Math::max(v.y, c0.y), c1.y), Math::min(Math::max(v.z, c0.z), c1.z));
 }
 
 template <typename T, typename T2>
 inline TVec4D<T> clamp(const TVec4D<T> &v, const T2 c0, const T2 c1)
 {
-	return TVec4D<T>(min(max(v.x, c0), c1), min(max(v.y, c0), c1), min(max(v.z, c0), c1), min(max(v.z, c0), c1));
+	return TVec4D<T>(Math::min(Math::max(v.x, c0), c1), Math::min(Math::max(v.y, c0), c1), Math::min(Math::max(v.z, c0), c1), Math::min(Math::max(v.z, c0), c1));
 }
 
 template <typename T>
 inline TVec4D<T> clamp(const TVec4D<T> &v, const TVec4D<T> &c0, const TVec4D<T> &c1)
 {
-	return TVec4D<T>(min(max(v.x, c0.x), c1.x), min(max(v.y, c0.y), c1.y), min(max(v.z, c0.z), c1.z), min(max(v.w, c0.w), c1.w));
+	return TVec4D<T>(Math::min(Math::max(v.x, c0.x), c1.x), Math::min(Math::max(v.y, c0.y), c1.y), Math::min(Math::max(v.z, c0.z), c1.z), Math::min(Math::max(v.w, c0.w), c1.w));
 }
 
 template <typename T>
