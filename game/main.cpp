@@ -168,13 +168,16 @@ void SDLPollEvent(sol::table& engineHostTable)
 				else if (nKey == SDL_SCANCODE_RALT)
 					nKey = SDL_SCANCODE_LALT;
 
-				if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
+				if (nKey == SDL_SCANCODE_PAGEUP && event.type == SDL_KEYDOWN)
+				{
+					g_cellsDrawDistance += 441;
+				}
+				else if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
 				{
 					g_cellsDrawDistance -= 441;
 					if (g_cellsDrawDistance < 441)
 						g_cellsDrawDistance = 441;
 				}
-
 				break;
 			}
 		}
