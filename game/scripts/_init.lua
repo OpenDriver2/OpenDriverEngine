@@ -1,7 +1,8 @@
--- state machine setup
-
+-- main OpenDriverEngine file
+dofile "scripts/common.lua"
 dofile "scripts/city.lua"
 dofile "scripts/updates.lua"
+dofile "scripts/free_camera.lua"
 
 -- "engine" namespace has everything dynamically updated
 -- "driver" & "driver2" namespace has every class to be used with "engine"
@@ -13,6 +14,7 @@ local world = engine.World						-- collision and rendering world
 local sky = engine.Sky							-- Sky renderer
 local levRenderProps = engine.LevelRenderProps	-- Level render properties (mode, lighting, etc)
 local camera = engine.Camera
+
 
 function StepSim(dt)
 	-- TODO: direct port from MAIN.C
@@ -38,19 +40,18 @@ function InitCamera( params )
 	camera.MainView.fov = params.fov
 end
 
-local testCamera = engine.CameraViewParams.new()
-
 function GameLoop(dt)
 
-	local position = vec.FIXED_VECTOR.new() -- {vx = 0, vy = 0, vz = 0}
-
-	testCamera.position.z = testCamera.position.z + 1.0 * dt
-	testCamera.position.x = 1
-	testCamera.position.y = math.sin(testCamera.position.z) * 0.5 + 1
+	FreeCamera.UpdateCameraMovement(dt)
+	InitCamera({
+		position = FreeCamera.Position,
+		angles = FreeCamera.Angles,
+		fov = FreeCamera.FOV
+	})
 	
-	testCamera.angles.y = math.sin(testCamera.position.z) * 80
-
-	InitCamera(testCamera)
+	local spoolPos = fix.ToFixedVector(camera.MainView.position)
+	world.SpoolRegions(spoolPos, 1)
+	
 	--StepSim( dt )
 end
 
@@ -82,14 +83,21 @@ function ChangeCity(newCity, newCityType, newWeather)
 	local triggerLoading = false
 	
 	if  CurrentCityInfo ~= newCity or 
-		CurrentCityType ~= newCityType then
-		print("NewLevel!\n")
+		CurrentCityType ~= newCityType or
+		world.IsLevelLoaded() == false then
+
+		MsgInfo("NewLevel!\n")
+		
 		triggerLoading = true
 	end
 	
 	CurrentCityInfo = newCity
 	CurrentCityType = newCityType
 	CurrentSkyType = newWeather
+	
+	if newCity.levPath == nil then
+		return
+	end
 
 	levRenderProps.nightMode = (CurrentCityType == CityType.Night)
 	
@@ -115,6 +123,14 @@ function ChangeCity(newCity, newCityType, newWeather)
 	end
 end
 
+function ResetFreeCamera()
+	FreeCamera.Position = vec.vec3(0)
+	FreeCamera.Angles = vec.vec3(25.0, 45.0, 0)
+	
+	--g_cameraPosition = FromFixedVector({ 230347, 372, 704038 });
+	--g_cameraAngles = FromFixedVector({ 0, 3840 - 1024, 0 }) * 360.0f;
+end
+
 function StartTest()
 	-- permanently disable lods
 	levRenderProps.noLod = true
@@ -122,6 +138,8 @@ function StartTest()
 	CurrentCityInfo = {}
 	CurrentCityType = CityType.Day
 	CurrentSkyType = SkyType.Day
+	
+	ResetFreeCamera()
 
 	--ChangeCity(CityInfo["Chicago"], CityType.Day, SkyType.Day)
 end
@@ -197,8 +215,8 @@ function RenderUI()
 			
 			ImGui.Separator()
 		
-			if ImGui.MenuItem("Spool all Area Data") then
-				world.SpoolAllAreaDatas();
+			if ImGui.MenuItem("Spool all regions") then
+				world.SpoolAllRegions();
 			end
 			
 			if ImGui.MenuItem("Unload") then
@@ -234,17 +252,12 @@ function RenderUI()
 				levRenderProps.displayAllCellLevels = not levRenderProps.displayAllCellLevels
 			end
 			
-			--[[
 			ImGui.Separator();
 
-			if ImGui.MenuItem("Reset camera", nil, g_noLod) then
-				g_cameraPosition = 0;
-				g_cameraAngles = Vector3D(25.0f, 45.0f, 0);
-
-				--g_cameraPosition = FromFixedVector({ 230347, 372, 704038 });
-				--g_cameraAngles = FromFixedVector({ 0, 3840 - 1024, 0 }) * 360.0f;
+			if ImGui.MenuItem("Reset camera") then
+				ResetFreeCamera()
 			end
-			]]
+
 			ImGui.EndMenu();
 		end
 
@@ -255,22 +268,38 @@ end
 -------------------------------------------------
 
 local function errorHandler ( errobj )
-	print("ERROR - "..errobj)
-	print(debug.traceback())
+	MsgError("ERROR - "..errobj)
+	MsgError(debug.traceback())
 	return false
 end
 
--- This function is called every frame before drawing world
-function Sys_Frame( dt )
+-- this table is always aqquired by engine
+EngineHost = {
+	-- This function is called every frame before drawing world
+	Frame = function( dt )
+		xpcall(function() DoUpdateFuncs(dt) end, errorHandler)
+	end,
 
-	xpcall(function() DoUpdateFuncs(dt) end, errorHandler)
-end
-
--- This function called every frame after drawing world
--- You can draw here ImGUI stuff
-function Sys_PostFrame( dt )
-	xpcall(RenderUI, errorHandler)
-end
+	-- This function called every frame after drawing world
+	-- You can draw here ImGUI stuff
+	PostFrame = function( dt )
+		xpcall(RenderUI, errorHandler)
+	end,
+	
+	MouseMove = function( x, y, xrel, yrel)
+		FreeCamera.MouseMove(xrel, yrel)
+	end,
+	
+	MouseButton = function( num, down )
+		if num == 1 then
+			FreeCamera.Look = down
+		end
+	end,
+	
+	KeyPress = function( num, down )
+		FreeCamera.KeyPress(num, down)
+	end
+}
 
 -- TEST ROUTINE
 StartTest()
