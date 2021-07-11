@@ -452,6 +452,21 @@ bool CBaseLevelMap::IsRegionSpooled(const XZPAIR& cell) const
 	return reg ? reg->m_loaded : false;
 }
 
+bool CBaseLevelMap::IsRegionSpooled(int index) const
+{
+	CBaseLevelRegion* reg = GetRegion(index);
+	return reg ? reg->m_loaded : false;
+}
+
+int CBaseLevelMap::GetRegionIndex(const XZPAIR& cell) const
+{
+	// lookup region
+	const int region_x = cell.x / m_mapInfo.region_size;
+	const int region_z = cell.z / m_mapInfo.region_size;
+
+	return region_x + region_z * m_regions_across;
+}
+
 void CBaseLevelMap::InitRegion(CBaseLevelRegion* region, int index) const
 {
 	ushort spoolOffset = m_regionSpoolInfoOffsets[index];

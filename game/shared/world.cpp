@@ -45,7 +45,8 @@ void CWorld::Lua_Init(sol::state& lua)
 	world["GetHWTexture"] = &GetHWTexture;
 	world["LoadLevel"] = &LoadLevel;
 	world["UnloadLevel"] = &UnloadLevel;
-	world["SpoolAllAreaDatas"] = &SpoolAllAreaDatas;
+	world["SpoolAllRegions"] = &SpoolAllRegions;
+	world["SpoolRegions"] = &SpoolRegions;
 
 	world["IsLevelLoaded"] = &IsLevelLoaded;
 	world["GetModelByIndex"] = &GetModelByIndex;
@@ -276,6 +277,49 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 		DrawLevelDriver1(view.position, view.angles.y, frustumVolume);
 }
 
+void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
+{
+	if (!IsLevelLoaded())
+		return;
+
+	CFileStream stream(g_levFile);
+
+	SPOOL_CONTEXT spoolContext;
+	spoolContext.dataStream = &stream;
+	spoolContext.lumpInfo = &g_levInfo;
+	spoolContext.models = &g_levModels;
+	spoolContext.textures = &g_levTextures;
+
+	int regionsAcross = g_levMap->GetRegionsAcross();
+	int regionsDown = g_levMap->GetRegionsDown();
+	int regionSize = g_levMap->GetMapInfo().region_size;
+	int cellSize = g_levMap->GetMapInfo().cell_size;
+
+	// get center region
+	XZPAIR cell;
+	g_levMap->WorldPositionToCellXZ(cell, position);
+
+	int midRegion = g_levMap->GetRegionIndex(cell);
+
+	// convert index to XZ
+	XZPAIR region;
+	region.x = midRegion % regionsAcross;
+	region.z = (midRegion - region.x) / regionsAcross;
+
+	for (int z = -radius; z <= radius; z++)
+	{
+		for (int x = -radius; x <= radius; x++)
+		{
+			// lookup region
+			XZPAIR iregion;
+			iregion.x = region.x + x;
+			iregion.z = region.z + z;
+
+			g_levMap->SpoolRegion(spoolContext, iregion.x + iregion.z * regionsAcross);
+		}
+	}
+}
+
 bool CWorld::IsLevelLoaded()
 {
 	return g_levMap;
@@ -284,7 +328,7 @@ bool CWorld::IsLevelLoaded()
 //-------------------------------------------------------------
 // Forcefully spools entire level regions and area datas
 //-------------------------------------------------------------
-void CWorld::SpoolAllAreaDatas()
+void CWorld::SpoolAllRegions()
 {
 	if (!IsLevelLoaded())
 		return;

@@ -32,7 +32,8 @@ public:
 
 	static bool				IsLevelLoaded();
 
-	static void				SpoolAllAreaDatas();
+	static void				SpoolAllRegions();
+	static void				SpoolRegions(const VECTOR_NOPAD& position, int radius);
 
 	static ModelRef_t*		GetModelByIndex(int modelIndex);
 	static ModelRef_t*		GetModelByName(const char* name);
