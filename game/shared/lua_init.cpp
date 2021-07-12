@@ -144,19 +144,6 @@ void LuaInit(sol::state& lua)
 		"z", &Vector4D::z,
 		"w", &Vector4D::w);
 
-	//
-	// Fixed Vector 3D
-	//
-	vec.new_usertype<VECTOR_NOPAD>("FVECTOR",
-		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
-				return VECTOR_NOPAD{ table["x"], table["y"], table["z"] };
-			},
-			[]() { return VECTOR_NOPAD{ 0 }; }),
-		"vx", &VECTOR_NOPAD::vx,
-		"vy", &VECTOR_NOPAD::vy,
-		"vz", &VECTOR_NOPAD::vz);
-
 	//----------------------------------------------------
 
 	vec["AngleVectors"] = [](const Vector3D& v) {
@@ -169,6 +156,22 @@ void LuaInit(sol::state& lua)
 	// FIXED MATH
 	//
 	auto& fix = lua["fix"].get_or_create<sol::table>();
+
+	//
+	// Fixed Vector 3D
+	//
+	fix.new_usertype<VECTOR_NOPAD>("VECTOR",
+		sol::call_constructor, sol::factories(
+			[](const int& x, const int& y, const int& z) {
+				return VECTOR_NOPAD{ x, y, z };
+			},
+			[](const sol::table& table) {
+				return VECTOR_NOPAD{ table["x"], table["y"], table["z"] };
+			},
+			[]() { return VECTOR_NOPAD{ 0 }; }),
+			"vx", &VECTOR_NOPAD::vx,
+			"vy", &VECTOR_NOPAD::vy,
+			"vz", &VECTOR_NOPAD::vz);
 
 	fix["ONE"] = ONE;
 

@@ -36,6 +36,8 @@ CDriverLevelTextures	g_levTextures;
 CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
+Array<CELL_OBJECT>		CWorld::m_CellObjects;
+
 void CWorld::Lua_Init(sol::state& lua)
 {
 	auto engine = lua["engine"].get_or_create<sol::table>();
@@ -53,18 +55,41 @@ void CWorld::Lua_Init(sol::state& lua)
 	world["GetModelByName"] = &GetModelByName;
 	world["MapHeight"] = &MapHeight;
 
+	world["PushCellObject"] = &PushCellObject;
+	world["PurgeCellObjects"] = &PurgeCellObjects;
+
 	// level properties
 	lua.new_usertype<LevelRenderProps>("LevelRenderProps",
 		"nightAmbientScale", &LevelRenderProps::nightAmbientScale,
-		"nightLightScale", & LevelRenderProps::nightLightScale,
-		"ambientScale", & LevelRenderProps::ambientScale,
-		"lightScale", & LevelRenderProps::lightScale,
-		"nightMode", & LevelRenderProps::nightMode,
-		"noLod", & LevelRenderProps::noLod,
+		"nightLightScale", &LevelRenderProps::nightLightScale,
+		"ambientScale", &LevelRenderProps::ambientScale,
+		"lightScale", &LevelRenderProps::lightScale,
+		"nightMode", &LevelRenderProps::nightMode,
+		"noLod", &LevelRenderProps::noLod,
 
-		"displayCollisionBoxes", & LevelRenderProps::displayCollisionBoxes,
-		"displayHeightMap", & LevelRenderProps::displayHeightMap,
-		"displayAllCellLevels", & LevelRenderProps::displayAllCellLevels);
+		"displayCollisionBoxes", &LevelRenderProps::displayCollisionBoxes,
+		"displayHeightMap", &LevelRenderProps::displayHeightMap,
+		"displayAllCellLevels", &LevelRenderProps::displayAllCellLevels);
+
+	lua.new_usertype<ModelRef_t>("ModelRef",
+		"name", &ModelRef_t::name,
+		"index", &ModelRef_t::index,
+		"highDetailId", &ModelRef_t::highDetailId,
+		"lowDetailId", &ModelRef_t::lowDetailId);
+
+	// level properties
+	lua.new_usertype<CELL_OBJECT>("CELL_OBJECT",
+		sol::call_constructor, sol::factories(
+			[](const VECTOR_NOPAD& position, const ubyte& yang, const ushort& type) {
+				return CELL_OBJECT{ position, 0, yang, type };
+			},
+			[](const sol::table& table) {
+				return CELL_OBJECT{ table["position"], 0, table["yang"], table["type"] };
+			},
+			[]() { return CELL_OBJECT{ 0 }; }),
+		"pos", &CELL_OBJECT::pos,
+		"yang", &CELL_OBJECT::yang,
+		"type", &CELL_OBJECT::type);
 
 	engine["LevelRenderProps"] = &g_levRenderProps;
 }
@@ -270,11 +295,18 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 
 	// reset lighting
 	CRenderModel::SetupLightingProperties();
+
+	bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 	
-	if(g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16)
+	if(driver2Map)
 		DrawLevelDriver2(view.position, view.angles.y, frustumVolume);
 	else
 		DrawLevelDriver1(view.position, view.angles.y, frustumVolume);
+
+	for (int i = 0; i < m_CellObjects.size(); i++)
+	{
+		DrawCellObject(m_CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
+	}
 }
 
 void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
@@ -369,3 +401,17 @@ int CWorld::MapHeight(const VECTOR_NOPAD& position)
 
 //-------------------------------------------------------------
 
+// push event cell object
+// any collision checks afterwards will have an effect with it
+int CWorld::PushCellObject(const CELL_OBJECT& object)
+{
+	int num = m_CellObjects.size();
+	m_CellObjects.append(object);
+	return num+1;
+}
+
+// purges list of recently added objects by PushCellObject
+void CWorld::PurgeCellObjects()
+{
+	m_CellObjects.clear();
+}
