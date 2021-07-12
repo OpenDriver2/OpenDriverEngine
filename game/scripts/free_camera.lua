@@ -10,7 +10,7 @@ FreeCamera = {
 	Look = false
 }
 
-local CAMERA_MOVEMENT_SPEED_FACTOR = 8.0	-- in-game units per second (one unit is 4096)
+local CAMERA_MOVEMENT_SPEED_FACTOR = 5.0	-- in-game units per second (one unit is 4096)
 local CAMERA_MOVEMENT_ACCELERATION = 10
 local CAMERA_MOVEMENT_DECELERATION = 40
 

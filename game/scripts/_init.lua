@@ -40,7 +40,12 @@ function InitCamera( params )
 	camera.MainView.fov = params.fov
 end
 
+local trainModel
+local truckModel
+
 function GameLoop(dt)
+
+	world.PurgeCellObjects()
 
 	FreeCamera.UpdateCameraMovement(dt)
 	InitCamera({
@@ -51,6 +56,20 @@ function GameLoop(dt)
 	
 	local spoolPos = fix.ToFixedVector(camera.MainView.position)
 	world.SpoolRegions(spoolPos, 1)
+	
+	-- Chicago ONLY
+	if trainModel then
+	
+		-- push event cell object
+		-- any collision checks afterwards will have an effect with it
+		world.PushCellObject(CELL_OBJECT { position = fix.VECTOR(4749, -250, -11082), yang = 512 / 64, type = trainModel.index })
+	
+	end
+	
+	if truckModel then
+		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2579, -300, -14235), 1024 / 64, truckModel.index))
+		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2434, -300, -9641), 128 / 64, truckModel.index))
+	end
 	
 	--StepSim( dt )
 end
@@ -116,6 +135,9 @@ function ChangeCity(newCity, newCityType, newWeather)
 		if world.LoadLevel(CurrentCityInfo.levPath[CurrentCityType]) then
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 			SetUpdateFunc("GameLoop", GameLoop)
+			
+			trainModel = world.GetModelByName("ELTRAIN")
+			truckModel = world.GetModelByName("LORRY")
 		end
 	else
 		-- reload sky only
@@ -142,6 +164,11 @@ function StartTest()
 	ResetFreeCamera()
 
 	--ChangeCity(CityInfo["Chicago"], CityType.Day, SkyType.Day)
+end
+
+function StopTest()
+	world.UnloadLevel()
+	SetUpdateFunc("GameLoop", nil)
 end
 
 --[[
@@ -220,7 +247,7 @@ function RenderUI()
 			end
 			
 			if ImGui.MenuItem("Unload") then
-				world.UnloadLevel();
+				StopTest()
 			end
 
 			ImGui.EndMenu()
