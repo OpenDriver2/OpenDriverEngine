@@ -58,7 +58,7 @@ ModelRef_t* CDriverLevelModels::GetModelByIndex(int nIndex) const
 
 int CDriverLevelModels::FindModelIndexByName(const char* name) const
 {
-	for (int i = 0; i < MAX_MODELS; i++)
+	for (int i = 0; i < MAX_MODELS && i < m_model_names.size(); i++)
 	{
 		if (!stricmp(m_model_names[i], name))
 			return i;
