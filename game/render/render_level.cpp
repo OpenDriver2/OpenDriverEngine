@@ -70,6 +70,77 @@ struct PCO_PAIR_D2
 	XZPAIR nearCell;
 };
 
+void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume, bool buildingLighting)
+{
+	if (co.type >= MAX_MODELS)
+	{
+		// WHAT THE FUCK?
+		return;
+	}
+
+	Vector3D absCellPosition = FromFixedVector(co.pos);
+	absCellPosition.y *= -1.0f;
+
+	float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
+
+	ModelRef_t* ref = GetModelCheckLods(co.type, distanceFromCamera);
+
+	MODEL* model = ref->model;
+
+	float cellRotationRad = -co.yang / 64.0f * PI_F * 2.0f;
+
+	bool isGround = false;
+
+	if (model)
+	{
+		if (model->shape_flags & SHAPE_FLAG_SPRITE)
+		{
+			cellRotationRad = DEG2RAD(cameraAngleY);
+		}
+
+		if ((model->shape_flags & (SHAPE_FLAG_WATER | SHAPE_FLAG_TILE)) ||
+			(model->flags2 & (MODEL_FLAG_PATH | MODEL_FLAG_GRASS)))
+		{
+			isGround = true;
+		}
+	}
+
+	Matrix4x4 objectMatrix = translate(absCellPosition) * rotateY4(cellRotationRad);
+	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
+	GR_UpdateMatrixUniforms();
+
+	if (buildingLighting)
+	{
+		if (isGround && g_levRenderProps.nightMode)
+			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
+		else
+			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
+	}
+	else
+	{
+		if (g_levRenderProps.nightMode)
+			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
+		else
+			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
+	}
+
+	CRenderModel* renderModel = (CRenderModel*)ref->userData;
+
+	if (renderModel)
+	{
+		const float boundSphere = ref->model->bounding_sphere * RENDER_SCALING * 2.0f;
+		if (frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
+		{
+			renderModel->Draw();
+			g_drawnModels++;
+			g_drawnPolygons += ref->model->num_polys;
+
+			if (g_levRenderProps.displayCollisionBoxes)
+				CRenderModel::DrawModelCollisionBox(ref, co.pos, co.yang);
+		}
+	}
+}
+
 //-------------------------------------------------------
 // Draws Driver 2 level region cells
 // and spools the world if needed
@@ -236,63 +307,7 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 		CELL_OBJECT co;
 		CDriver2LevelMap::UnpackCellObject(co, drawObjects[i].pco, drawObjects[i].nearCell);
 
-		if (co.type >= MAX_MODELS)
-		{
-			// WHAT THE FUCK?
-			continue;
-		}
-
-		Vector3D absCellPosition = FromFixedVector(co.pos);
-		absCellPosition.y *= -1.0f;
-
-		float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
-
-		ModelRef_t* ref = GetModelCheckLods(co.type, distanceFromCamera);
-
-		MODEL* model = ref->model;
-
-		float cellRotationRad = -co.yang / 64.0f * PI_F * 2.0f;
-
-		bool isGround = false;
-
-		if (model)
-		{
-			if (model->shape_flags & SHAPE_FLAG_SPRITE)
-			{
-				cellRotationRad = DEG2RAD(cameraAngleY);
-			}
-
-			if ((model->shape_flags & (SHAPE_FLAG_WATER | SHAPE_FLAG_TILE)) ||
-				(model->flags2 & (MODEL_FLAG_PATH | MODEL_FLAG_GRASS)))
-			{
-				isGround = true;
-			}
-		}
-
-		Matrix4x4 objectMatrix = translate(absCellPosition) * rotateY4(cellRotationRad);
-		GR_SetMatrix(MATRIX_WORLD, objectMatrix);
-		GR_UpdateMatrixUniforms();
-
-		if (isGround && g_levRenderProps.nightMode)
-			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
-		else
-			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
-
-		CRenderModel* renderModel = (CRenderModel*)ref->userData;
-
-		if (renderModel)
-		{
-			const float boundSphere = ref->model->bounding_sphere * RENDER_SCALING * 2.0f;
-			if (frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
-			{
-				renderModel->Draw();
-				g_drawnModels++;
-				g_drawnPolygons += ref->model->num_polys;
-
-				if (g_levRenderProps.displayCollisionBoxes)
-					CRenderModel::DrawModelCollisionBox(ref, co.pos, co.yang);
-			}
-		}
+		DrawCellObject(co, cameraPos, cameraAngleY, frustrumVolume, true);
 	}
 }
 
@@ -409,61 +424,6 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 	{
 		pco = drawObjects[i];
 
-		if (pco->type >= MAX_MODELS)
-		{
-			// WHAT THE FUCK?
-			continue;
-		}
-
-		Vector3D absCellPosition = FromFixedVector(pco->pos);
-		absCellPosition.y *= -1.0f;
-		
-		float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
-
-		ModelRef_t* ref = GetModelCheckLods(pco->type, distanceFromCamera);
-		MODEL* model = ref->model;
-
-		float cellRotationRad = -pco->yang / 64.0f * PI_F * 2.0f;
-
-		bool isGround = false;
-
-		if (model)
-		{
-			if (model->shape_flags & SHAPE_FLAG_SPRITE)
-			{
-				cellRotationRad = DEG2RAD(cameraAngleY);
-			}
-
-			if ((model->shape_flags & (SHAPE_FLAG_WATER | SHAPE_FLAG_TILE)) ||
-				(model->flags2 & (MODEL_FLAG_PATH | MODEL_FLAG_GRASS)))
-			{
-				isGround = true;
-			}
-		}
-
-		Matrix4x4 objectMatrix = translate(absCellPosition) * rotateY4(cellRotationRad);
-		GR_SetMatrix(MATRIX_WORLD, objectMatrix);
-		GR_UpdateMatrixUniforms();
-
-		if (g_levRenderProps.nightMode)
-			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
-		else
-			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
-
-		CRenderModel* renderModel = (CRenderModel*)ref->userData;
-
-		if (renderModel)
-		{
-			const float boundSphere = ref->model->bounding_sphere * RENDER_SCALING * 2.0f;
-			if (frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
-			{
-				renderModel->Draw();
-				g_drawnModels++;
-				g_drawnPolygons += ref->model->num_polys;
-
-				if (g_levRenderProps.displayCollisionBoxes)
-					CRenderModel::DrawModelCollisionBox(ref, pco->pos, pco->yang);
-			}
-		}
+		DrawCellObject(*pco, cameraPos, cameraAngleY, frustrumVolume, false );
 	}
 }
