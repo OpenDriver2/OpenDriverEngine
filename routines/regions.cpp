@@ -49,6 +49,10 @@ void CBaseLevelRegion::FreeAll()
 
 	delete[] m_cellPointers;
 	m_cellPointers = nullptr;
+
+	if (m_cellObjects)
+		free(m_cellObjects);
+	m_cellObjects = nullptr;
 	
 	m_pvsData = nullptr;	
 	m_roadmapData = nullptr;
@@ -64,6 +68,19 @@ bool CBaseLevelRegion::IsEmpty() const
 int	CBaseLevelRegion::GetNumber() const
 {
 	return m_regionNumber;
+}
+
+CELL_OBJECT* CBaseLevelRegion::GetCellObject(int num) const
+{
+	int numStraddlers = m_owner->m_numStraddlers;
+
+	if (num >= numStraddlers)
+	{
+		num -= m_owner->m_cell_objects_add[m_regionBarrelNumber] + numStraddlers;
+		return &m_cellObjects[num];
+	}
+
+	return &m_owner->m_straddlers[num];
 }
 
 //-------------------------------------------------------------
@@ -190,6 +207,9 @@ void CBaseLevelMap::FreeAll()
 
 	delete[] m_areaDataStates;
 	m_areaDataStates = nullptr;
+
+	delete[] m_straddlers;
+	m_straddlers = nullptr;
 }
 
 int	CBaseLevelMap::GetAreaDataCount() const

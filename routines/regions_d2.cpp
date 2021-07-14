@@ -333,9 +333,9 @@ void CDriver2LevelRegion::FreeAll()
 		free(m_cells);
 	m_cells = nullptr;
 
-	if (m_cellObjects)
-		free(m_cellObjects);
-	m_cellObjects = nullptr;
+	if (m_packedCellObjects)
+		free(m_packedCellObjects);
+	m_packedCellObjects = nullptr;
 
 	if (m_pvsData)
 		free(m_pvsData);
@@ -405,12 +405,15 @@ void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 		pFile->Read(m_cells, m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 
 		// read cell objects
-		m_cellObjects = (PACKED_CELL_OBJECT*)malloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE);
+		m_packedCellObjects = (PACKED_CELL_OBJECT*)malloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE);
 		pFile->Seek(ctx.lumpInfo->spooled_offset + cellObjectsOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
-		pFile->Read(m_cellObjects, m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
+		pFile->Read(m_packedCellObjects, m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 	}
 	else
 		MsgError("BAD PACKED CELL POINTER DATA, region = %d\n", m_regionNumber);
+
+	// post-process
+	UnpackAllCellObjects();
 
 	delete [] packed_cell_pointers;
 
@@ -423,6 +426,53 @@ void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	m_loaded = true;
 
 	m_owner->OnRegionLoaded(this);
+}
+
+//---------------------------------------------------------------------
+// Unpacks all cell objects from PACKED_CELL_OBJECT
+//---------------------------------------------------------------------
+void CDriver2LevelRegion::UnpackAllCellObjects()
+{
+	CDriver2LevelMap* owner = (CDriver2LevelMap*)m_owner;
+	int numCellObjects = (m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE) / sizeof(PACKED_CELL_OBJECT);
+
+	// alloc and convert
+	m_cellObjects = (CELL_OBJECT*)malloc(numCellObjects * sizeof(CELL_OBJECT));
+	memset(m_cellObjects, 0, numCellObjects * sizeof(CELL_OBJECT));
+
+	const OUT_CELL_FILE_HEADER& mapInfo = owner->GetMapInfo();
+	const int numStraddlers = owner->m_numStraddlers;
+	const int cellObjectsAdd = owner->m_cell_objects_add[m_regionBarrelNumber];
+
+	// walk through all cell data
+	for (int i = 0; i < mapInfo.region_size * mapInfo.region_size; i++)
+	{
+		CELL_ITERATOR_D2 ci;
+		PACKED_CELL_OBJECT* pco = StartIterator(&ci, i);
+
+		if (!pco)
+			continue;
+
+		while (pco)
+		{
+			int num = ci.pcd->num & 0x3fff;
+
+			if (num >= numStraddlers)
+			{
+				num -= cellObjectsAdd + numStraddlers;
+				
+				CELL_OBJECT& co = m_cellObjects[num];
+				CDriver2LevelMap::UnpackCellObject(co, pco, ci.nearCell);
+			}
+			else
+			{
+				// unpack straddlers
+				CDriver2LevelMap::UnpackCellObject(owner->m_straddlers[num], pco, ci.nearCell);
+			}
+
+			pco = owner->GetNextPackedCop(&ci);
+		}
+	}
 }
 
 void CDriver2LevelRegion::ReadHeightmapData(const SPOOL_CONTEXT& ctx)
@@ -453,7 +503,7 @@ void CDriver2LevelRegion::ReadHeightmapData(const SPOOL_CONTEXT& ctx)
 	}
 }
 
-PACKED_CELL_OBJECT* CDriver2LevelRegion::GetCellObject(int num) const
+PACKED_CELL_OBJECT* CDriver2LevelRegion::GetPackedCellObject(int num) const
 {
 	CDriver2LevelMap* owner = (CDriver2LevelMap*)m_owner;
 
@@ -462,10 +512,10 @@ PACKED_CELL_OBJECT* CDriver2LevelRegion::GetCellObject(int num) const
 	if (num >= numStraddlers)
 	{
 		num -= owner->m_cell_objects_add[m_regionBarrelNumber] + numStraddlers;
-		return &m_cellObjects[num];
+		return &m_packedCellObjects[num];
 	}
 
-	return &owner->m_straddlers[num];
+	return &owner->m_packedStraddlers[num];
 }
 
 CELL_DATA* CDriver2LevelRegion::GetCellData(int num) const
@@ -481,13 +531,14 @@ PACKED_CELL_OBJECT* CDriver2LevelRegion::StartIterator(CELL_ITERATOR_D2* iterato
 	if (cell_ptr == 0xFFFF)
 		return nullptr;
 
-	const OUT_CELL_FILE_HEADER& mapInfo = m_owner->m_mapInfo;
+	CDriver2LevelMap* owner = (CDriver2LevelMap*)m_owner;
+	const OUT_CELL_FILE_HEADER& mapInfo = owner->m_mapInfo;
 
 	iterator->region = (CDriver2LevelRegion*)this;
 
 	// IDK if it gonna work correct
 	XZPAIR cpos;
-	m_owner->WorldPositionToCellXZ(cpos, {0,0,0});
+	owner->WorldPositionToCellXZ(cpos, {0,0,0});
 
 	// convert cell number to XZ
 	int cellx = cellNumber % mapInfo.region_size;
@@ -503,19 +554,21 @@ PACKED_CELL_OBJECT* CDriver2LevelRegion::StartIterator(CELL_ITERATOR_D2* iterato
 	// get the packed cell data start and near cell
 	CELL_DATA* celld = &m_cells[cell_ptr];
 
-	iterator->listType = 0;
+	iterator->listType = -1;
 
 	if (celld->num & 0x4000) // if we immediately got to the typed list
 	{
-		iterator->listType = celld->num;
+		iterator->listType = celld->num & 0x3fff;
 		celld++; // get to the start
 	}
 
-	PACKED_CELL_OBJECT* ppco = GetCellObject(celld->num & 0x3fff);
+	PACKED_CELL_OBJECT* ppco = GetPackedCellObject(celld->num & 0x3fff);
 	iterator->pcd = celld;
 
+	iterator->co = GetCellObject(celld->num & 0x3fff);
+
 	if (ppco->value == 0xffff && (ppco->pos.vy & 1))
-		ppco = ((CDriver2LevelMap*)m_owner)->GetNextPackedCop(iterator);
+		ppco = owner->GetNextPackedCop(iterator);
 
 	iterator->ppco = ppco;
 
@@ -537,8 +590,8 @@ void CDriver2LevelMap::FreeAll()
 	delete[] m_regions;
 	m_regions = nullptr;
 
-	delete[] m_straddlers;
-	m_straddlers = nullptr;
+	delete[] m_packedStraddlers;
+	m_packedStraddlers = nullptr;
 
 	delete[] m_straights;
 	m_straights = nullptr;
@@ -561,8 +614,11 @@ void CDriver2LevelMap::LoadMapLump(IVirtualStream* pFile)
 
 	// read straddlers
 	// Driver 2 PCO
-	m_straddlers = new PACKED_CELL_OBJECT[m_numStraddlers];
-	pFile->Read(m_straddlers, m_numStraddlers, sizeof(PACKED_CELL_OBJECT));
+	m_packedStraddlers = new PACKED_CELL_OBJECT[m_numStraddlers];
+	pFile->Read(m_packedStraddlers, m_numStraddlers, sizeof(PACKED_CELL_OBJECT));
+
+	m_straddlers = new CELL_OBJECT[m_numStraddlers];
+	memset(m_straddlers, 0, m_numStraddlers * sizeof(CELL_OBJECT));
 }
 
 //-------------------------------------------------------------
@@ -830,15 +886,16 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetFirstPackedCop(CELL_ITERATOR_D2* iterat
 		0x8000           - end of cell objects
 	*/
 
-	iterator->listType = 0;
+	iterator->listType = -1;
 
 	if (celld->num & 0x4000) // if we immediately got to the typed list
 	{
-		iterator->listType = celld->num;
+		iterator->listType = celld->num & 0x3fff;
 		celld++; // get to the start
 	}
 
-	PACKED_CELL_OBJECT* ppco = region.GetCellObject(celld->num & 0x3fff);
+	PACKED_CELL_OBJECT* ppco = region.GetPackedCellObject(celld->num & 0x3fff);
+	iterator->co = region.GetCellObject(celld->num & 0x3fff);
 
 	iterator->pcd = celld;
 
@@ -857,6 +914,7 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetNextPackedCop(CELL_ITERATOR_D2* iterato
 {
 	ushort num;
 	PACKED_CELL_OBJECT* ppco;
+	CELL_OBJECT* co;
 
 	do {
 		CELL_DATA* celld = iterator->pcd;
@@ -874,24 +932,13 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetNextPackedCop(CELL_ITERATOR_D2* iterato
 
 		iterator->pcd = celld;
 
-		/*
-		celld++;
-		num = celld->num;
-
-		if (celld->num & 0x4000) // if we immediately got to the typed list
-		{
-			iterator->listType = celld->num;
-			celld++; // get to the start
-		}
-		
-		if(num & 0x4000)	// start of new sub list?
-			return nullptr;
-		*/
-		ppco = iterator->region->GetCellObject(celld->num & 0x3fff);
+		ppco = iterator->region->GetPackedCellObject(celld->num & 0x3fff);
+		co = iterator->region->GetCellObject(celld->num & 0x3fff);
 
 	} while (ppco->value == 0xffff && (ppco->pos.vy & 1));
 
 	iterator->ppco = ppco;
+	iterator->co = co;
 
 	return ppco;
 }

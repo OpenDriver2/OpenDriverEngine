@@ -17,10 +17,6 @@ void CDriver1LevelRegion::FreeAll()
 	if (m_cells)
 		free(m_cells);
 	m_cells = nullptr;
-
-	if (m_cellObjects)
-		free(m_cellObjects);
-	m_cellObjects = nullptr;
 }
 
 void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
@@ -89,21 +85,6 @@ void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	// TODO: PVS and heightmap data
 }
 
-CELL_OBJECT* CDriver1LevelRegion::GetCellObject(int num) const
-{
-	CDriver1LevelMap* owner = (CDriver1LevelMap*)m_owner;
-
-	int numStraddlers = owner->m_numStraddlers;
-
-	if (num >= numStraddlers)
-	{
-		num -= owner->m_cell_objects_add[m_regionBarrelNumber] + numStraddlers;
-		return &m_cellObjects[num];
-	}
-
-	return &owner->m_straddlers[num];
-}
-
 //----------------------------------------
 // cell iterator
 CELL_OBJECT* CDriver1LevelRegion::StartIterator(CELL_ITERATOR_D1* iterator, int cellNumber) const
@@ -138,9 +119,6 @@ void CDriver1LevelMap::FreeAll()
 
 	delete[] m_regions;
 	m_regions = nullptr;
-
-	delete[] m_straddlers;
-	m_straddlers = nullptr;
 
 	CBaseLevelMap::FreeAll();
 }

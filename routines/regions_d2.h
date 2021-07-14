@@ -62,6 +62,7 @@ struct CELL_ITERATOR_D2
 	CDriver2LevelRegion*	region;
 	CELL_DATA*				pcd;
 	PACKED_CELL_OBJECT*		ppco;
+	CELL_OBJECT*			co;
 	XZPAIR					nearCell;
 	int						listType;
 };
@@ -79,7 +80,7 @@ public:
 	void					FreeAll() override;
 	void					LoadRegionData(const SPOOL_CONTEXT& ctx) override;
 
-	PACKED_CELL_OBJECT*		GetCellObject(int num) const;
+	PACKED_CELL_OBJECT*		GetPackedCellObject(int num) const;
 	CELL_DATA*				GetCellData(int num) const;
 
 	// cell iterator
@@ -92,10 +93,12 @@ public:
 
 protected:
 
+	void					UnpackAllCellObjects();
+
 	void					ReadHeightmapData(const SPOOL_CONTEXT& ctx);
 
-	CELL_DATA*				m_cells{ nullptr };				// cell data that holding information about cell pointers. 3D world seeks cells first here
-	PACKED_CELL_OBJECT*		m_cellObjects{ nullptr };		// cell objects that represents objects placed in the world
+	CELL_DATA*				m_cells{ nullptr };					// cell data that holding information about cell pointers. 3D world seeks cells first here
+	PACKED_CELL_OBJECT*		m_packedCellObjects{ nullptr };		// cell objects that represents objects placed in the world
 
 	char*					m_pvsData{ nullptr };
 
@@ -155,7 +158,7 @@ protected:
 	
 	// Driver 2 - specific
 	CDriver2LevelRegion*	m_regions{ nullptr };					// map of regions
-	PACKED_CELL_OBJECT*		m_straddlers { nullptr };				// cell objects between regions
+	PACKED_CELL_OBJECT*		m_packedStraddlers { nullptr };				// cell objects between regions
 
 	DRIVER2_STRAIGHT*		m_straights{ nullptr };
 	DRIVER2_CURVE*			m_curves{ nullptr };

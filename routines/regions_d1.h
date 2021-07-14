@@ -26,14 +26,11 @@ public:
 	void					FreeAll() override;
 	void					LoadRegionData(const SPOOL_CONTEXT& ctx) override;
 
-	CELL_OBJECT*			GetCellObject(int num) const;
-
 	// cell iterator
 	CELL_OBJECT*			StartIterator(CELL_ITERATOR_D1* iterator, int cellNumber) const;
 
 protected:
 	CELL_DATA_D1*			m_cells{ nullptr };				// cell data that holding information about cell pointers. 3D world seeks cells first here
-	CELL_OBJECT*			m_cellObjects{ nullptr };		// cell objects that represents objects placed in the world
 };
 
 
@@ -66,7 +63,6 @@ protected:
 
 	// Driver 2 - specific
 	CDriver1LevelRegion*	m_regions{ nullptr };					// map of regions
-	CELL_OBJECT*			m_straddlers{ nullptr };				// cell objects between regions
 };
 
 

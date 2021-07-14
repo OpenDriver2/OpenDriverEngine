@@ -43,6 +43,8 @@ public:
 	bool					IsEmpty() const;
 	int						GetNumber() const;
 
+	CELL_OBJECT*			GetCellObject(int num) const;
+
 protected:
 	static int				UnpackCellPointers(ushort* dest_ptrs, char* src_data, int cell_slots_add, int targetRegion = 0);
 	
@@ -51,6 +53,7 @@ protected:
 	Spool*					m_spoolInfo{ nullptr };
 	
 	ushort*					m_cellPointers{ nullptr };		// cell pointers - pointing to CELL_DATA
+	CELL_OBJECT*			m_cellObjects{ nullptr };		// cell objects that represents objects placed in the world
 
 	ushort*					m_pvsData{ nullptr };			// potentially visibile set of cells
 	short*					m_roadmapData{ nullptr };		// heightfield with planes and BSP
@@ -146,6 +149,8 @@ protected:
 
 	int							m_regions_across{ 0 };
 	int							m_regions_down{ 0 };
+
+	CELL_OBJECT*				m_straddlers{ nullptr };
 
 	OnRegionLoaded_t			m_onRegionLoaded{ nullptr };
 	OnRegionFreed_t				m_onRegionFreed{ nullptr };
