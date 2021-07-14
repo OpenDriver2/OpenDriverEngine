@@ -298,10 +298,7 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 
 	bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 	
-	if(driver2Map)
-		DrawLevelDriver2(view.position, view.angles.y, frustumVolume);
-	else
-		DrawLevelDriver1(view.position, view.angles.y, frustumVolume);
+	DrawMap(view.position, view.angles.y, frustumVolume);
 
 	for (int i = 0; i < m_CellObjects.size(); i++)
 	{
@@ -415,3 +412,4 @@ void CWorld::PurgeCellObjects()
 {
 	m_CellObjects.clear();
 }
+

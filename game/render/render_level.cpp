@@ -64,12 +64,6 @@ int g_drawnCells;
 int g_drawnModels;
 int g_drawnPolygons;
 
-struct PCO_PAIR_D2
-{
-	PACKED_CELL_OBJECT* pco;
-	XZPAIR nearCell;
-};
-
 void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume, bool buildingLighting)
 {
 	if (co.type >= MAX_MODELS)
@@ -141,94 +135,53 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 	}
 }
 
-//-------------------------------------------------------
-// Draws Driver 2 level region cells
-// and spools the world if needed
-//-------------------------------------------------------
-void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume)
-{
-	int i = g_cellsDrawDistance;
-	int vloop = 0;
-	int hloop = 0;
-	int dir = 0;
-	XZPAIR cell;
-	XZPAIR icell;
 
+//-------------------------------------------------------
+// Draws the map of Driver 1 or Driver 2
+//-------------------------------------------------------
+void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume)
+{
 	g_drawnCells = 0;
 	g_drawnModels = 0;
 	g_drawnPolygons = 0;
 
+	bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
+
 	VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
 
-	CDriver2LevelMap* levMapDriver2 = (CDriver2LevelMap*)g_levMap;
+	CBaseLevelMap* levMap = g_levMap;
 
-	levMapDriver2->WorldPositionToCellXZ(cell, cameraPosition);
+	XZPAIR cell;
+	levMap->WorldPositionToCellXZ(cell, cameraPosition);
 
-	/*
-	int cameraAngleY = g_cameraAngles.y * (4096.0f / 360.0f);
-	int FrAng = 512;
-
-	// setup planes
-	int backPlane = 6144;
-	int rightPlane = -6144;
-	int leftPlane = 6144;
-
-	int farClipLimit = 280000;
-
-	int rightAng = cameraAngleY - FrAng & 0xfff;
-	int leftAng = cameraAngleY + FrAng & 0xfff;
-	int backAng = cameraAngleY + 1024 & 0xfff;
-
-	int rightcos = icos(rightAng);
-	int rightsin = isin(rightAng);
-
-	int leftcos = icos(leftAng);
-	int leftsin = isin(leftAng);
-	int backcos = icos(backAng);
-	int backsin = isin(backAng);
-	*/
-
-	static Array<PCO_PAIR_D2> drawObjects;
+	static Array<CELL_OBJECT*> drawObjects;
 	drawObjects.reserve(g_cellsDrawDistance * 2);
 	drawObjects.clear();
+
+	int i = g_cellsDrawDistance;
+	int vloop = 0;
+	int hloop = 0;
+	int dir = 0;
+
+	XZPAIR icell;
 
 	// walk through all cells
 	while (i >= 0)
 	{
-		if (abs(hloop) + abs(vloop) < 256)
+		icell.x = cell.x + hloop;
+		icell.z = cell.z + vloop;
+
+		if (icell.x > -1 && icell.x < levMap->GetCellsAcross() &&
+			icell.z > -1 && icell.z < levMap->GetCellsDown())
 		{
-			// clamped vis values
-			int vis_h = MIN(MAX(hloop, -9), 10);
-			int vis_v = MIN(MAX(vloop, -9), 10);
-
-			icell.x = cell.x + hloop;
-			icell.z = cell.z + vloop;
-
-			if ( //rightPlane < 0 &&
-				//leftPlane > 0 &&
-				//backPlane < farClipLimit &&  // check planes
-				icell.x > -1 && icell.x < levMapDriver2->GetCellsAcross() &&
-				icell.z > -1 && icell.z < levMapDriver2->GetCellsDown())
+			if (driver2Map)
 			{
+				CDriver2LevelMap* levMapDriver2 = (CDriver2LevelMap*)levMap;
+
+				// Driver 2 map iteration
 				CELL_ITERATOR_D2 ci;
-				PACKED_CELL_OBJECT* ppco;
-				/*
-				// TODO: don't spool here
-				if (!levMapDriver2->IsRegionSpooled(icell))
-				{
-					SPOOL_CONTEXT spoolContext;
 
-					CFileStream spoolStream(g_levFile);
-
-					spoolContext.dataStream = &spoolStream;
-					spoolContext.lumpInfo = &g_levInfo;
-					spoolContext.models = &g_levModels;
-					spoolContext.textures = &g_levTextures;
-
-					levMapDriver2->SpoolRegion(spoolContext, icell);
-				}
-				*/
-				ppco = levMapDriver2->GetFirstPackedCop(&ci, icell);
+				PACKED_CELL_OBJECT* ppco = levMapDriver2->GetFirstPackedCop(&ci, icell);
 
 				if (ppco)
 					g_drawnCells++;
@@ -236,145 +189,23 @@ void DrawLevelDriver2(const Vector3D& cameraPos, float cameraAngleY, const Volum
 				// walk each cell object in cell
 				while (ppco)
 				{
-					if (ci.listType != 0 && !g_levRenderProps.displayAllCellLevels)
-						break;
-					
-					PCO_PAIR_D2 pair;
-					pair.nearCell = ci.nearCell;
-					pair.pco = ppco;
+					if (ci.listType != -1 && !g_levRenderProps.displayAllCellLevels)
+						return;
 
-					drawObjects.append(pair);
+					drawObjects.append(ci.co);
 
 					ppco = levMapDriver2->GetNextPackedCop(&ci);
 				}
 			}
-		}
-
-		if (dir == 0)
-		{
-			//leftPlane += leftcos;
-			//backPlane += backcos;
-			//rightPlane += rightcos;
-
-			hloop++;
-
-			if (hloop + vloop == 1)
-				dir = 1;
-		}
-		else if (dir == 1)
-		{
-			//leftPlane += leftsin;
-			//backPlane += backsin;
-			//rightPlane += rightsin;
-
-			vloop++;
-
-			if (hloop == vloop)
-				dir = 2;
-		}
-		else if (dir == 2)
-		{
-			//leftPlane -= leftcos;
-			//backPlane -= backcos;
-			//rightPlane -= rightcos;
-
-			hloop--;
-
-			if (hloop + vloop == 0)
-				dir = 3;
-		}
-		else
-		{
-			//leftPlane -= leftsin;
-			//backPlane -= backsin;
-			//rightPlane -= rightsin;
-
-			vloop--;
-
-			if (hloop == vloop)
-				dir = 0;
-		}
-
-		i--;
-	}
-
-	// at least once we should do that
-	CRenderModel::SetupModelShader();
-
-	// draw object list
-	for (uint i = 0; i < drawObjects.size(); i++)
-	{
-		CELL_OBJECT co;
-		CDriver2LevelMap::UnpackCellObject(co, drawObjects[i].pco, drawObjects[i].nearCell);
-
-		DrawCellObject(co, cameraPos, cameraAngleY, frustrumVolume, true);
-	}
-}
-
-//-------------------------------------------------------
-// Draws Driver 2 level region cells
-// and spools the world if needed
-//-------------------------------------------------------
-void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume)
-{
-	CELL_ITERATOR_D1 ci;
-	CELL_OBJECT* pco;
-
-	int i = g_cellsDrawDistance;
-	int vloop = 0;
-	int hloop = 0;
-	int dir = 0;
-	XZPAIR cell;
-	XZPAIR icell;
-
-	g_drawnCells = 0;
-	g_drawnModels = 0;
-	g_drawnPolygons = 0;
-
-	VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
-
-	CDriver1LevelMap* levMapDriver1 = (CDriver1LevelMap*)g_levMap;
-
-	levMapDriver1->WorldPositionToCellXZ(cell, cameraPosition);
-
-	static Array<CELL_OBJECT*> drawObjects;
-	drawObjects.reserve(g_cellsDrawDistance * 2);
-	drawObjects.clear();
-
-	// walk through all cells
-	while (i >= 0)
-	{
-		if (abs(hloop) + abs(vloop) < 256)
-		{
-			// clamped vis values
-			int vis_h = MIN(MAX(hloop, -9), 10);
-			int vis_v = MIN(MAX(vloop, -9), 10);
-
-			icell.x = cell.x + hloop;
-			icell.z = cell.z + vloop;
-
-
-			if (icell.x > -1 && icell.x < levMapDriver1->GetCellsAcross() &&
-				icell.z > -1 && icell.z < levMapDriver1->GetCellsDown())
+			else
 			{
-				/*
-				if (!levMapDriver1->IsRegionSpooled(icell))
-				{
-					SPOOL_CONTEXT spoolContext;
+				CELL_ITERATOR_D1 ci;
+				CDriver1LevelMap* levMapDriver1 = (CDriver1LevelMap*)g_levMap;
 
-					CFileStream spoolStream(g_levFile);
+				// Driver 1 map iteration
+				CELL_OBJECT* pco = levMapDriver1->GetFirstCop(&ci, icell.x, icell.z);
 
-					spoolContext.dataStream = &spoolStream;
-					spoolContext.lumpInfo = &g_levInfo;
-					spoolContext.models = &g_levModels;
-					spoolContext.textures = &g_levTextures;
-
-					levMapDriver1->SpoolRegion(spoolContext, icell);
-				}*/
-
-				pco = levMapDriver1->GetFirstCop(&ci, icell.x, icell.z);
-
-				if(pco)
+				if (pco)
 					g_drawnCells++;
 
 				// walk each cell object in cell
@@ -397,6 +228,7 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 		else if (dir == 1)
 		{
 			vloop++;
+
 			if (hloop == vloop)
 				dir = 2;
 		}
@@ -410,6 +242,7 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 		else
 		{
 			vloop--;
+
 			if (hloop == vloop)
 				dir = 0;
 		}
@@ -420,10 +253,9 @@ void DrawLevelDriver1(const Vector3D& cameraPos, float cameraAngleY, const Volum
 	// at least once we should do that
 	CRenderModel::SetupModelShader();
 
+	// draw object list
 	for (uint i = 0; i < drawObjects.size(); i++)
 	{
-		pco = drawObjects[i];
-
-		DrawCellObject(*pco, cameraPos, cameraAngleY, frustrumVolume, false );
+		DrawCellObject(*drawObjects[i], cameraPos, cameraAngleY, frustrumVolume, true);
 	}
 }
