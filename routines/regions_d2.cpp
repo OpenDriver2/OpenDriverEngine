@@ -683,11 +683,18 @@ CBaseLevelRegion* CDriver2LevelMap::GetRegion(const XZPAIR& cell) const
 	const int region_x = cell.x / m_mapInfo.region_size;
 	const int region_z = cell.z / m_mapInfo.region_size;
 
-	return &m_regions[region_x + region_z * m_regions_across];
+	return GetRegion(region_x + region_z * m_regions_across);
 }
 
 CBaseLevelRegion* CDriver2LevelMap::GetRegion(int regionIdx) const
 {
+#if 0
+	const int total_regions = m_regions_across * m_regions_down;
+
+	if (regionIdx < 0 && regionIdx >= total_regions)
+		return nullptr;
+#endif
+
 	return &m_regions[regionIdx];
 }
 
@@ -695,7 +702,7 @@ void CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell)
 {
 	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
 
-	if (!region->m_loaded)
+	if (region && !region->m_loaded)
 	{
 		if (m_regionSpoolInfoOffsets[region->m_regionNumber] != REGION_EMPTY)
 		{
@@ -711,7 +718,7 @@ void CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 {
 	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(regionIdx);
 
-	if (!region->m_loaded)
+	if (region && !region->m_loaded)
 	{
 		if (m_regionSpoolInfoOffsets[region->m_regionNumber] != REGION_EMPTY)
 		{
@@ -736,7 +743,9 @@ int CDriver2LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 	WorldPositionToCellXZ(cell, cellPos);
 	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
 
-	sdPlane* plane = region->SdGetCell(cellPos, level, SdGetBSP);
+	sdPlane* plane = &g_seaPlane;
+	if (region)
+		plane = region->SdGetCell(cellPos, level, SdGetBSP);
 
 	if (plane)
 		return SdHeightOnPlane(position, plane, m_curves);
@@ -915,6 +924,7 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetNextPackedCop(CELL_ITERATOR_D2* iterato
 	ushort num;
 	PACKED_CELL_OBJECT* ppco;
 	CELL_OBJECT* co;
+	CDriver2LevelRegion* reg = iterator->region;
 
 	do {
 		CELL_DATA* celld = iterator->pcd;
@@ -932,8 +942,8 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetNextPackedCop(CELL_ITERATOR_D2* iterato
 
 		iterator->pcd = celld;
 
-		ppco = iterator->region->GetPackedCellObject(celld->num & 0x3fff);
-		co = iterator->region->GetCellObject(celld->num & 0x3fff);
+		ppco = reg->GetPackedCellObject(celld->num & 0x3fff);
+		co = reg->GetCellObject(celld->num & 0x3fff);
 
 	} while (ppco->value == 0xffff && (ppco->pos.vy & 1));
 

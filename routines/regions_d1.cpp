@@ -144,7 +144,7 @@ void CDriver1LevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 	CBaseLevelMap::LoadSpoolInfoLump(pFile);
 
 	// Init regions
-	int total_regions = m_regions_across * m_regions_down;
+	const int total_regions = m_regions_across * m_regions_down;
 
 	m_regions = new CDriver1LevelRegion[total_regions];
 
@@ -158,11 +158,17 @@ CBaseLevelRegion* CDriver1LevelMap::GetRegion(const XZPAIR& cell) const
 	const int region_x = cell.x / m_mapInfo.region_size;
 	const int region_z = cell.z / m_mapInfo.region_size;
 
-	return &m_regions[region_x + region_z * m_regions_across];
+	return GetRegion(region_x + region_z * m_regions_across);;
 }
 
 CBaseLevelRegion* CDriver1LevelMap::GetRegion(int regionIdx) const
 {
+#if 0
+	const int total_regions = m_regions_across * m_regions_down;
+
+	if (regionIdx < 0 && regionIdx >= total_regions)
+		return nullptr;
+#endif
 	return &m_regions[regionIdx];
 }
 
@@ -186,7 +192,7 @@ void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 {
 	CDriver1LevelRegion* region = (CDriver1LevelRegion*)GetRegion(regionIdx);
 
-	if (!region->m_loaded)
+	if (region && !region->m_loaded)
 	{
 		if (m_regionSpoolInfoOffsets[region->m_regionNumber] != REGION_EMPTY)
 		{
@@ -207,11 +213,11 @@ int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 //-------------------------------------------------------------
 // returns first cell object of cell
 //-------------------------------------------------------------
-CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, int cellx, int cellz) const
+CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, const XZPAIR& cell) const
 {
 	// lookup region
-	const int region_x = cellx / m_mapInfo.region_size;
-	const int region_z = cellz / m_mapInfo.region_size;
+	const int region_x = cell.x / m_mapInfo.region_size;
+	const int region_z = cell.z / m_mapInfo.region_size;
 
 	int regionIdx = region_x + region_z * m_regions_across;
 
@@ -224,8 +230,8 @@ CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, int cellx
 		return nullptr;
 
 	// get cell index on the region
-	const int region_cell_x = cellx % m_mapInfo.region_size;
-	const int region_cell_z = cellz % m_mapInfo.region_size;
+	const int region_cell_x = cell.x % m_mapInfo.region_size;
+	const int region_cell_z = cell.z % m_mapInfo.region_size;
 
 	// FIXME: might be incorrect
 	int cell_index = region_cell_x + region_cell_z * m_mapInfo.region_size;
@@ -236,11 +242,11 @@ CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, int cellx
 		return nullptr;
 
 	// get the packed cell data start and near cell
-	CELL_DATA_D1& cell = region.m_cells[cell_ptr];
+	CELL_DATA_D1& pcd = region.m_cells[cell_ptr];
 	
-	CELL_OBJECT* pco = region.GetCellObject(cell.num & 0x3fff);
+	CELL_OBJECT* pco = region.GetCellObject(pcd.num & 0x3fff);
 
-	iterator->pcd = &cell;
+	iterator->pcd = &pcd;
 	iterator->pco = pco;
 
 	return pco;

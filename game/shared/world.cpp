@@ -344,7 +344,11 @@ void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 			iregion.x = region.x + x;
 			iregion.z = region.z + z;
 
-			g_levMap->SpoolRegion(spoolContext, iregion.x + iregion.z * regionsAcross);
+			if (iregion.x >= 0 && iregion.x < regionsAcross &&
+				iregion.z >= 0 && iregion.z < regionsDown)
+			{
+				g_levMap->SpoolRegion(spoolContext, iregion.x + iregion.z * regionsAcross);
+			}
 		}
 	}
 }
@@ -404,7 +408,7 @@ int CWorld::PushCellObject(const CELL_OBJECT& object)
 {
 	int num = m_CellObjects.size();
 	m_CellObjects.append(object);
-	return num+1;
+	return num;
 }
 
 // purges list of recently added objects by PushCellObject
@@ -413,3 +417,41 @@ void CWorld::PurgeCellObjects()
 	m_CellObjects.clear();
 }
 
+void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func)
+{
+	CBaseLevelMap* levMap = g_levMap;
+	bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
+
+	if (driver2Map)
+	{
+		CDriver2LevelMap* levMapDriver2 = (CDriver2LevelMap*)levMap;
+
+		// Driver 2 map iteration
+		CELL_ITERATOR_D2 ci;
+		PACKED_CELL_OBJECT* ppco = levMapDriver2->GetFirstPackedCop(&ci, cell);
+
+		// walk each cell object in cell
+		while (ppco)
+		{
+			if (!func(ci.listType, ci.co))
+				break;
+			ppco = levMapDriver2->GetNextPackedCop(&ci);
+		}
+	}
+	else
+	{
+		CDriver1LevelMap* levMapDriver1 = (CDriver1LevelMap*)levMap;
+
+		// Driver 1 map iteration
+		CELL_ITERATOR_D1 ci;
+		CELL_OBJECT* pco = levMapDriver1->GetFirstCop(&ci, cell);
+
+		// walk each cell object in cell
+		while (pco)
+		{
+			if (!func(-1, pco))
+				break;
+			pco = levMapDriver1->GetNextCop(&ci);
+		}
+	}
+}

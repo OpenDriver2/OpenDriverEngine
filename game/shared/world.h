@@ -11,6 +11,8 @@
 class CTexturePage;
 struct ModelRef_t;
 
+typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
+
 class CWorld
 {
 public:
@@ -52,7 +54,8 @@ public:
 	// purges list of recently added objects by PushCellObject
 	static void				PurgeCellObjects();
 
-
+	// iterates through all cell objects at specific cell on map
+	static void				ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func);
 
 	//------------------------------------------
 

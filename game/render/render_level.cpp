@@ -12,6 +12,7 @@
 
 #include "math/Volume.h"
 #include "math/convert.h"
+#include "game/shared/world.h"
 
 // extern some vars
 extern String					g_levname;
@@ -135,7 +136,6 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 	}
 }
 
-
 //-------------------------------------------------------
 // Draws the map of Driver 1 or Driver 2
 //-------------------------------------------------------
@@ -145,11 +145,11 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 	g_drawnModels = 0;
 	g_drawnPolygons = 0;
 
-	bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
+	CBaseLevelMap* levMap = g_levMap;
+
+	bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 
 	VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
-
-	CBaseLevelMap* levMap = g_levMap;
 
 	XZPAIR cell;
 	levMap->WorldPositionToCellXZ(cell, cameraPosition);
@@ -174,48 +174,15 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 		if (icell.x > -1 && icell.x < levMap->GetCellsAcross() &&
 			icell.z > -1 && icell.z < levMap->GetCellsDown())
 		{
-			if (driver2Map)
-			{
-				CDriver2LevelMap* levMapDriver2 = (CDriver2LevelMap*)levMap;
+			g_drawnCells++;
 
-				// Driver 2 map iteration
-				CELL_ITERATOR_D2 ci;
+			CWorld::ForEachCellObjectAt(icell, [](int listType, CELL_OBJECT* co) {
+				if (listType != -1 && !g_levRenderProps.displayAllCellLevels)
+					return false;
 
-				PACKED_CELL_OBJECT* ppco = levMapDriver2->GetFirstPackedCop(&ci, icell);
-
-				if (ppco)
-					g_drawnCells++;
-
-				// walk each cell object in cell
-				while (ppco)
-				{
-					if (ci.listType != -1 && !g_levRenderProps.displayAllCellLevels)
-						return;
-
-					drawObjects.append(ci.co);
-
-					ppco = levMapDriver2->GetNextPackedCop(&ci);
-				}
-			}
-			else
-			{
-				CELL_ITERATOR_D1 ci;
-				CDriver1LevelMap* levMapDriver1 = (CDriver1LevelMap*)g_levMap;
-
-				// Driver 1 map iteration
-				CELL_OBJECT* pco = levMapDriver1->GetFirstCop(&ci, icell.x, icell.z);
-
-				if (pco)
-					g_drawnCells++;
-
-				// walk each cell object in cell
-				while (pco)
-				{
-					drawObjects.append(pco);
-
-					pco = levMapDriver1->GetNextCop(&ci);
-				}
-			}
+				drawObjects.append(co);
+				return true;
+			});
 		}
 
 		if (dir == 0)
