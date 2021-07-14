@@ -3,6 +3,10 @@
 
 #define ONE			4096
 #define ONE_F		float(ONE)
+#define ONE_BITS	12
+
+#define FixHalfRound(x, bits)		(((x) + (1 << (bits-1))) >> bits)
+#define	FIXEDH(a)					FixHalfRound(a, ONE_BITS)		// Fixed Half Round number
 
 struct VECTOR_NOPAD
 {
