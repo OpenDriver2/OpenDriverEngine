@@ -75,14 +75,41 @@ void LuaInit(sol::state& lua)
 	sol_ImGui::InitBindings(lua);
 
 	// replace default print with Msg
-	lua["print"] = &Msg;
+	lua["print"] = lua["Msg"] = [](sol::variadic_args va) {
+		for (auto v : va) {
+			Msg("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
+		}
+		Msg("\n");
+	};
 
 	// as well as expose all dev messages
-	lua["Msg"] = &Msg;
-	lua["MsgWarning"] = &MsgWarning;
-	lua["MsgError"] = &MsgError;
-	lua["MsgInfo"] = &MsgInfo;
-	lua["MsgAccept"] = &MsgAccept;
+	lua["MsgWarning"] = [](sol::variadic_args va) {
+		for (auto v : va) {
+			MsgWarning("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
+		}
+		MsgWarning("\n");
+	};
+
+	lua["MsgError"] = [](sol::variadic_args va) {
+		for (auto v : va) {
+			MsgError("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
+		}
+		MsgError("\n");
+	};
+
+	lua["MsgInfo"] = [](sol::variadic_args va) {
+		for (auto v : va) {
+			MsgInfo("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
+		}
+		MsgInfo("\n");
+	};
+
+	lua["MsgAccept"] = [](sol::variadic_args va) {
+		for (auto v : va) {
+			MsgAccept("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
+		}
+		MsgAccept("\n");
+	};
 
 	lua["DevMsg"] = &DevMsg;
 
