@@ -2,11 +2,14 @@
 #include <nstd/Array.hpp>
 
 #include "math/psx_math_types.h"
+#include "math/psx_matrix.h"
 #include "math/isin.h"
 #include "math/ratan2.h"
+#include "math/convert.h"
 
 #include "routines/d2_types.h"
 #include "renderer/gl_renderer.h"
+#include "renderer/debug_overlay.h"
 
 #include "core/cmdlib.h"
 
@@ -14,6 +17,9 @@
 
 #include "world.h"
 #include "cars.h"
+
+
+
 
 struct GEAR_DESC
 {
@@ -58,15 +64,7 @@ static const GEAR_DESC s_gearDesc[2][4] =
 int gCopDifficultyLevel = 0;		// TODO: Lua parameter on difficulty?
 int wetness = 0;					// TODO: CWorld::GetWetness()
 
-// FIXME: dummy! Replace with GTE replacements!
-#define gte_ldv0(x)
-#define gte_rtv0tr()
-#define gte_stlvnl(x)
-#define gte_ldlvl(x)
-#define gte_rtir()
-#define gte_stsv(x)
-#define gte_SetRotMatrix(m)
-#define gte_SetTransMatrix(m)
+//--------------------------------------------------------
 
 CCar::CCar()
 {
@@ -91,11 +89,8 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	int chan;
 	WHEEL* wheel;
 	int friction_coef;
-	int oldSpeed;
-	int wheelspd;
-	LONGVECTOR4 wheelPos;
-	LONGVECTOR4 surfacePoint;
-	LONGVECTOR4 surfaceNormal;
+	int oldSpeed, wheelspd;
+	LONGVECTOR4 wheelPos, surfacePoint, surfaceNormal;
 	VECTOR_NOPAD force;
 	LONGVECTOR4 pointVel;
 	int frontFS;
@@ -142,6 +137,8 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		gte_stlvnl(wheelPos);
 
 		newCompression = CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, &SurfacePtr);
+
+		CDebugOverlay::Line(FromFixedVector(*(VECTOR_NOPAD*)&wheelPos), FromFixedVector(*(VECTOR_NOPAD*)&surfacePoint), ColorRGBA(1, 0, 0, 1));
 
 		friction_coef = (newCompression * (32400 - wetness) >> 15) + 500;
 
@@ -1287,4 +1284,15 @@ void CCar::DentCar()
 void CCar::DrawCar()
 {
 	// UNIMPEMENTED!!!
+
+
+	Vector3D carPos = FromFixedVector((VECTOR_NOPAD&)m_hd.where.t);
+
+	Vector3D carMatX = FromFixedVector({m_hd.drawCarMat.m[0][0], m_hd.drawCarMat.m[1][0], m_hd.drawCarMat.m[2][0]});
+	Vector3D carMatY = FromFixedVector({m_hd.drawCarMat.m[0][1], m_hd.drawCarMat.m[1][1], m_hd.drawCarMat.m[2][1]});
+	Vector3D carMatZ = FromFixedVector({m_hd.drawCarMat.m[0][2], m_hd.drawCarMat.m[1][2], m_hd.drawCarMat.m[2][2]});
+
+	CDebugOverlay::Line(carPos, carPos + carMatX, ColorRGBA(1, 0, 0, 1));
+	CDebugOverlay::Line(carPos, carPos + carMatY, ColorRGBA(0, 1, 0, 1));
+	CDebugOverlay::Line(carPos, carPos + carMatZ, ColorRGBA(0, 0, 1, 1));
 }

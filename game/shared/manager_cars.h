@@ -28,6 +28,8 @@ public:
 
 	void			DrawAllCars();
 
+	static void		Draw(const CameraViewParams& view);
+
 	static void		Lua_Init(sol::state& lua);
 protected:
 

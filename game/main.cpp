@@ -23,6 +23,7 @@
 
 #include "shared/world.h"
 #include "shared/camera.h"
+#include "shared/manager_cars.h"
 
 #include "shared/lua_init.h"
 #include "shared/input.h"
@@ -244,6 +245,7 @@ void MainLoop()
 
 			CSky::Draw(view);
 			CWorld::RenderLevelView(view);
+			CManager_Cars::Draw(view);
 		}
 
 		CDebugOverlay::Draw();

@@ -48,14 +48,27 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"exhaust", &CAR_COSMETICS::exhaust,
 		"smoke", &CAR_COSMETICS::smoke,
 		"fire", &CAR_COSMETICS::fire,
-		"wheelDisp", &CAR_COSMETICS::wheelDisp,
+		"wheelDisp", 
+			[](CAR_COSMETICS& self, int i) {
+				return self.wheelDisp[i - 1];
+			},
+		"setWheelDisp",
+			[](CAR_COSMETICS& self, int i, SVECTOR& v) {
+				self.wheelDisp[i - 1] = v;
+			},
 		"extraInfo", &CAR_COSMETICS::extraInfo,
 		"powerRatio", &CAR_COSMETICS::powerRatio,
 		"cbYoffset", &CAR_COSMETICS::cbYoffset,
 		"susCoeff", &CAR_COSMETICS::susCoeff,
 		"traction", &CAR_COSMETICS::traction,
 		"wheelSize", &CAR_COSMETICS::wheelSize,
-		"cPoints", &CAR_COSMETICS::cPoints,
+		"cPoints", [](CAR_COSMETICS& self, int i) {
+			return self.cPoints[i];
+		},
+		"setcPoints",
+			[](CAR_COSMETICS& self, int i, SVECTOR& v) {
+			self.cPoints[i - 1] = v;
+		},
 		"colBox", &CAR_COSMETICS::colBox,
 		"cog", &CAR_COSMETICS::cog,
 		"twistRateX", &CAR_COSMETICS::twistRateX,
@@ -103,6 +116,8 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, P
 	tmpStart.vz = positionInfo.position.vz;
 
 	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_ap.carCos->wheelDisp[0].vy;
+
+	tmpStart.vy += 50;
 
 	cp->InitCarPhysics((LONGVECTOR4*)&tmpStart, positionInfo.direction);
 	cp->m_controlType = control;
@@ -763,4 +778,9 @@ void CManager_Cars::DrawAllCars()
 		CCar* cp = active_cars[i];
 		cp->DrawCar();
 	}
+}
+
+void CManager_Cars::Draw(const CameraViewParams& view)
+{
+	g_cars->DrawAllCars();
 }

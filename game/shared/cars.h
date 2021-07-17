@@ -25,6 +25,16 @@ struct CAR_COSMETICS
 	SVECTOR cog;
 	short twistRateX, twistRateY, twistRateZ;
 	short mass;
+
+	SVECTOR& get_wheelDisp(int i)
+	{
+		return wheelDisp[i];
+	}
+
+	SVECTOR& get_cPoints(int i)
+	{
+		return cPoints[i];
+	}
 };
 
 struct WHEEL
