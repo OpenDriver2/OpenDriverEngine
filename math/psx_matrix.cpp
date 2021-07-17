@@ -1,7 +1,9 @@
 #include "core/dktypes.h"
+#include <nstd/Math.hpp>
 #include "psx_math_types.h"
 #include "isin.h"
 #include "psx_matrix.h"
+#include "Vector.h"
 
 #define	FIX_BIT			12
 
@@ -206,4 +208,45 @@ MATRIX* ScaleMatrix(MATRIX* m, VECTOR_NOPAD* v)
 	m->m[2][1] = FIX(m->m[2][1] * v->vz);
 	m->m[2][2] = FIX(m->m[2][2] * v->vz);
 	return m;
+}
+
+//-------------------------------------------
+// PSX GTE routines emulation
+//-------------------------------------------
+
+MATRIX _globmat;
+VECTOR_NOPAD _vr0, _vr1, _vr2, _vr3;
+VECTOR_NOPAD _mac;
+SVECTOR_NOPAD _ir;
+
+void gte_SetRotMatrix(MATRIX* m)
+{
+	_globmat.m[0][0] = m->m[0][0];
+	_globmat.m[0][1] = m->m[0][1];
+	_globmat.m[0][2] = m->m[0][2];
+	_globmat.m[1][0] = m->m[1][0];
+	_globmat.m[1][1] = m->m[1][1];
+	_globmat.m[1][2] = m->m[1][2];
+	_globmat.m[2][0] = m->m[2][0];
+	_globmat.m[2][1] = m->m[2][1];
+	_globmat.m[2][2] = m->m[2][2];
+}
+
+void gte_SetTransMatrix(MATRIX* m)
+{
+	_globmat.t[0] = m->t[0];
+	_globmat.t[1] = m->t[1];
+	_globmat.t[2] = m->t[2];
+}
+
+// rotate vector by matrix
+void GTE_RTV()
+{
+	_mac.vx = ((int64)((int64)_globmat.t[0] << 12) + (_globmat.m[0][0] * _vr0.vx) + (_globmat.m[0][1] * _vr0.vy) + (_globmat.m[0][2] * _vr0.vz)) >> 12;
+	_mac.vy = ((int64)((int64)_globmat.t[1] << 12) + (_globmat.m[1][0] * _vr0.vx) + (_globmat.m[1][1] * _vr0.vy) + (_globmat.m[1][2] * _vr0.vz)) >> 12;
+	_mac.vz = ((int64)((int64)_globmat.t[2] << 12) + (_globmat.m[2][0] * _vr0.vx) + (_globmat.m[2][1] * _vr0.vy) + (_globmat.m[2][2] * _vr0.vz)) >> 12;
+
+	_ir.vx = clamp(_mac.vx, SHRT_MIN, SHRT_MAX);
+	_ir.vy = clamp(_mac.vy, SHRT_MIN, SHRT_MAX);
+	_ir.vz = clamp(_mac.vz, SHRT_MIN, SHRT_MAX);
 }

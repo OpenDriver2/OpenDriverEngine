@@ -39,4 +39,42 @@ MATRIX* TransMatrix(MATRIX* m, VECTOR_NOPAD* v);
 // scales the matrix by arbitary value
 MATRIX* ScaleMatrix(MATRIX* m, VECTOR_NOPAD* v);
 
+extern VECTOR_NOPAD _vr0, _vr1, _vr2, _vr3;
+extern VECTOR_NOPAD _mac;
+extern SVECTOR_NOPAD _ir;
+
+void gte_SetRotMatrix(MATRIX* m);
+void gte_SetTransMatrix(MATRIX* m);
+void GTE_RTV();
+
+// load short vector
+#define gte_ldv0( x )						\
+	_vr3 = _vr2;								\
+	_vr2 = _vr1;								\
+	_vr1 = _vr0;								\
+	_vr0.vx = ( ( SVECTOR * )( x ) )->vx;	\
+	_vr0.vy = ( ( SVECTOR * )( x ) )->vy;	\
+	_vr0.vz = ( ( SVECTOR * )( x ) )->vz
+
+// load long vector
+#define gte_ldlvl(x) \
+	_vr0.vx = ((VECTOR_NOPAD*)( x ))->vx;	\
+	_vr0.vy = ((VECTOR_NOPAD*)( x ))->vy;	\
+	_vr0.vz = ((VECTOR_NOPAD*)( x ))->vz
+
+// store long vector
+#define gte_stlvnl(x) \
+	((VECTOR_NOPAD*)( x ))->vx = _mac.vx;	\
+	((VECTOR_NOPAD*)( x ))->vy = _mac.vy;	\
+	((VECTOR_NOPAD*)( x ))->vz = _mac.vz
+
+// store short vector
+#define gte_stsv(x) \
+	((VECTOR_NOPAD*)( x ))->vx = _ir.vx;	\
+	((VECTOR_NOPAD*)( x ))->vy = _ir.vy;	\
+	((VECTOR_NOPAD*)( x ))->vz = _ir.vz
+
+#define gte_rtir()		GTE_RTV()
+#define gte_rtv0tr()	GTE_RTV()
+
 #endif // PSX_MATRIX_H
