@@ -117,6 +117,7 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	ModelRef_t* ref = new ModelRef_t();
 	ref->model = carModel->cleanmodel;
 	ref->size = carModel->cleanSize;
+	ref->index = 4096;
 
 	CRenderModel* renderModel = new CRenderModel();
 
