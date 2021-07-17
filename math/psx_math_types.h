@@ -7,6 +7,7 @@
 
 #define FixHalfRound(x, bits)		(((x) + (1 << (bits-1))) >> bits)
 #define	FIXEDH(a)					FixHalfRound(a, ONE_BITS)		// Fixed Half Round number
+#define	FIXED(a)					((a) >> ONE_BITS)				// Fixed number (unsigned)
 
 struct VECTOR_NOPAD
 {

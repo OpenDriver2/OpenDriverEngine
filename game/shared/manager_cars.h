@@ -6,23 +6,34 @@
 
 class CCar;
 struct CAR_COSMETICS;
-struct POSITION_INFO;
+
+struct POSITION_INFO
+{
+
+};
 
 class CManager_Cars
 {
 public:
 	//void			Load(CDriverLevelModels* level);
-	//CCar*			Create(CAR_COSMETICS* cosmetic, int palette, int controlType, POSITION_INFO* positionInfo);
+	CCar*			Create(CAR_COSMETICS* cosmetic, int palette, int controlType, POSITION_INFO* positionInfo);
 
 	void			UpdateControl();
 	void			GlobalTimeStep();
 
 	void			DoScenaryCollisions();
 
+	//------------------------------------------------------
+
+	void			DrawAllCars();
+
 	static void		Lua_Init(sol::state& lua);
 protected:
 
-	Array<CCar*>	car_data;		// [A] to be renamed as m_carList
+	void			StepCars();
+	void			CheckCarToCarCollisions();
+
+	Array<CCar*>	active_cars;		// [A] to be renamed as m_carList
 };
 
 #endif // MANAGER_CARS_H
