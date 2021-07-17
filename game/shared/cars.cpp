@@ -1288,6 +1288,9 @@ void CCar::DentCar()
 	// UNIMPEMENTED!!!
 }
 
+#include "routines/models.h"
+extern CDriverLevelModels g_levModels;
+
 void CCar::DrawCar()
 {
 	// UNIMPEMENTED!!!
@@ -1313,6 +1316,46 @@ void CCar::DrawCar()
 	if (renderModel)
 	{
 		renderModel->Draw();
+	}
+
+	static int wheelModelId = g_levModels.FindModelIndexByName("CLEANWHEEL");
+
+	objectMatrix = translate(carPos) * Matrix4x4(Vector4D(carMatX, 0.0f), Vector4D(carMatY, 0.0f), Vector4D(carMatZ, 0.0f), Vector4D(0, 0, 0, 1)) * rotateY4(DEG2RAD(180));
+
+	ModelRef_t* wheelModel = g_levModels.GetModelByIndex(wheelModelId);
+	renderModel = (CRenderModel*)wheelModel->userData;
+	if (renderModel)
+	{
+		const int wheelSize = m_ap.carCos->wheelSize;
+
+		for (int i = 0; i < 4; i++)
+		{
+			const WHEEL& wheel = m_hd.wheel[i];
+			const SVECTOR& wheelDisp = m_ap.carCos->wheelDisp[i];
+
+			SVECTOR sWheelPos;
+			if ((i & 2) == 0)
+				sWheelPos.vx = 17 - wheelDisp.vx;
+			else
+				sWheelPos.vx = -17 - wheelDisp.vx;
+
+			sWheelPos.vz = -wheelDisp.vz;
+			sWheelPos.vy = (-wheelSize - wheelDisp.vy) + wheel.susCompression + 14;
+
+			Vector3D wheelPos = FromFixedVector(sWheelPos);
+
+			Matrix4x4 wheelMat = objectMatrix * translate(wheelPos);
+
+			if ((i & 1) == 0)
+			{
+				wheelMat = wheelMat * rotateY4(-DEG2RAD(float(m_wheel_angle) / 24.0f));
+			}
+
+			GR_SetMatrix(MATRIX_WORLD, wheelMat);
+			GR_UpdateMatrixUniforms();
+
+			renderModel->Draw();
+		}
 	}
 
 	objectMatrix = transpose(objectMatrix);
