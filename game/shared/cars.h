@@ -197,6 +197,7 @@ enum ECarControlFlags
 
 class CCar
 {
+	friend class CManager_Cars;
 public:
 					CCar();
 					~CCar();
@@ -211,11 +212,10 @@ public:
 	// drawing
 	void			UpdateCarDrawMatrix();
 	void			DentCar();
+	void			DrawCar();
 
 	// wheel forces
 	void			StepOneCar();
-
-
 
 protected:
 
@@ -226,6 +226,8 @@ protected:
 		int extraangulardamping;
 		int aggressive;
 	};
+
+	void			CreateDentableCar();
 
 	// handling
 	void			InitOrientedBox();

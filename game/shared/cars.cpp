@@ -1264,7 +1264,17 @@ void CCar::UpdateCarDrawMatrix()
 	// also we probably gonna update wheel positions here
 }
 
+void CCar::CreateDentableCar()
+{
+	// UNIMPEMENTED!!!
+}
+
 void CCar::DentCar()
 {
+	// UNIMPEMENTED!!!
+}
 
+void CCar::DrawCar()
+{
+	// UNIMPEMENTED!!!
 }
