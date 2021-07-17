@@ -4,11 +4,16 @@
 #include <nstd/Array.hpp>
 
 #include "core/cmdlib.h"
-#include "manager_cars.h"
-#include "cars.h"
+
+#include "renderer/gl_renderer.h"
+
 #include "math/psx_math_types.h"
 #include "math/ratan2.h"
+
 #include "world.h"
+#include "manager_cars.h"
+#include "cars.h"
+
 
 // TODO: move it
 int	CameraCnt = 0;
@@ -19,6 +24,7 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 /*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
 {
 	lua.new_usertype<CAR_COSMETICS>(
+		"CAR_COSMETICS",
 		"headLight", &CAR_COSMETICS::headLight,
 		"frontInd", &CAR_COSMETICS::frontInd,
 		"backInd", &CAR_COSMETICS::backInd,

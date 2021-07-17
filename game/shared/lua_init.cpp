@@ -19,11 +19,6 @@
 #include <imgui_internal.h>
 #include <sol_ImGui/sol_imgui.h>
 
-#include "game/shared/manager_cars.h"
-#include "game/render/render_sky.h"
-
-#include "renderer/debug_overlay.h"
-
 #include "camera.h"
 #include "world.h"
 #include "input.h"
@@ -36,6 +31,10 @@
 #include "math/ratan2.h"
 #include "math/convert.h"
 
+#include "game/shared/manager_cars.h"
+#include "game/render/render_sky.h"
+
+#include "renderer/debug_overlay.h"
 
 #define VEC_OPERATORS(vec_type) \
 	/* vec - vec */\
@@ -203,7 +202,7 @@ void LuaInit(sol::state& lua)
 	// Fixed Short vector 3D (for car cosmetics and shit)
 	fix.new_usertype<SVECTOR>("SVECTOR",
 		sol::call_constructor, sol::factories(
-			[](const int& x, const int& y, const int& z) {
+			[](const short& x, const short& y, const short& z) {
 				return SVECTOR{ x, y, z };
 			},
 			[](const sol::table& table) {
