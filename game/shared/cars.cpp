@@ -1056,15 +1056,69 @@ void CCar::RebuildCarMatrix(RigidBodyState& st)
 
 void CCar::CheckCarEffects()
 {
+	// Dummy for now...
+	JumpDebris();
 
+	// update skidding sound
+
+	// update tyre tracks
+
+	// update hubcaps release
 }
 
 void CCar::JumpDebris()
 {
+	WHEEL* wheel;
+	int count;
+	VECTOR_NOPAD position;
+	VECTOR_NOPAD velocity;
 
+	wheel = m_hd.wheel;
+
+	for (count = 0; count < 4; count++)
+	{
+		if (wheel->susCompression != 0)
+		{
+			//DebrisTimer = 0;
+			m_wasOnGround = 1;
+			return;
+		}
+
+		wheel++;
+	}
+
+	if (m_wasOnGround == 1)
+	{
+		m_wasOnGround = 0;
+		//DebrisTimer = 80;
+
+		NoseDown();
+	}
+
+#if 0
+	if (DebrisTimer != 0 && --DebrisTimer < 75)
+	{
+		memset((u_char*)&velocity, 0, sizeof(velocity));
+
+		velocity.vx = m_hd.where.t[0] + ((rand() & 0x1ff) - 256);
+		velocity.vy = 200 - m_hd.where.t[1];
+
+		position.vz = m_hd.where.t[2] + ((rand() & 0x1ff) - 256);
+		position.vx = velocity.vx;
+		position.vy = velocity.vy;
+		position.pad = velocity.pad;
+
+		velocity.vz = position.vz;
+
+		memset((u_char*)&velocity, 0, sizeof(velocity));
+		Setup_Debris(&position, &velocity, 5, 0xb);
+	}
+#endif
 }
 
 void CCar::NoseDown()
 {
-
+	m_st.n.angularVelocity[0] += m_hd.where.m[0][0] * 50;
+	m_st.n.angularVelocity[1] += m_hd.where.m[1][0] * 50;
+	m_st.n.angularVelocity[2] += m_hd.where.m[2][0] * 50;
 }

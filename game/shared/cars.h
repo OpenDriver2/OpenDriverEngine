@@ -206,12 +206,16 @@ public:
 	void			TempBuildHandlingMatrix(int init);
 	void			StepCarPhysics();
 
+	void			CheckCarEffects();
+
 	// drawing
 	void			UpdateCarDrawMatrix();
 	void			DentCar();
 
 	// wheel forces
 	void			StepOneCar();
+
+
 
 protected:
 
@@ -227,7 +231,6 @@ protected:
 	void			InitOrientedBox();
 	void			RebuildCarMatrix(RigidBodyState& st);
 
-	void			CheckCarEffects();
 	void			JumpDebris();
 	void			NoseDown();
 
