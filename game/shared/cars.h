@@ -276,6 +276,9 @@ protected:
 	uint16			m_totalDamage;
 
 	int				m_lastPad;
+
+	int				m_frontWheelRotation;
+	int				m_backWheelRotation;
 };
 
 #endif // CARS_H

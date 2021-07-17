@@ -26,7 +26,7 @@ struct HANDLING_TYPE
 	int8 frictionScaleRatio, aggressiveBraking, fourWheelDrive, autoBrakeOn;
 };
 
-const HANDLING_TYPE handlingType[7] =
+HANDLING_TYPE handlingType[7] =
 {
 	// frictionScaleRatio, aggressiveBraking, fourWheelDrive, autoBrakeOn
 	{ 32, 1, 0, 1 },
@@ -1057,6 +1057,7 @@ void CCar::RebuildCarMatrix(RigidBodyState& st)
 void CCar::CheckCarEffects()
 {
 	// Dummy for now...
+
 	JumpDebris();
 
 	// update skidding sound
@@ -1121,4 +1122,149 @@ void CCar::NoseDown()
 	m_st.n.angularVelocity[0] += m_hd.where.m[0][0] * 50;
 	m_st.n.angularVelocity[1] += m_hd.where.m[1][0] * 50;
 	m_st.n.angularVelocity[2] += m_hd.where.m[2][0] * 50;
+}
+
+void CCar::InitCarPhysics(LONGVECTOR4* startpos, int direction)
+{
+	int ty;
+	int odz;
+	int dz;
+	int sn, cs;
+
+	CAR_COSMETICS* car_cos = m_ap.carCos;
+
+	dz = car_cos->wheelDisp[0].vz + car_cos->wheelDisp[1].vz;
+	ty = dz / 5;
+	odz = dz / 32;
+
+	m_hd.direction = direction;
+
+	m_hd.autoBrake = 0;
+
+	sn = isin(direction / 2);
+	cs = icos(direction / 2);
+
+	m_st.n.orientation[0] = FIXEDH(-cs * ty);
+	m_st.n.orientation[1] = sn;
+	m_st.n.orientation[2] = FIXEDH(sn * ty);
+	m_st.n.orientation[3] = cs;
+
+	m_st.n.fposition[0] = (*startpos)[0] << 4;
+	m_st.n.fposition[1] = (*startpos)[1] << 4;
+	m_st.n.fposition[2] = (*startpos)[2] << 4;
+
+	m_st.n.linearVelocity[0] = 0;
+	m_st.n.linearVelocity[1] = 0;
+	m_st.n.linearVelocity[2] = 0;
+	m_st.n.angularVelocity[0] = 0;
+	m_st.n.angularVelocity[1] = 0;
+	m_st.n.angularVelocity[2] = 0;
+
+	m_hd.aacc[0] = 0;
+	m_hd.aacc[1] = 0;
+	m_hd.aacc[2] = 0;
+	m_hd.acc[0] = 0;
+	m_hd.acc[1] = 0;
+	m_hd.acc[2] = 0;
+
+	RebuildCarMatrix(m_st);
+
+	UpdateCarDrawMatrix();
+
+	m_hd.wheel[0].susCompression = 14 - odz;
+	m_hd.wheel[1].susCompression = odz + 14;
+	m_hd.wheel[2].susCompression = 14 - odz;
+	m_hd.wheel[3].susCompression = odz + 14;
+
+	m_thrust = 0;
+	m_wheel_angle = 0;
+	m_hd.wheel_speed = 0;
+}
+
+void CCar::TempBuildHandlingMatrix(int init)
+{
+	int dz;
+	int sn, cs;
+	CAR_COSMETICS* car_cos = m_ap.carCos;
+
+	dz = (car_cos->wheelDisp[0].vz + car_cos->wheelDisp[1].vz) / 5;
+
+	if (init == 1)
+	{
+		m_st.n.fposition[0] = m_hd.where.t[0] << 4;
+		m_st.n.fposition[1] = m_hd.where.t[1] << 4;
+		m_st.n.fposition[2] = m_hd.where.t[2] << 4;
+	}
+
+	sn = isin(m_hd.direction / 2);
+	cs = icos(m_hd.direction / 2);
+
+	m_st.n.orientation[0] = FIXEDH(-cs * dz);
+	m_st.n.orientation[1] = sn;
+	m_st.n.orientation[2] = FIXEDH(sn * dz);
+	m_st.n.orientation[3] = cs;
+
+	RebuildCarMatrix(m_st);
+}
+
+void CCar::StepCarPhysics()
+{
+	HANDLING_TYPE* hp;
+	int car_id;
+
+	int frontWheelSpeed;
+	int backWheelSpeed;
+
+	hp = &handlingType[m_hndType];
+
+	if (m_hndType == 1)
+		hp->aggressiveBraking = 0;
+	else
+		hp->aggressiveBraking = 1;
+
+	// [A] update wheel rotation - fix for multiplayer outside cameras
+	frontWheelSpeed = m_hd.wheel_speed / 256;
+
+	if (m_hd.wheel[0].locked == 0)
+	{
+		m_frontWheelRotation += frontWheelSpeed;
+		m_frontWheelRotation &= 0xfff;
+	}
+
+	if (m_hd.wheel[3].locked == 0)
+	{
+		backWheelSpeed = frontWheelSpeed;
+
+		if (m_wheelspin != 0)
+			backWheelSpeed = 700;
+
+		m_backWheelRotation += backWheelSpeed;
+		m_backWheelRotation &= 0xfff;
+	}
+}
+
+//----------------------------------------------------------
+
+void CCar::UpdateCarDrawMatrix()
+{
+	// TODO: it must be interpolated here
+
+	m_hd.drawCarMat.m[0][0] = -m_hd.where.m[0][0];
+	m_hd.drawCarMat.m[0][1] = -m_hd.where.m[0][1];
+	m_hd.drawCarMat.m[0][2] = -m_hd.where.m[0][2];
+
+	m_hd.drawCarMat.m[1][0] = m_hd.where.m[1][0];
+	m_hd.drawCarMat.m[1][1] = m_hd.where.m[1][1];
+	m_hd.drawCarMat.m[1][2] = m_hd.where.m[1][2];
+
+	m_hd.drawCarMat.m[2][0] = -m_hd.where.m[2][0];
+	m_hd.drawCarMat.m[2][1] = -m_hd.where.m[2][1];
+	m_hd.drawCarMat.m[2][2] = -m_hd.where.m[2][2];
+
+	// also we probably gonna update wheel positions here
+}
+
+void CCar::DentCar()
+{
+
 }
