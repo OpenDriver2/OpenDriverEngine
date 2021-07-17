@@ -5,7 +5,9 @@
 
 #include "core/cmdlib.h"
 
+#include "routines/models.h"
 #include "renderer/gl_renderer.h"
+#include "game/render/render_model.h"
 
 #include "math/psx_math_types.h"
 #include "math/ratan2.h"
@@ -78,20 +80,59 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 	lua.new_usertype<CManager_Cars>(
 		"CManager_Cars",
+		"LoadModel", sol::overload([](CManager_Cars& self, int idx) {
+			return self.LoadModel(idx);
+		}),
 		"Create", &CManager_Cars::Create,
 		"UpdateControl", &CManager_Cars::UpdateControl,
 		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
 		"DoScenaryCollisions", &CManager_Cars::DoScenaryCollisions);
 
 	lua.new_usertype<CCar>(
-		"CCar");
+		"CCar",
+		"thrust", &CCar::m_thrust,
+		"wheel_angle", &CCar::m_wheel_angle);
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
 	engine["Cars"] = g_cars;
 }
 
-CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, POSITION_INFO& positionInfo)
+extern CDriverLevelModels g_levModels;
+
+int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
+{
+	// game can load specific car models from other cities
+	if (!levelModels)
+		levelModels = &g_levModels;
+
+	CarModelData_t* carModel = levelModels->GetCarModel(modelNumber);
+
+	if (!carModel)
+		return -1;
+
+	if (!carModel->cleanmodel)
+		return -1;
+
+	ModelRef_t* ref = new ModelRef_t();
+	ref->model = carModel->cleanmodel;
+	ref->size = carModel->cleanSize;
+
+	CRenderModel* renderModel = new CRenderModel();
+
+	if (renderModel->Initialize(ref))
+		ref->userData = renderModel;
+	else
+		delete renderModel;
+
+	int carModelIndex = m_carModels.size();
+
+	m_carModels.append(ref);
+
+	return carModelIndex;
+}
+
+CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
 {
 	// not valid request
 	if (control == CONTROL_TYPE_NONE)
@@ -104,12 +145,14 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, P
 
 	cp->m_id = m_carIdCnt++;
 
-	cp->m_ap.model = 0;// model;
+	cp->m_ap.model = modelId;
 	cp->m_ap.palette = palette;
 	cp->m_lowDetail = -1;
 	cp->m_ap.qy = 0;
 	cp->m_ap.qw = 0;
 	cp->m_ap.carCos = cosmetic;
+
+	cp->m_model = m_carModels[modelId];
 
 	tmpStart.vx = positionInfo.position.vx;
 	tmpStart.vy = positionInfo.position.vy;
@@ -117,7 +160,7 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, P
 
 	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_ap.carCos->wheelDisp[0].vy;
 
-	tmpStart.vy += 50;
+	tmpStart.vy += 150;
 
 	cp->InitCarPhysics((LONGVECTOR4*)&tmpStart, positionInfo.direction);
 	cp->m_controlType = control;
@@ -167,16 +210,20 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, P
 	cp->CreateDentableCar();
 	cp->DentCar();
 
-	active_cars.append(cp);
+	m_active_cars.append(cp);
 
 	return cp;
 }
 
 void CManager_Cars::UpdateControl()
 {
-	for (usize i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
-		CCar* cp = active_cars[i];
+		CCar* cp = m_active_cars[i];
+
+		//cp->m_thrust = 4096;
+		//cp->m_wheel_angle = -280;
+		//cp->m_hd.autoBrake = 90;
 
 #if 0
 		// Update player inputs
@@ -257,9 +304,9 @@ void CManager_Cars::GlobalTimeStep()
 	Array<RigidBodyState> _d0;
 	Array<RigidBodyState> _d1;
 
-	_tp.resize(active_cars.size());
-	_d0.resize(active_cars.size());
-	_d1.resize(active_cars.size());
+	_tp.resize(m_active_cars.size());
+	_d0.resize(m_active_cars.size());
+	_d1.resize(m_active_cars.size());
 
 	int mayBeCollidingBits;
 	int howHard;
@@ -293,9 +340,9 @@ void CManager_Cars::GlobalTimeStep()
 
 	// step car forces (when no collisions with them)
 	// TODO: made into CCar::StepRigidBody()
-	for (usize i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
-		cp = active_cars[i];
+		cp = m_active_cars[i];
 
 		RigidBodyState& st = cp->m_st;
 
@@ -377,9 +424,9 @@ void CManager_Cars::GlobalTimeStep()
 	{
 		for (int RKstep = 0; RKstep < 2; RKstep++)
 		{
-			for (usize i = 0; i < active_cars.size(); i++)
+			for (usize i = 0; i < m_active_cars.size(); i++)
 			{
-				cp = active_cars[i];
+				cp = m_active_cars[i];
 
 				// check collisions with buildings
 				if (RKstep != 0 && (subframe & 1) != 0 && cp->m_controlType == CONTROL_TYPE_PLAYER)
@@ -429,7 +476,7 @@ void CManager_Cars::GlobalTimeStep()
 #if 0 // car vs car collisions - disabled for now
 					for (j = 0; j < i; j++)
 					{
-						c1 = active_cars[j];
+						c1 = m_active_cars[j];
 
 						// [A] optimized run to not use the box checking
 						// as it has already composed bitfield / pairs
@@ -668,9 +715,9 @@ void CManager_Cars::GlobalTimeStep()
 			}
 
 			// update forces and rebuild matrix of the cars
-			for (usize i = 0; i < active_cars.size(); i++)
+			for (usize i = 0; i < m_active_cars.size(); i++)
 			{
-				cp = active_cars[i];
+				cp = m_active_cars[i];
 
 				// if has any collision, process with double precision
 				if (cp->m_hd.mayBeColliding)
@@ -707,9 +754,9 @@ void CManager_Cars::GlobalTimeStep()
 	// dent cars - no more than 5 cars in per frame
 	carsDentedThisFrame = 0;
 
-	for (usize i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
-		cp = active_cars[i];
+		cp = m_active_cars[i];
 
 		cp->UpdateCarDrawMatrix();
 #if 0
@@ -739,7 +786,7 @@ void CManager_Cars::DoScenaryCollisions()
 {
 	CCar* cp;
 
-	auto i = active_cars.end();
+	auto i = m_active_cars.end();
 
 	do
 	{
@@ -758,14 +805,14 @@ void CManager_Cars::DoScenaryCollisions()
 			CheckScenaryCollisions(cp);
 		}
 
-	} while (i == active_cars.begin());
+	} while (i == m_active_cars.begin());
 }
 
 void CManager_Cars::StepCars()
 {
-	for (usize i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
-		CCar* cp = active_cars[i];
+		CCar* cp = m_active_cars[i];
 		cp->StepOneCar();
 		cp->ControlCarRevs();
 	}
@@ -773,9 +820,9 @@ void CManager_Cars::StepCars()
 
 void CManager_Cars::DrawAllCars()
 {
-	for (usize i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
-		CCar* cp = active_cars[i];
+		CCar* cp = m_active_cars[i];
 		cp->DrawCar();
 	}
 }

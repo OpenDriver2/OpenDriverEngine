@@ -48,39 +48,31 @@ enum EFaceFlags_e
 
 struct ModelRef_t
 {
-	ModelRef_t()
-	{
-		model = nullptr;
-		userData = nullptr;
-		baseInstance = nullptr;
-		name = nullptr;
-	}
+	ModelRef_t* baseInstance{ nullptr };
 
-	ModelRef_t* baseInstance;
+	const char* name{ nullptr };
+	MODEL*		model{ nullptr };
 
-	const char*	name;
-	MODEL*		model;
+	int			index{ -1 };
+	int			size{ 0 };
 
-	int			index;
-	int			size;
-
-	ushort		highDetailId;
-	ushort		lowDetailId;
+	ushort		highDetailId{ 0xffff };
+	ushort		lowDetailId{ 0xffff };
 	
-	void*		userData; // might contain a hardware model pointer
+	void*		userData{ nullptr }; // might contain a hardware model pointer
 };
 
 //------------------------------------------------------------------------------------------------------------
 
 struct CarModelData_t
 {
-	MODEL* cleanmodel;
-	MODEL* dammodel;
-	MODEL* lowmodel;
+	MODEL* cleanmodel{ nullptr };
+	MODEL* dammodel{ nullptr };
+	MODEL* lowmodel{ nullptr };
 
-	int cleanSize;
-	int damSize;
-	int lowSize;
+	int cleanSize{ 0 };
+	int damSize{ 0 };
+	int lowSize{ 0 };
 };
 
 class CDriverLevelModels

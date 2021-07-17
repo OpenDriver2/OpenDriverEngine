@@ -5,6 +5,7 @@
 #include <sol/forward.hpp>
 
 class CCar;
+class CDriverLevelModels;
 struct CAR_COSMETICS;
 
 struct POSITION_INFO
@@ -13,11 +14,13 @@ struct POSITION_INFO
 	int direction;
 };
 
+
+
 class CManager_Cars
 {
 public:
-	//void			Load(CDriverLevelModels* level);
-	CCar*			Create(CAR_COSMETICS* cosmetic, int control, int palette, POSITION_INFO& positionInfo);
+	int				LoadModel(int modelNumber, CDriverLevelModels* levelModels = nullptr);
+	CCar*			Create(CAR_COSMETICS* cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo);
 
 	void			UpdateControl();
 	void			GlobalTimeStep();
@@ -38,8 +41,10 @@ protected:
 
 	void			CheckScenaryCollisions(CCar* cp);
 
-	Array<CCar*>	active_cars;		// [A] to be renamed as m_carList
-	int				m_carIdCnt{ 0 };
+	Array<CCar*>		m_active_cars;		// [A] to be renamed as m_carList
+	int					m_carIdCnt{ 0 };
+
+	Array<ModelRef_t*>	m_carModels;	// TEMPORARY; Will use different container!
 };
 
 #endif // MANAGER_CARS_H

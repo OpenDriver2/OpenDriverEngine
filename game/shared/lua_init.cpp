@@ -219,7 +219,7 @@ void LuaInit(sol::state& lua)
 	fix["FromFixed"]	= [](const int& a)		{ return float(a) / ONE_F; };
 
 	fix["ToFixedVector"] = &ToFixedVector;
-	fix["FromFixedVector"] = &FromFixedVector;
+	fix["FromFixedVector"] = sol::resolve<Vector3D(const VECTOR_NOPAD&)>(&FromFixedVector);
 
 	// extend Lua math
 	auto& gte = lua["gte"].get_or_create<sol::table>();
