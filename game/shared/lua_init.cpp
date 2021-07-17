@@ -200,6 +200,20 @@ void LuaInit(sol::state& lua)
 			"vy", &VECTOR_NOPAD::vy,
 			"vz", &VECTOR_NOPAD::vz);
 
+	// Fixed Short vector 3D (for car cosmetics and shit)
+	fix.new_usertype<SVECTOR>("SVECTOR",
+		sol::call_constructor, sol::factories(
+			[](const int& x, const int& y, const int& z) {
+				return SVECTOR{ x, y, z };
+			},
+			[](const sol::table& table) {
+				return SVECTOR{ table["x"], table["y"], table["z"] };
+			},
+				[]() { return SVECTOR{ 0 }; }),
+		"vx", &SVECTOR::vx,
+		"vy", &SVECTOR::vy,
+		"vz", &SVECTOR::vz);
+
 	fix["ONE"] = ONE;
 
 	fix["ToFixed"]		= [](const float& a)	{ return int(a * ONE_F); };
