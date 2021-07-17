@@ -9,14 +9,10 @@ typedef int		LONGQUATERNION[4];
 struct CAR_COSMETICS
 {
 	SVECTOR headLight;
-	SVECTOR frontInd;
-	SVECTOR backInd;
-	SVECTOR brakeLight;
-	SVECTOR revLight;
+	SVECTOR frontInd, backInd;
+	SVECTOR brakeLight, revLight;
 	SVECTOR policeLight;
-	SVECTOR exhaust;
-	SVECTOR smoke;
-	SVECTOR fire;
+	SVECTOR exhaust, smoke, fire;
 	SVECTOR wheelDisp[4];
 	short extraInfo;
 	short powerRatio;
@@ -27,9 +23,7 @@ struct CAR_COSMETICS
 	SVECTOR cPoints[12];
 	SVECTOR colBox;
 	SVECTOR cog;
-	short twistRateX;
-	short twistRateY;
-	short twistRateZ;
+	short twistRateX, twistRateY, twistRateZ;
 	short mass;
 };
 
@@ -55,15 +49,12 @@ typedef struct _HANDLING_DATA
 	LONGVECTOR4 acc;
 	LONGVECTOR4 aacc;
 	WHEEL wheel[4];
-	int wheel_speed;
-	int speed;
+	int wheel_speed, speed;
 	int direction;
-	int front_vel;
-	int rear_vel;
+	int front_vel, rear_vel;
 	int mayBeColliding;		// [A] now used as a bitfield to create collision pairs
 	short revs;
-	char gear;
-	char changingGear;
+	char gear, changingGear;
 	char autoBrake;
 
 	OrientedBox oBox;
@@ -87,8 +78,7 @@ typedef struct _APPEARANCE_DATA
 	short old_clock[4];
 	char life;
 	char coplife;
-	short qy;
-	short qw;
+	short qy, qw;
 	char life2;
 	char model;
 	char palette;
@@ -147,8 +137,7 @@ struct COP
 	short lastRecoverStrategy;
 	short recoveryTimer;
 	short hiddenTimer;
-	short frontLClear;
-	short frontRClear;
+	short frontLClear, frontRClear;
 	short batterTimer;	// [A] new gameplay feature
 };
 
@@ -204,17 +193,6 @@ enum ECarControlFlags
 	CONTROL_FLAG_WAS_PARKED = (1 << 2),			// car pinged in as parked. Really nothing to do with it
 	CONTROL_FLAG_PLAYER_START_CAR = (1 << 3),	// car owned by player
 };
-
-//------------------------------------------------------------------
-
-struct CAR_LOCALS
-{
-	LONGVECTOR4 vel;
-	LONGVECTOR4 avel;
-	int extraangulardamping;
-	int aggressive;
-};
-
 //------------------------------------------------------------------
 
 class CCar
@@ -237,6 +215,14 @@ public:
 
 protected:
 
+	struct CAR_LOCALS
+	{
+		LONGVECTOR4 vel;
+		LONGVECTOR4 avel;
+		int extraangulardamping;
+		int aggressive;
+	};
+
 	// handling
 	void			InitOrientedBox();
 	void			RebuildCarMatrix(RigidBodyState* st);
@@ -250,43 +236,43 @@ protected:
 	void			ControlCarRevs();
 
 	// wheel forces
-	void			GetFrictionScalesDriver1(CAR_LOCALS* cl, int* frontFS, int* rearFS);
-	void			AddWheelForcesDriver1(CAR_LOCALS* cl);
-	void			ConvertTorqueToAngularAcceleration(CAR_LOCALS* cl);
+	void			GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS);
+	void			AddWheelForcesDriver1(CAR_LOCALS& cl);
+	void			ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl);
 
 	// --------------------
-	HANDLING_DATA	hd;
-	RigidBodyState	st;
-	APPEARANCE_DATA	ap;
+	HANDLING_DATA	m_hd;
+	RigidBodyState	m_st;
+	APPEARANCE_DATA	m_ap;
 
-	uint8			hndType;
+	uint8			m_hndType;
 
-	uint8			controlType;
-	uint8			controlFlags;
+	uint8			m_controlType;
+	uint8			m_controlFlags;
 
-	int8			id;
+	int8			m_id;
 
 	union {
 		char* padid;		// CONTROL_TYPE_PLAYER or CONTROL_TYPE_CUTSCENE
 		CIV_STATE c;		// CONTROL_TYPE_CIV_AI
 		COP p;				// CONTROL_TYPE_PURSUER_AI
 		LEAD_CAR l;			// CONTROL_TYPE_LEAD_AI
-	} ai;
+	} m_ai;
 
-	int*			inform;
+	int*			m_inform;
 
-	short			thrust;
-	short			felonyRating;
+	short			m_thrust;
+	short			m_felonyRating;
 
-	int8			handbrake;
-	int8			wheelspin;
-	int8			wasOnGround;
-	int8			lowDetail;
+	int8			m_handbrake;
+	int8			m_wheelspin;
+	int8			m_wasOnGround;
+	int8			m_lowDetail;
 
-	short			wheel_angle;
-	uint16			totalDamage;
+	short			m_wheel_angle;
+	uint16			m_totalDamage;
 
-	int				lastPad;
+	int				m_lastPad;
 };
 
 #endif // CARS_H
