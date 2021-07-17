@@ -15,15 +15,18 @@
 #include "world.h"
 #include "cars.h"
 
-struct HANDLING_TYPE
+struct GEAR_DESC
 {
-	int8 frictionScaleRatio;
-	int8 aggressiveBraking;
-	int8 fourWheelDrive;
-	int8 autoBrakeOn;
+	int lowidl_ws, low_ws, hi_ws;
+	int ratio_ac, ratio_id;
 };
 
-HANDLING_TYPE handlingType[7] =
+struct HANDLING_TYPE
+{
+	int8 frictionScaleRatio, aggressiveBraking, fourWheelDrive, autoBrakeOn;
+};
+
+const HANDLING_TYPE handlingType[7] =
 {
 	// frictionScaleRatio, aggressiveBraking, fourWheelDrive, autoBrakeOn
 	{ 32, 1, 0, 1 },
@@ -33,6 +36,23 @@ HANDLING_TYPE handlingType[7] =
 	{ 68, 1, 1, 0 },
 	{ 32, 1, 0, 1 },
 	{ 29, 0, 0, 0 }
+};
+
+// gear ratios for different handling types
+static const GEAR_DESC s_gearDesc[2][4] =
+{
+	{
+		{ 0, 0, 163, 144, 135 },
+		{ 86, 133, 260, 90, 85 },
+		{ 186, 233, 360, 60, 57 },
+		{ 286, 326, 9999, 48, 45 }
+	},
+	{
+		{ 0, 0, 50, 144, 135 },
+		{ 43, 66, 100, 90, 85 },
+		{ 93, 116, 150, 60, 57 },
+		{ 143, 163, 9999, 48, 45 }
+	}
 };
 
 int gCopDifficultyLevel = 0;		// TODO: Lua parameter on difficulty?
@@ -383,7 +403,7 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 {
 	int autoBrake;
 	int q;
-	HANDLING_TYPE* hp;
+	const HANDLING_TYPE* hp;
 
 	hp = &handlingType[m_hndType];
 
@@ -516,9 +536,9 @@ void CCar::ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl)
 void CCar::StepOneCar()
 {
 	static int frictionLimit[6] = {
-		0x3ED000, 0x178E000,
-		0x3ED000, 0x13A1000,
-		0x75C6000,0x13A1000
+		1005 * ONE, 6030 * ONE,
+		1005 * ONE, 5025 * ONE,
+		1884 * ONE, 5025 * ONE
 	};
 
 	volatile int impulse;
@@ -735,4 +755,175 @@ void CCar::StepOneCar()
 	ConvertTorqueToAngularAcceleration(_cl);
 
 	m_hd.mayBeColliding = 0;
+}
+
+//-----------------------------------------------------
+
+uint16 CCar::GetEngineRevs()
+{
+	int acc;
+	const GEAR_DESC* gd;
+	int gear;
+	int lastgear;
+	int ws, lws;
+	int type;
+
+	gear = m_hd.gear;
+	ws = m_hd.wheel_speed;
+	acc = m_thrust;
+	type = (m_controlType == CONTROL_TYPE_CIV_AI);
+
+	if (ws > 0)
+	{
+		ws >>= 11;
+
+		if (gear > 3)
+			gear = 3;
+
+		gd = &s_gearDesc[type][gear];
+
+		do {
+			if (acc < 1)
+				lws = gd->lowidl_ws;
+			else
+				lws = gd->low_ws;
+
+			lastgear = gear;
+
+			if (ws < lws)
+			{
+				gd--;
+				lastgear = gear - 1;
+			}
+
+			if (gd->hi_ws < ws)
+			{
+				gd++;
+				lastgear++;
+			}
+
+			if (gear == lastgear)
+				break;
+
+			gear = lastgear;
+
+		} while (true);
+
+		m_hd.gear = lastgear;
+	}
+	else
+	{
+		ws = -ws / 2048;
+		lastgear = 0;
+
+		m_hd.gear = 0;
+	}
+
+	if (acc != 0)
+		return ws * s_gearDesc[type][lastgear].ratio_ac;
+
+	return ws * s_gearDesc[type][lastgear].ratio_id;
+}
+
+void CCar::ControlCarRevs()
+{
+	const int MaxRevDrop = 1440;
+	const int MaxRevRise = 1600;
+
+	char spin;
+	int player_id, acc, oldvol;
+	short oldRevs, newRevs, desiredRevs;
+
+	acc = m_thrust;
+	spin = m_wheelspin;
+	oldRevs = m_hd.revs;
+	player_id = 0;// GetPlayerId(cp);
+
+	m_hd.changingGear = 0;
+
+	if (spin == 0 && (m_hd.wheel[1].susCompression || m_hd.wheel[3].susCompression || acc == 0))
+	{
+		desiredRevs = GetEngineRevs();
+	}
+	else
+	{
+		desiredRevs = 20160;
+
+		if (m_hd.wheel[1].susCompression == 0 && m_hd.wheel[3].susCompression == 0)
+		{
+			desiredRevs = 30719;
+			spin = 1;
+		}
+
+		if (oldRevs < 8000)
+			oldRevs = 8000;
+
+		m_hd.gear = 0;
+	}
+
+	newRevs = desiredRevs;
+	desiredRevs = (oldRevs - newRevs);
+
+	if (MaxRevDrop < desiredRevs)
+	{
+		acc = 0;
+		m_hd.changingGear = 1;
+		newRevs = oldRevs - MaxRevDrop;
+	}
+
+	desiredRevs = newRevs - oldRevs;
+
+	if (MaxRevRise < desiredRevs)
+		newRevs = oldRevs + MaxRevRise;
+
+	m_hd.revs = newRevs;
+
+#if 0
+	// TODO: CPlayerManager:GetPlayer()
+	if (player_id != -1)
+	{
+		if (acc == 0 && newRevs < 7001)
+		{
+			acc = player[player_id].revsvol;
+
+			player[player_id].idlevol += 200;
+			player[player_id].revsvol = acc - 200;
+
+			if (player[player_id].idlevol > -6000)
+				player[player_id].idlevol = -6000;
+
+			if (player[player_id].revsvol < -10000)
+				player[player_id].revsvol = -10000;
+		}
+		else
+		{
+			int revsmax;
+
+			if (acc != 0)
+				revsmax = -5500;
+			else
+				revsmax = -6750;
+
+			if (spin == 0)
+				acc = -64;
+			else
+				acc = -256;
+
+			player[player_id].idlevol += acc;
+
+			if (spin == 0)
+				acc = 175;
+			else
+				acc = 700;
+
+			player[player_id].revsvol = player[player_id].revsvol + acc;
+
+			if (player[player_id].idlevol < -10000)
+				player[player_id].idlevol = -10000;
+
+			if (player[player_id].revsvol > revsmax)
+				player[player_id].revsvol = revsmax;
+		}
+	}
+#endif
 }
