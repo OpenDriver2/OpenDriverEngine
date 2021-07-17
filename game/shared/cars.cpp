@@ -62,6 +62,9 @@ int wetness = 0;					// TODO: CWorld::GetWetness()
 #define gte_ldv0(x)
 #define gte_rtv0tr()
 #define gte_stlvnl(x)
+#define gte_ldlvl(x)
+#define gte_rtir()
+#define gte_stsv(x)
 #define gte_SetRotMatrix(m)
 #define gte_SetTransMatrix(m)
 
@@ -555,8 +558,8 @@ void CCar::StepOneCar()
 	sdPlane* SurfacePtr;
 
 	// FIXME: redundant?
-	if (m_controlType == CONTROL_TYPE_NONE)
-		return;
+	// if (m_controlType == CONTROL_TYPE_NONE)
+	// 	return;
 
 	SurfacePtr = NULL;
 	_cl.aggressive = handlingType[m_hndType].aggressiveBraking;
@@ -926,4 +929,142 @@ void CCar::ControlCarRevs()
 		}
 	}
 #endif
+}
+
+//---------------------------------------------------
+
+void CCar::InitOrientedBox()
+{
+	SVECTOR boxDisp;
+	CAR_COSMETICS* car_cos;
+
+	short length;
+
+	gte_SetRotMatrix(&m_hd.where);
+	gte_SetTransMatrix(&m_hd.where);
+
+	car_cos = m_ap.carCos;
+
+	boxDisp.vx = -car_cos->cog.vx;
+	boxDisp.vy = -car_cos->cog.vy;
+	boxDisp.vz = -car_cos->cog.vz;
+
+	gte_ldv0(&boxDisp);
+	gte_rtv0tr();
+
+	if (m_controlType == CONTROL_TYPE_PURSUER_AI)
+	{
+		length = (car_cos->colBox.vx * 14) / 16;
+		m_hd.oBox.length[0] = length;
+	}
+	else
+	{
+		length = car_cos->colBox.vx;
+		m_hd.oBox.length[0] = length;
+	}
+
+	gte_stlvnl(&m_hd.oBox.location);
+
+	VECTOR_NOPAD svx = { length, 0 ,0 };
+	VECTOR_NOPAD svy = { 0, car_cos->colBox.vy ,0 };
+	VECTOR_NOPAD svz = { 0, 0 ,car_cos->colBox.vz };
+
+	gte_ldlvl(&svx);
+
+	gte_rtir();
+	m_hd.oBox.length[1] = car_cos->colBox.vy;
+	gte_stsv(&m_hd.oBox.radii[0]);
+
+	gte_ldlvl(&svy);
+	gte_rtir();
+	m_hd.oBox.length[2] = car_cos->colBox.vz;
+	gte_stsv(&m_hd.oBox.radii[1]);
+
+	gte_ldlvl(&svz);
+	gte_rtir();
+	gte_stsv(&m_hd.oBox.radii[2]);
+}
+
+void LongQuaternion2Matrix(LONGQUATERNION* qua, MATRIX* m)
+{
+	int qx = (*qua)[0];
+	int qy = (*qua)[1];
+	int qz = (*qua)[2];
+	int qw = (*qua)[3];
+
+	int yy = FixHalfRound(qy * qy, 11);
+	int zz = FixHalfRound(qz * qz, 11);
+	int xx = FixHalfRound(qx * qx, 11);
+	int zw = FixHalfRound(qz * qw, 11);
+	int xy = FixHalfRound(qx * qy, 11);
+	int xz = FixHalfRound(qx * qz, 11);
+	int yw = FixHalfRound(qy * qw, 11);
+	int xw = FixHalfRound(qx * qw, 11);
+	int yz = FixHalfRound(qy * qz, 11);
+
+	m->m[0][0] = ONE - (yy + zz);
+	m->m[1][1] = ONE - (xx + zz);
+	m->m[2][2] = ONE - (xx + yy);
+	m->m[0][1] = xy - zw;
+	m->m[0][2] = xz + yw;
+	m->m[1][0] = xy + zw;
+	m->m[2][0] = xz - yw;
+	m->m[1][2] = yz - xw;
+	m->m[2][1] = yz + xw;
+}
+
+void CCar::RebuildCarMatrix(RigidBodyState& st)
+{
+	int sm, osm;
+	int qw, qz, qy, qx;
+
+	m_hd.where.t[0] = st.n.fposition[0] >> 4;
+	m_hd.where.t[1] = st.n.fposition[1] >> 4;
+	m_hd.where.t[2] = st.n.fposition[2] >> 4;
+
+	qx = st.n.orientation[0];
+	qy = st.n.orientation[1];
+	qz = st.n.orientation[2];
+	qw = st.n.orientation[3];
+
+	osm = qx * qx + qy * qy + qz * qz + qw * qw;
+	sm = 4096;
+
+	if (osm < 1024)
+	{
+		st.n.orientation[2] = 0;
+		st.n.orientation[1] = 0;
+		st.n.orientation[0] = 0;
+	}
+	else
+	{
+		sm = 6144 - (osm >> 13);
+
+		st.n.orientation[0] = FIXEDH(sm * qx);
+		st.n.orientation[1] = FIXEDH(sm * qy);
+		st.n.orientation[2] = FIXEDH(sm * qz);
+
+		sm = FIXEDH(sm * qw);
+	}
+	st.n.orientation[3] = sm;
+
+	LongQuaternion2Matrix(&st.n.orientation, &m_hd.where);
+
+	InitOrientedBox();
+}
+
+
+void CCar::CheckCarEffects()
+{
+
+}
+
+void CCar::JumpDebris()
+{
+
+}
+
+void CCar::NoseDown()
+{
+
 }

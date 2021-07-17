@@ -225,7 +225,7 @@ protected:
 
 	// handling
 	void			InitOrientedBox();
-	void			RebuildCarMatrix(RigidBodyState* st);
+	void			RebuildCarMatrix(RigidBodyState& st);
 
 	void			CheckCarEffects();
 	void			JumpDebris();
