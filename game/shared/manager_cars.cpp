@@ -23,6 +23,20 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 /*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
 {
+	lua.new_usertype<POSITION_INFO>(
+		"POSITION_INFO",
+		sol::call_constructor, sol::factories(
+			[](const int& x, const int& y, const int& z, const int& direction) {
+				return POSITION_INFO{ VECTOR_NOPAD{x, y, z}, direction };
+			},
+			[](const sol::table& table) {
+				return POSITION_INFO{ VECTOR_NOPAD{ table["x"], table["y"], table["z"] }, table["direction"] };
+			},
+			[]() { return POSITION_INFO{ 0 }; }),
+		"position", &POSITION_INFO::position,
+		"direction", &POSITION_INFO::direction
+		);
+
 	lua.new_usertype<CAR_COSMETICS>(
 		"CAR_COSMETICS",
 		"headLight", &CAR_COSMETICS::headLight,
@@ -51,16 +65,20 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 	lua.new_usertype<CManager_Cars>(
 		"CManager_Cars",
+		"Create", &CManager_Cars::Create,
 		"UpdateControl", &CManager_Cars::UpdateControl,
 		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
 		"DoScenaryCollisions", &CManager_Cars::DoScenaryCollisions);
+
+	lua.new_usertype<CCar>(
+		"CCar");
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
 	engine["Cars"] = g_cars;
 }
 
-CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, int controlType, POSITION_INFO& positionInfo)
+CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, POSITION_INFO& positionInfo)
 {
 	// not valid request
 	if (control == CONTROL_TYPE_NONE)
@@ -141,7 +159,7 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, i
 
 void CManager_Cars::UpdateControl()
 {
-	for (int i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < active_cars.size(); i++)
 	{
 		CCar* cp = active_cars[i];
 
@@ -243,8 +261,6 @@ void CManager_Cars::GlobalTimeStep()
 	LONGVECTOR4 normal, collisionpoint;
 	LONGVECTOR4 AV, lever0, lever1, torque, pointVel0;
 	VECTOR_NOPAD velocity;
-	int RKstep, subframe;
-	int i, j;
 	int do1, do2;
 	int m1, m2;
 	int strikeVel, strength, depth;
@@ -262,7 +278,7 @@ void CManager_Cars::GlobalTimeStep()
 
 	// step car forces (when no collisions with them)
 	// TODO: made into CCar::StepRigidBody()
-	for (i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < active_cars.size(); i++)
 	{
 		cp = active_cars[i];
 
@@ -342,13 +358,11 @@ void CManager_Cars::GlobalTimeStep()
 	}
 
 	// do collision interactions
-	for (subframe = 0; subframe < 4; subframe++)
+	for (int subframe = 0; subframe < 4; subframe++)
 	{
-		RKstep = 0;
-
-		for (RKstep = 0; RKstep < 2; RKstep++)
+		for (int RKstep = 0; RKstep < 2; RKstep++)
 		{
-			for (i = 0; i < active_cars.size(); i++)
+			for (usize i = 0; i < active_cars.size(); i++)
 			{
 				cp = active_cars[i];
 
@@ -639,7 +653,7 @@ void CManager_Cars::GlobalTimeStep()
 			}
 
 			// update forces and rebuild matrix of the cars
-			for (i = 0; i < active_cars.size(); i++)
+			for (usize i = 0; i < active_cars.size(); i++)
 			{
 				cp = active_cars[i];
 
@@ -653,7 +667,7 @@ void CManager_Cars::GlobalTimeStep()
 
 					if (RKstep == 0)
 					{
-						for (j = 0; j < 13; j++)
+						for (int j = 0; j < 13; j++)
 						{
 							tp->v[j] = st.v[j] + (d0->v[j] >> 2);
 						}
@@ -662,7 +676,7 @@ void CManager_Cars::GlobalTimeStep()
 					}
 					else if (RKstep == 1)
 					{
-						for (j = 0; j < 13; j++)
+						for (int j = 0; j < 13; j++)
 						{
 							st.v[j] += d0->v[j] + d1->v[j] >> 3;
 						}
@@ -678,7 +692,7 @@ void CManager_Cars::GlobalTimeStep()
 	// dent cars - no more than 5 cars in per frame
 	carsDentedThisFrame = 0;
 
-	for (i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < active_cars.size(); i++)
 	{
 		cp = active_cars[i];
 
@@ -734,7 +748,7 @@ void CManager_Cars::DoScenaryCollisions()
 
 void CManager_Cars::StepCars()
 {
-	for (int i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < active_cars.size(); i++)
 	{
 		CCar* cp = active_cars[i];
 		cp->StepOneCar();
@@ -744,7 +758,7 @@ void CManager_Cars::StepCars()
 
 void CManager_Cars::DrawAllCars()
 {
-	for (int i = 0; i < active_cars.size(); i++)
+	for (usize i = 0; i < active_cars.size(); i++)
 	{
 		CCar* cp = active_cars[i];
 		cp->DrawCar();

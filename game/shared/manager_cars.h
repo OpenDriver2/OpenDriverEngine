@@ -17,7 +17,7 @@ class CManager_Cars
 {
 public:
 	//void			Load(CDriverLevelModels* level);
-	CCar*			Create(CAR_COSMETICS* cosmetic, int control, int palette, int controlType, POSITION_INFO& positionInfo);
+	CCar*			Create(CAR_COSMETICS* cosmetic, int control, int palette, POSITION_INFO& positionInfo);
 
 	void			UpdateControl();
 	void			GlobalTimeStep();
