@@ -6,10 +6,15 @@
 #include "math/isin.h"
 #include "math/ratan2.h"
 #include "math/convert.h"
+#include "math/Matrix.h"
 
 #include "routines/d2_types.h"
+#include "routines/models.h"
+
 #include "renderer/gl_renderer.h"
 #include "renderer/debug_overlay.h"
+
+#include "game/render//render_model.h"
 
 #include "core/cmdlib.h"
 
@@ -138,7 +143,9 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 
 		newCompression = CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, &SurfacePtr);
 
-		CDebugOverlay::Line(FromFixedVector(*(VECTOR_NOPAD*)&wheelPos), FromFixedVector(*(VECTOR_NOPAD*)&surfacePoint), ColorRGBA(1, 0, 0, 1));
+		Vector3D lineA = FromFixedVector(*(VECTOR_NOPAD*)&wheelPos) * Vector3D(1, -1, 1);
+		Vector3D lineB = FromFixedVector(*(VECTOR_NOPAD*)&surfacePoint) * Vector3D(1,-1,1);
+		CDebugOverlay::Line(lineA, lineB, ColorRGBA(1, 0, 0, 1));
 
 		friction_coef = (newCompression * (32400 - wetness) >> 15) + 500;
 
@@ -1284,15 +1291,33 @@ void CCar::DentCar()
 void CCar::DrawCar()
 {
 	// UNIMPEMENTED!!!
-
+	CRenderModel::SetupModelShader();
 
 	Vector3D carPos = FromFixedVector((VECTOR_NOPAD&)m_hd.where.t);
 
-	Vector3D carMatX = FromFixedVector({m_hd.drawCarMat.m[0][0], m_hd.drawCarMat.m[1][0], m_hd.drawCarMat.m[2][0]});
-	Vector3D carMatY = FromFixedVector({m_hd.drawCarMat.m[0][1], m_hd.drawCarMat.m[1][1], m_hd.drawCarMat.m[2][1]});
-	Vector3D carMatZ = FromFixedVector({m_hd.drawCarMat.m[0][2], m_hd.drawCarMat.m[1][2], m_hd.drawCarMat.m[2][2]});
+	Vector3D carMatX = FromFixedVector(SVECTOR{m_hd.where.m[0][0], m_hd.where.m[0][1], m_hd.where.m[0][2]});
+	Vector3D carMatY = FromFixedVector(SVECTOR{m_hd.where.m[1][0], m_hd.where.m[1][1], m_hd.where.m[1][2]});
+	Vector3D carMatZ = FromFixedVector(SVECTOR{m_hd.where.m[2][0], m_hd.where.m[2][1], m_hd.where.m[2][2]});
 
-	CDebugOverlay::Line(carPos, carPos + carMatX, ColorRGBA(1, 0, 0, 1));
-	CDebugOverlay::Line(carPos, carPos + carMatY, ColorRGBA(0, 1, 0, 1));
-	CDebugOverlay::Line(carPos, carPos + carMatZ, ColorRGBA(0, 0, 1, 1));
+
+
+	Matrix4x4 objectMatrix = translate(carPos) * Matrix4x4(Vector4D(carMatX, 0.0f), Vector4D(carMatY, 0.0f), Vector4D(carMatZ, 0.0f), Vector4D(0,0,0,1)) * rotateY4(DEG2RAD(180));
+
+	objectMatrix = objectMatrix * translate(-FromFixedVector(m_ap.carCos->cog));
+
+	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
+	GR_UpdateMatrixUniforms();
+
+	CRenderModel* renderModel = (CRenderModel*)m_model->userData;
+
+	if (renderModel)
+	{
+		renderModel->Draw();
+	}
+
+	objectMatrix = transpose(objectMatrix);
+
+	CDebugOverlay::Line(carPos, carPos + objectMatrix.rows[0].xyz(), ColorRGBA(1, 0, 0, 1));
+	CDebugOverlay::Line(carPos, carPos + objectMatrix.rows[1].xyz(), ColorRGBA(0, 1, 0, 1));
+	CDebugOverlay::Line(carPos, carPos + objectMatrix.rows[2].xyz(), ColorRGBA(0, 0, 1, 1));
 }

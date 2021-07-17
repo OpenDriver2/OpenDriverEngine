@@ -291,6 +291,8 @@ protected:
 
 	int				m_frontWheelRotation{ 0 };
 	int				m_backWheelRotation{ 0 };
+
+	ModelRef_t*		m_model{ nullptr };
 };
 
 #endif // CARS_H
