@@ -133,6 +133,7 @@ public:
 	CBaseLevelRegion*		GetRegion(int regionIdx) const override;
 
 	int						MapHeight(const VECTOR_NOPAD& position) const override;
+	int						FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane) const override;
 
 	int						GetRoadIndex(VECTOR_NOPAD& position) const;
 

@@ -204,10 +204,37 @@ void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 	}
 }
 
+extern sdPlane g_seaPlane;
+
 int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 {
 	MsgWarning("UNIMPLEMENTED MapHeight for D1\n");
 	return 0;
+}
+
+int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane) const
+{
+	{
+		*outPlane = &g_seaPlane;
+
+		outPoint.vx = position.vx;
+		outPoint.vz = position.vz;
+		outPoint.vy = 0;
+
+		if (*outPlane == NULL || (*outPlane)->b == 0)
+		{
+			outNormal.vx = 0;
+			outNormal.vy = 4096;
+			outNormal.vz = 0;
+		}
+		else
+		{
+			outNormal.vx = (int)(*outPlane)->a >> 2;
+			outNormal.vy = (int)(*outPlane)->b >> 2;
+			outNormal.vz = (int)(*outPlane)->c >> 2;
+		}
+	}
+	return 4096;
 }
 
 //-------------------------------------------------------------

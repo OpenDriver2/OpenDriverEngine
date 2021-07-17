@@ -27,9 +27,11 @@
 
 #include "math/convert.h"
 #include "math/Volume.h"
+#include "math/isin.h"
 
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
+
 
 OUT_CITYLUMP_INFO		g_levInfo;
 CDriverLevelTextures	g_levTextures;
@@ -84,7 +86,7 @@ void CWorld::Lua_Init(sol::state& lua)
 				return CELL_OBJECT{ position, 0, yang, type };
 			},
 			[](const sol::table& table) {
-				return CELL_OBJECT{ table["position"], 0, table["yang"], table["type"] };
+				return CELL_OBJECT{ (VECTOR_NOPAD&)table["position"], 0, table["yang"], table["type"] };
 			},
 			[]() { return CELL_OBJECT{ 0 }; }),
 		"pos", &CELL_OBJECT::pos,
@@ -398,6 +400,30 @@ ModelRef_t* CWorld::GetModelByName(const char* name)
 int CWorld::MapHeight(const VECTOR_NOPAD& position)
 {
 	return g_levMap->MapHeight(position);
+}
+
+int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane)
+{
+	int fr = g_levMap->FindSurface(position, outNormal, outPoint, outPlane);
+
+	if (*outPlane == NULL)
+	{
+		return fr;
+	}
+	else if ((*outPlane)->surfaceType == 4)
+	{
+		// TODO: move this hardcoding away
+#if 0
+		if (gInGameCutsceneActive && gCurrentMissionNumber == 23 && gInGameCutsceneID == 0)
+			outPoint.vy += isin((pos->vx + pos->vz) * 2) >> 9;
+		else
+#endif
+			outPoint.vy += (isin((position.vx + position.vz) * 2) >> 8) / 3;
+
+		return fr >> 1;
+	}
+
+	return fr;
 }
 
 //-------------------------------------------------------------

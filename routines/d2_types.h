@@ -309,6 +309,14 @@ struct CELL_OBJECT {
 
 //------------------------------------------------------------------------------------------------------------
 
+enum SurfaceType
+{
+	SurfType_Asphalt = 0,
+	SurfType_Grass = 4,
+	SurfType_Water = 6,
+	SurfType_DeepWater = 9,		// the default surface
+};
+
 struct sdPlane
 {
 	short surfaceType;

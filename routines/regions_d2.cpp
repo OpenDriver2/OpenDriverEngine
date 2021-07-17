@@ -15,8 +15,8 @@
 #define IS_CURVED_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x4000 && ((surfid) & 0x1FFF) < m_numCurves)
 #define IS_JUNCTION_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x2000 && ((surfid) & 0x1FFF) < m_numJunctions)
 
-sdPlane g_defaultPlane	= { 0, 0, 0, 0, 2048 };
-sdPlane g_seaPlane		= { 9, 0, 16384, 0, 2048 };
+sdPlane g_defaultPlane	= { SurfType_Asphalt, 0, 0, 0, 2048 };
+sdPlane g_seaPlane		= { SurfType_DeepWater, 0, 16384, 0, 2048 };
 
 int SdHeightOnPlane(const VECTOR_NOPAD& position, sdPlane* plane, DRIVER2_CURVE* curves)
 {
@@ -751,6 +751,44 @@ int CDriver2LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 		return SdHeightOnPlane(position, plane, m_curves);
 
 	return 0;
+}
+
+int CDriver2LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane) const
+{
+	VECTOR_NOPAD cellPos;
+	XZPAIR cell;
+	int level = 0;
+
+	cellPos.vx = position.vx - 512;	// FIXME: is that a quarter of a cell?
+	cellPos.vy = position.vy;
+	cellPos.vz = position.vz - 512;
+
+	WorldPositionToCellXZ(cell, cellPos);
+	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
+
+	if (region)
+	{
+		*outPlane = region->SdGetCell(cellPos, level, SdGetBSP);
+
+		outPoint.vx = position.vx;
+		outPoint.vz = position.vz;
+		outPoint.vy = SdHeightOnPlane(position, *outPlane, m_curves);
+
+		if (*outPlane == NULL || (*outPlane)->b == 0)
+		{
+			outNormal.vx = 0;
+			outNormal.vy = 4096;
+			outNormal.vz = 0;
+		}
+		else
+		{
+			outNormal.vx = (int)(*outPlane)->a >> 2;
+			outNormal.vy = (int)(*outPlane)->b >> 2;
+			outNormal.vz = (int)(*outPlane)->c >> 2;
+		}
+	}
+
+	return 4096;
 }
 
 int	CDriver2LevelMap::GetRoadIndex(VECTOR_NOPAD& position) const
