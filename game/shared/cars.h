@@ -250,37 +250,37 @@ protected:
 	RigidBodyState	m_st;
 	APPEARANCE_DATA	m_ap;
 
-	uint8			m_hndType;
+	uint8			m_hndType{ 0 };
 
-	uint8			m_controlType;
-	uint8			m_controlFlags;
+	uint8			m_controlType{ 0 };
+	uint8			m_controlFlags{ 0 };
 
-	int8			m_id;
+	int8			m_id{ -1 };
 
 	union {
-		char* padid;		// CONTROL_TYPE_PLAYER or CONTROL_TYPE_CUTSCENE
+		char* padid{ 0 };		// CONTROL_TYPE_PLAYER or CONTROL_TYPE_CUTSCENE
 		CIV_STATE c;		// CONTROL_TYPE_CIV_AI
 		COP p;				// CONTROL_TYPE_PURSUER_AI
 		LEAD_CAR l;			// CONTROL_TYPE_LEAD_AI
 	} m_ai;
 
-	int*			m_inform;
+	int*			m_inform{ nullptr };
 
-	short			m_thrust;
-	short			m_felonyRating;
+	short			m_thrust{ 0 };
+	short			m_felonyRating{ 0 };
 
-	int8			m_handbrake;
-	int8			m_wheelspin;
-	int8			m_wasOnGround;
-	int8			m_lowDetail;
+	int8			m_handbrake{ 0 };
+	int8			m_wheelspin{ 0 };
+	int8			m_wasOnGround{ 0 };
+	int8			m_lowDetail{ 0 };
 
-	short			m_wheel_angle;
-	uint16			m_totalDamage;
+	short			m_wheel_angle{ 0 };
+	uint16			m_totalDamage{ 0 };
 
-	int				m_lastPad;
+	int				m_lastPad{ 0 };
 
-	int				m_frontWheelRotation;
-	int				m_backWheelRotation;
+	int				m_frontWheelRotation{ 0 };
+	int				m_backWheelRotation{ 0 };
 };
 
 #endif // CARS_H

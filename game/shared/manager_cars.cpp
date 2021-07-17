@@ -69,8 +69,6 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, i
 	CCar* cp = new CCar();
 	VECTOR_NOPAD tmpStart;
 
-	//memset(cp, 0, sizeof(CCar));
-
 	cp->m_wasOnGround = 1;
 
 	cp->m_id = m_carIdCnt++;

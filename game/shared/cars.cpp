@@ -68,6 +68,16 @@ int wetness = 0;					// TODO: CWorld::GetWetness()
 #define gte_SetRotMatrix(m)
 #define gte_SetTransMatrix(m)
 
+CCar::CCar()
+{
+	memset(&m_ap, 0, sizeof(m_ap));
+	memset(&m_hd, 0, sizeof(m_hd));
+	memset(&m_st, 0, sizeof(m_st));
+}
+
+CCar::~CCar()
+{
+}
 
 void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 {
