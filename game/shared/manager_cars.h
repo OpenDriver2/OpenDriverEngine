@@ -9,14 +9,15 @@ struct CAR_COSMETICS;
 
 struct POSITION_INFO
 {
-
+	VECTOR_NOPAD position;
+	int direction;
 };
 
 class CManager_Cars
 {
 public:
 	//void			Load(CDriverLevelModels* level);
-	CCar*			Create(CAR_COSMETICS* cosmetic, int palette, int controlType, POSITION_INFO* positionInfo);
+	CCar*			Create(CAR_COSMETICS* cosmetic, int control, int palette, int controlType, POSITION_INFO& positionInfo);
 
 	void			UpdateControl();
 	void			GlobalTimeStep();
@@ -33,7 +34,10 @@ protected:
 	void			StepCars();
 	void			CheckCarToCarCollisions();
 
+	void			CheckScenaryCollisions(CCar* cp);
+
 	Array<CCar*>	active_cars;		// [A] to be renamed as m_carList
+	int				m_carIdCnt{ 0 };
 };
 
 #endif // MANAGER_CARS_H

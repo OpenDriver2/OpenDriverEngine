@@ -8,12 +8,41 @@
 #include "cars.h"
 #include "math/psx_math_types.h"
 #include "math/ratan2.h"
+#include "world.h"
+
+// TODO: move it
+int	CameraCnt = 0;
 
 static CManager_Cars s_carManagerInstance;
 CManager_Cars* g_cars = &s_carManagerInstance;
 
 /*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
 {
+	lua.new_usertype<CAR_COSMETICS>(
+		"headLight", &CAR_COSMETICS::headLight,
+		"frontInd", &CAR_COSMETICS::frontInd,
+		"backInd", &CAR_COSMETICS::backInd,
+		"brakeLight", &CAR_COSMETICS::brakeLight,
+		"revLight", &CAR_COSMETICS::revLight,
+		"policeLight", &CAR_COSMETICS::policeLight,
+		"exhaust", &CAR_COSMETICS::exhaust,
+		"smoke", &CAR_COSMETICS::smoke,
+		"fire", &CAR_COSMETICS::fire,
+		"wheelDisp", &CAR_COSMETICS::wheelDisp,
+		"extraInfo", &CAR_COSMETICS::extraInfo,
+		"powerRatio", &CAR_COSMETICS::powerRatio,
+		"cbYoffset", &CAR_COSMETICS::cbYoffset,
+		"susCoeff", &CAR_COSMETICS::susCoeff,
+		"traction", &CAR_COSMETICS::traction,
+		"wheelSize", &CAR_COSMETICS::wheelSize,
+		"cPoints", &CAR_COSMETICS::cPoints,
+		"colBox", &CAR_COSMETICS::colBox,
+		"cog", &CAR_COSMETICS::cog,
+		"twistRateX", &CAR_COSMETICS::twistRateX,
+		"twistRateY", &CAR_COSMETICS::twistRateY,
+		"twistRateZ", &CAR_COSMETICS::twistRateZ,
+		"mass", &CAR_COSMETICS::mass);
+
 	lua.new_usertype<CManager_Cars>(
 		"CManager_Cars",
 		"UpdateControl", &CManager_Cars::UpdateControl,
@@ -25,9 +54,164 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 	engine["Cars"] = g_cars;
 }
 
+CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int palette, int controlType, POSITION_INFO& positionInfo)
+{
+	// not valid request
+	if (control == CONTROL_TYPE_NONE)
+		return nullptr;
+
+	CCar* cp = new CCar();
+	VECTOR_NOPAD tmpStart;
+
+	//memset(cp, 0, sizeof(CCar));
+
+	cp->m_wasOnGround = 1;
+
+	cp->m_id = m_carIdCnt++;
+
+	cp->m_ap.model = 0;// model;
+	cp->m_ap.palette = palette;
+	cp->m_lowDetail = -1;
+	cp->m_ap.qy = 0;
+	cp->m_ap.qw = 0;
+	cp->m_ap.carCos = cosmetic;
+
+	tmpStart.vx = positionInfo.position.vx;
+	tmpStart.vy = positionInfo.position.vy;
+	tmpStart.vz = positionInfo.position.vz;
+
+	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_ap.carCos->wheelDisp[0].vy;
+
+	cp->InitCarPhysics((LONGVECTOR4*)&tmpStart, positionInfo.direction);
+	cp->m_controlType = control;
+
+	switch (control)
+	{
+		case CONTROL_TYPE_PLAYER:
+		case CONTROL_TYPE_CUTSCENE:
+			// player car or cutscene car
+			cp->m_ai.padid = 0;// extraData;
+
+			//player[cp->m_id].worldCentreCarId = cp->m_id;
+			cp->m_hndType = 0;
+			break;
+#if 0
+		case CONTROL_TYPE_CIV_AI:
+			cp->m_hndType = 1;
+
+			if (extraData == NULL)
+			{
+				cp->m_controlFlags = 0;
+				cp->m_ap.palette = 0;
+			}
+			else
+			{
+				cp->m_controlFlags = ((EXTRA_CIV_DATA*)extraData)->controlFlags;
+				cp->m_ap.palette = ((EXTRA_CIV_DATA*)extraData)->palette;
+			}
+
+			InitCivState(cp, (EXTRA_CIV_DATA*)extraData);
+
+			break;
+		case CONTROL_TYPE_PURSUER_AI:
+			InitCopState(cp, extraData);
+			cp->m_ap.palette = 0;
+			numCopCars++;
+			break;
+		case CONTROL_TYPE_LEAD_AI:
+			// free roamer lead car
+			InitLead(cp);
+			leadCarId = cp->m_id;
+			cp->hndType = 5;
+			break;
+#endif
+	}
+
+	cp->CreateDentableCar();
+	cp->DentCar();
+
+	active_cars.append(cp);
+
+	return cp;
+}
+
 void CManager_Cars::UpdateControl()
 {
-	MsgWarning("Unimplemented CManager_Cars::UpdateControl()\n");
+	for (int i = 0; i < active_cars.size(); i++)
+	{
+		CCar* cp = active_cars[i];
+
+#if 0
+		// Update player inputs
+		switch (cp->m_controlType)
+		{
+			case CONTROL_TYPE_PLAYER:
+				t0 = Pads[*cp->ai.padid].mapped;	// [A] padid might be wrong
+				t1 = Pads[*cp->ai.padid].mapanalog[2];
+				t2 = Pads[*cp->ai.padid].type & 4;
+
+				// [A] handle REDRIVER2 dedicated car exit button
+				if (t0 & CAR_PAD_LEAVECAR_DED)
+				{
+					t0 &= ~CAR_PAD_LEAVECAR_DED;
+					t0 |= CAR_PAD_LEAVECAR;
+				}
+
+				if (NoPlayerControl == 0)
+				{
+					if (gStopPadReads)
+					{
+						t0 = CAR_PAD_BRAKE;
+
+						if (cp->hd.wheel_speed <= 0x9000)
+							t0 = CAR_PAD_HANDBRAKE;
+
+						t1 = 0;
+						t2 = 1;
+					}
+
+					cjpRecord(*cp->ai.padid, &t0, &t1, &t2);
+				}
+				else
+				{
+					cjpPlay(*cp->ai.padid, &t0, &t1, &t2);
+				}
+
+				ProcessCarPad(cp, t0, t1, t2);
+				break;
+			case CONTROL_TYPE_CIV_AI:
+				CivControl(cp);
+				break;
+			case CONTROL_TYPE_PURSUER_AI:
+				CopControl(cp);
+				break;
+			case CONTROL_TYPE_LEAD_AI:
+				t2 = 0;
+				t1 = 0;
+				t0 = 0;
+
+				t0 = FreeRoamer(cp);
+
+				if (t0 == 0)
+				{
+					cp->handbrake = 1;
+					cp->wheel_angle = 0;
+				}
+				else
+				{
+					ProcessCarPad(cp, t0, t1, t2);
+				}
+
+				break;
+			case CONTROL_TYPE_CUTSCENE:
+				if (!_CutRec_RecordPad(cp, &t0, &t1, &t2))
+					cjpPlay(-*cp->ai.padid, &t0, &t1, &t2);
+
+				ProcessCarPad(cp, t0, t1, t2);
+		}
+#endif
+		cp->StepCarPhysics();
+	}
 }
 
 void CManager_Cars::GlobalTimeStep()
@@ -508,12 +692,57 @@ void CManager_Cars::GlobalTimeStep()
 	}
 }
 
+void CManager_Cars::CheckScenaryCollisions(CCar* cp)
+{
+	// UNIMPLEMENTED!!!
+}
+
+void CManager_Cars::CheckCarToCarCollisions()
+{
+	// UNIMPLEMENTED!!!
+}
+
 void CManager_Cars::DoScenaryCollisions()
 {
-	MsgWarning("Unimplemented CManager_Cars::DoScenaryCollisions()\n");
+	CCar* cp;
+
+	auto i = active_cars.end();
+
+	do
+	{
+		cp = *i;
+		// civ AI and dead cop cars perform less collision detection frames
+		if (cp->m_controlType == CONTROL_TYPE_CIV_AI ||
+			cp->m_controlType == CONTROL_TYPE_PURSUER_AI && cp->m_ai.p.dying > 85)
+		{
+			if (cp->m_totalDamage != 0 && (cp->m_hd.speed > 10 || (cp->m_id + CameraCnt & 3) == 0))
+			{
+				CheckScenaryCollisions(cp);
+			}
+		}
+		else
+		{
+			CheckScenaryCollisions(cp);
+		}
+
+	} while (i == active_cars.begin());
+}
+
+void CManager_Cars::StepCars()
+{
+	for (int i = 0; i < active_cars.size(); i++)
+	{
+		CCar* cp = active_cars[i];
+		cp->StepOneCar();
+		cp->ControlCarRevs();
+	}
 }
 
 void CManager_Cars::DrawAllCars()
 {
-
+	for (int i = 0; i < active_cars.size(); i++)
+	{
+		CCar* cp = active_cars[i];
+		cp->DrawCar();
+	}
 }
