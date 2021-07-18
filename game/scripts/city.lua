@@ -26,6 +26,9 @@ function IsNightCity(typeVal)
 end
 
 CityInfo = {
+	-----------------------------------------------------
+	-- DRIVER 2 Cities
+	-----------------------------------------------------
 	["Chicago"] = {
 		number 		= 0,		-- city index; For necessary hardcoded stuff
 		gameId 		= 2,		-- Game Index. This is Driver 2
@@ -132,6 +135,48 @@ CityInfo = {
 			toptile = 252, dummyImage = 0x44,
 			
 			scale = 2048,	-- / 4096
+		}
+	},
+	
+	-----------------------------------------------------
+	-- DRIVER 1 Cities
+	-----------------------------------------------------
+	["Miami"] = {
+		number 		= 0,		-- city index; For necessary hardcoded stuff
+		gameId 		= 1,		-- Game Index.
+
+		skyPath		= "DRIVER2/DATA/SKY0.RAW",
+		
+		brightnessScale = 0.45,
+
+		-- lev path for all city types
+		levPath		= {
+			"DRIVER/LEVELS/MIAMI.LEV",
+			"DRIVER/LEVELS/MIAMI.LEV",
+			"DRIVER/LEVELS/MIAMI.LEV",
+			"DRIVER/LEVELS/MIAMI.LEV",
+		},
+		
+		events 		= {},--dofile("driver2_chicago_events.lua"),
+		
+		cosmetics 	= {},--dofile("driver2_chicago_cosmetics.lua"), 	-- "DRIVER2/LEVELS/CHICAGO.LCF"
+		-- cosmetics now pull denting out of DEN files.			-- denting 	= "DRIVER2/LEVELS/CHICAGO.DEN",
+		
+		-- this is still not decided
+		frontendPath = {
+			Selection = "DRIVER2/DATA/CITY.RAW",
+			Cars = "DRIVER2/DATA/CARS/CCARS.RAW",
+			Cuts = "DRIVER2/DATA/CUTS/CCUTS.RAW",
+		},
+
+		-- map settings
+		overlayMap = {
+			x_offset = 197, y_offset = 318,
+			width = 384, height = 672,
+			
+			toptile = 252, dummyImage = 0x99,
+			
+			scale = 2145,	-- / 4096
 		}
 	},
 }

@@ -6,7 +6,6 @@ TestGame = {
 }
 
 local car = nil
-local carCos = nil
 
 -- car controls
 local buttonState = {
@@ -20,19 +19,19 @@ local buttonState = {
 -- TODO: move to CarCosmetics lua
 local function FixCarCos(carCos)
 	local delta = fix.SVECTOR(0,0,0)
-	delta.vy = -(carCos:wheelDisp(1).vz + carCos:wheelDisp(2).vz - 14) / 2
+	delta.vz = -(carCos.wheelDisp[1].vz + carCos.wheelDisp[2].vz - 14) / 2
 
 	local function UpdateCarPoints()
 		for i=1,12 do
-			carCos:cPoints(i).vx = carCos:cPoints(i).vx + delta.vx
-			carCos:cPoints(i).vy = carCos:cPoints(i).vy - delta.vy
-			carCos:cPoints(i).vz = carCos:cPoints(i).vz + delta.vz
+			carCos.cPoints[i].vx = carCos.cPoints[i].vx + delta.vx
+			carCos.cPoints[i].vy = carCos.cPoints[i].vy - delta.vy
+			carCos.cPoints[i].vz = carCos.cPoints[i].vz + delta.vz
 		end
 
 		for i=1,4 do
-			carCos:wheelDisp(i).vx = carCos:wheelDisp(i).vx + delta.vx
-			carCos:wheelDisp(i).vy = carCos:wheelDisp(i).vy - delta.vy
-			carCos:wheelDisp(i).vz = carCos:wheelDisp(i).vz + delta.vz
+			carCos.wheelDisp[i].vx = carCos.wheelDisp[i].vx + delta.vx
+			carCos.wheelDisp[i].vy = carCos.wheelDisp[i].vy - delta.vy
+			carCos.wheelDisp[i].vz = carCos.wheelDisp[i].vz + delta.vz
 		end
 		carCos.cog.vx = carCos.cog.vx + delta.vx;
 		carCos.cog.vy = carCos.cog.vy + delta.vy;
@@ -45,13 +44,16 @@ end
 -- TODO: move to Camera.lua
 local cameraAngle = 1024
 
-local function PlaceCameraFollowCar()
+local function PlaceCameraFollowCar(dt)
 	if car == nil then
 		return
 	end
+	
+	local carCos = car.cosmetics
 
-	local basePos = car.cog_position
-	local direction = car.direction
+	-- take the base car position
+	local basePos = car.i_cog_position
+	local baseDir = car.i_direction
 	
 	local cameraPos = fix.VECTOR(0,0,0)
 	
@@ -61,8 +63,8 @@ local function PlaceCameraFollowCar()
 	local cameraDist = maxCameraDist
 	
 	-- smooth follow
-	local angleDelta = fix.DIFF_ANGLES(cameraAngle, direction)
-	cameraAngle = cameraAngle + (angleDelta / 8)
+	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
+	cameraAngle = cameraAngle + (angleDelta / 8) * dt * 30
 	
 	local sn = gte.isin(cameraAngle)
 	local cs = gte.icos(cameraAngle)
@@ -97,76 +99,42 @@ end
 
 -------------------------------------------------------
 
-TestGame.UpdateCamera = function()
-	PlaceCameraFollowCar()
+TestGame.UpdateCamera = function(dt)
+	PlaceCameraFollowCar(dt)
 end
 
 TestGame.Init = function()
 
-	-- load current city cars
-	cars:LoadModel(1)
-	
-	-- add test car
-	if carCos == nil then
-		carCos = CAR_COSMETICS.new()
-		carCos.headLight = fix.SVECTOR(93,14,-351)
-		carCos.frontInd = fix.SVECTOR(110,16,-340)
-		carCos.backInd = fix.SVECTOR(55,32,368)
-		carCos.brakeLight = fix.SVECTOR(68,33,368)
-		carCos.revLight = fix.SVECTOR(57,35,359)
-		carCos.policeLight = fix.SVECTOR(34,0,0)
-		carCos.exhaust = fix.SVECTOR(68,68,359)
-		carCos.smoke = fix.SVECTOR(0,-4,-335)
-		carCos.fire = fix.SVECTOR(0,-4,-341)
-		
-		carCos:setWheelDisp(1, fix.SVECTOR(128,-30,217))
-		carCos:setWheelDisp(2, fix.SVECTOR(128,-30,-181))
-		carCos:setWheelDisp(3, fix.SVECTOR(-129,-30,217))
-		carCos:setWheelDisp(4, fix.SVECTOR(-129,-30,-181))
-		
-		carCos.extraInfo = -31720 -- FLAGS
-		carCos.powerRatio = 4096
-		carCos.cbYoffset = 0
-		carCos.susCoeff = 4096
-		carCos.traction = 4096
-		carCos.wheelSize = 52
-		
-		carCos:setcPoints(1, fix.SVECTOR(-126, 11, -370))
-		carCos:setcPoints(2, fix.SVECTOR(125, 11, -370))
-		carCos:setcPoints(3, fix.SVECTOR(-126, 2, 370))
-		carCos:setcPoints(4, fix.SVECTOR(125, 2, 370))
-		carCos:setcPoints(5, fix.SVECTOR(-126, 89, -367))
-		carCos:setcPoints(6, fix.SVECTOR(125, 89, -367))
-		carCos:setcPoints(7, fix.SVECTOR(-83, 163, -124))
-		carCos:setcPoints(8, fix.SVECTOR(82, 163, -124))
-		carCos:setcPoints(9, fix.SVECTOR(-83, 164, 52))
-		carCos:setcPoints(10, fix.SVECTOR(82, 164, 52))
-		carCos:setcPoints(11, fix.SVECTOR(-126, 91, 371))
-		carCos:setcPoints(12, fix.SVECTOR(125, 91, 371))
-		
-		carCos.colBox = fix.SVECTOR(129,84,375)
-		carCos.cog = fix.SVECTOR(0,-85,11)
-		carCos.twistRateX = 224
-		carCos.twistRateY = 224
-		carCos.twistRateZ = 1120
-		carCos.mass = 4096
-		
-		FixCarCos(carCos)
+	-- destroy old car
+	if car ~= nil then
+		car:Destroy()
+		car = nil
 	end
 
-	local positionInfo = POSITION_INFO {x = 3166, z = -11787, direction = 0}
-	
-	local model = 0
-	
+	-- add test car
+	-- create car cosmetics from table
+	--local miamiCos = dofile("scripts/driver1_miami_cosmetics.lua")
+	local chicagoCos = dofile("scripts/driver2_chicago_cosmetics.lua")
+	FixCarCos(chicagoCos[1])		
+
+	--local positionInfo = POSITION_INFO {x = 6216, z = -222456, direction = 0}
+	local positionInfo = POSITION_INFO {x = -59057, z = -63321, direction = 0}
+	local residentModel = 1
 	local palette = math.random(0, 5)
 	
-	car = cars:Create(carCos, 1 --[[ CONTROL_TYPE_PLAYER ]], model, palette, positionInfo)
+	-- load current city cars
+	local modelIdx = cars:LoadModel(residentModel)
+
+	car = cars:Create(CAR_COSMETICS(chicagoCos[1]), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
 end
 
 TestGame.UpdateCarPads = function()
 	if car == nil then
 		return
 	end
+	
+	local carCos = car.cosmetics
+	
 	-- update steering
 	
 	if buttonState[SDL.Scancode.Left] then

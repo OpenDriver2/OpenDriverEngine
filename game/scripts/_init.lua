@@ -25,34 +25,34 @@ function StepSim(dt)
 
 	timeAccumulator = timeAccumulator + dt
 	
-	if timeAccumulator < fixed_timestep then
-		return
-	end
-	
-	while timeAccumulator > fixed_timestep do
+	if timeAccumulator >= fixed_timestep then
+		while timeAccumulator > fixed_timestep do
 
-		TestGame.UpdateCarPads()
+			TestGame.UpdateCarPads()
 
-		-- TODO: direct port from MAIN.C
-		-- 
-		-- events:Update()
-		-- mission:Update()
-		-- civAI:PingIn()
-		cars:UpdateControl()	-- controls and replay
-		
-		-- cops.Update()
-		-- peds.Update()
+			-- TODO: direct port from MAIN.C
+			-- 
+			-- events:Update()
+			-- mission:Update()
+			-- civAI:PingIn()
+			cars:UpdateControl()	-- controls and replay
+			
+			-- cops.Update()
+			-- peds.Update()
 
-		cars:GlobalTimeStep()
-		--players:Update()
-		cars:DoScenaryCollisions()
-		--players:CheckMiscFelonies()
+			cars:GlobalTimeStep()
+			--players:Update()
+			cars:DoScenaryCollisions()
+			--players:CheckMiscFelonies()
 
-		if testGameCamera then
-			TestGame.UpdateCamera()
+
+			
+			timeAccumulator = timeAccumulator - fixed_timestep
 		end
-		
-		timeAccumulator = timeAccumulator - fixed_timestep
+	end
+
+	if testGameCamera then
+		TestGame.UpdateCamera(dt)
 	end
 end
 
@@ -152,11 +152,15 @@ function ChangeCity(newCity, newCityType, newWeather)
 		levRenderProps.ambientScale = 3
 		levRenderProps.lightScale = 0
 	else
-		levRenderProps.ambientScale = 1
-		levRenderProps.lightScale = 1
+		levRenderProps.ambientScale = 0.6 * (CurrentCityInfo.brightnessScale or 1)
+		levRenderProps.lightScale = 1.25 * (CurrentCityInfo.brightnessScale or 1)
 	end
 	
 	if triggerLoading then
+		
+		-- drop all cars
+		cars:RemoveAll()
+		
 		if world.LoadLevel(CurrentCityInfo.levPath[CurrentCityType]) then
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 					
