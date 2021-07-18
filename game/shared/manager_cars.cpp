@@ -2,6 +2,7 @@
 
 #include <sol/sol.hpp>
 #include <nstd/Array.hpp>
+#include <nstd/Time.hpp>
 
 #include "core/cmdlib.h"
 
@@ -15,7 +16,6 @@
 #include "world.h"
 #include "manager_cars.h"
 #include "cars.h"
-
 
 // TODO: move it
 int	CameraCnt = 0;
@@ -41,6 +41,68 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 	lua.new_usertype<CAR_COSMETICS>(
 		"CAR_COSMETICS",
+		sol::call_constructor, sol::factories(
+			[](const sol::table& table) {
+
+				sol::table& wheelDispTable = table["wheelDisp"].get<sol::table>();
+				sol::table& cPointsTable = table["cPoints"].get<sol::table>();
+
+				CAR_COSMETICS newCosmetics;
+
+				if (!table.valid())
+					return newCosmetics;
+
+				if (!wheelDispTable.valid())
+				{
+					throw new sol::error("wheelDisp is null for CAR_COSMETICS");
+				}
+
+				if (!cPointsTable.valid())
+				{
+					throw new sol::error("cPoints is null for CAR_COSMETICS");
+				}
+
+				if (wheelDispTable.size() != 4)
+				{
+					throw new sol::error("wheelDisp count must be 4!");
+				}
+
+				if (cPointsTable.size() != 12)
+				{
+					throw new sol::error("cPoints count is not 12!");
+				}
+
+				newCosmetics.headLight = table["headLight"];
+				newCosmetics.frontInd = table["frontInd"];
+				newCosmetics.backInd = table["backInd"];
+				newCosmetics.brakeLight = table["brakeLight"];
+				newCosmetics.revLight = table["revLight"];
+				newCosmetics.policeLight = table["policeLight"];
+				newCosmetics.exhaust = table["exhaust"];
+				newCosmetics.smoke = table["smoke"];
+				newCosmetics.fire = table["fire"];
+
+				for(int i = 0; i < 4; i++)
+					newCosmetics.wheelDisp[i] = wheelDispTable[i+1];
+
+				for (int i = 0; i < 12; i++)
+					newCosmetics.cPoints[i] = cPointsTable[i + 1];
+
+				newCosmetics.extraInfo = table["extraInfo"];
+				newCosmetics.powerRatio = table["powerRatio"];
+				newCosmetics.cbYoffset = table["cbYoffset"];
+				newCosmetics.susCoeff = table["susCoeff"];
+				newCosmetics.traction = table["traction"];
+				newCosmetics.wheelSize = table["wheelSize"];
+				newCosmetics.colBox = table["colBox"];
+				newCosmetics.cog = table["cog"];
+				newCosmetics.twistRateX = table["twistRateX"];
+				newCosmetics.twistRateY = table["twistRateY"];
+				newCosmetics.twistRateZ = table["twistRateZ"];
+				newCosmetics.mass = table["mass"];
+
+				return newCosmetics;
+			}),
 		"headLight", &CAR_COSMETICS::headLight,
 		"frontInd", &CAR_COSMETICS::frontInd,
 		"backInd", &CAR_COSMETICS::backInd,
@@ -84,12 +146,16 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 			return self.LoadModel(idx);
 		}),
 		"Create", &CManager_Cars::Create,
+		"Remove", &CManager_Cars::Remove,
+		"RemoveAll", &CManager_Cars::RemoveAll,
 		"UpdateControl", &CManager_Cars::UpdateControl,
 		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
-		"DoScenaryCollisions", &CManager_Cars::DoScenaryCollisions);
+		"DoScenaryCollisions", &CManager_Cars::DoScenaryCollisions
+	);
 
 	lua.new_usertype<CCar>(
 		"CCar",
+		"Destroy", &CCar::Destroy,
 		"thrust", &CCar::m_thrust,
 		"wheel_angle", &CCar::m_wheel_angle,
 		"handbrake", &CCar::m_handbrake,
@@ -98,7 +164,11 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"autobrake", sol::property(&CCar::get_autobrake, &CCar::set_autobrake),
 		"cog_position", sol::property(&CCar::GetCogPosition),
 		"position", sol::property(&CCar::GetPosition, &CCar::SetPosition),
-		"direction", sol::property(&CCar::GetDirection, &CCar::SetDirection));
+		"direction", sol::property(&CCar::GetDirection, &CCar::SetDirection),
+		"i_cog_position", sol::property(&CCar::GetInterpolatedCogPosition),
+		"i_position", sol::property(&CCar::GetInterpolatedPosition),
+		"i_direction", sol::property(&CCar::GetInterpolatedDirection),
+		"cosmetics", &CCar::m_cos);
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
@@ -140,7 +210,7 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	return carModelIndex;
 }
 
-CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
+CCar* CManager_Cars::Create(const CAR_COSMETICS& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
 {
 	// not valid request
 	if (control == CONTROL_TYPE_NONE)
@@ -148,6 +218,8 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int modelId, i
 
 	CCar* cp = new CCar();
 	VECTOR_NOPAD tmpStart;
+
+	cp->m_owner = this;
 
 	cp->m_wasOnGround = 1;
 
@@ -158,7 +230,7 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int modelId, i
 	cp->m_lowDetail = -1;
 	cp->m_ap.qy = 0;
 	cp->m_ap.qw = 0;
-	cp->m_ap.carCos = cosmetic;
+	cp->m_cos = cosmetic;
 
 	cp->m_model = m_carModels[modelId];
 
@@ -166,9 +238,7 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int modelId, i
 	tmpStart.vy = positionInfo.position.vy;
 	tmpStart.vz = positionInfo.position.vz;
 
-	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_ap.carCos->wheelDisp[0].vy;
-
-	tmpStart.vy += 150;
+	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_cos.wheelDisp[0].vy;
 
 	cp->InitCarPhysics((LONGVECTOR4*)&tmpStart, positionInfo.direction);
 	cp->m_controlType = control;
@@ -223,11 +293,39 @@ CCar* CManager_Cars::Create(CAR_COSMETICS* cosmetic, int control, int modelId, i
 	return cp;
 }
 
+void CManager_Cars::RemoveAll()
+{
+	for (usize i = 0; i < m_active_cars.size(); i++)
+	{
+		CCar* cp = m_active_cars[i];
+		delete cp;
+	}
+	m_active_cars.clear();
+}
+
+void CManager_Cars::Remove(CCar* car)
+{
+	auto& foundCar = m_active_cars.find(car);
+	if (*foundCar)
+	{
+		delete car;
+		m_active_cars.remove(foundCar);
+	}
+}
+
 void CManager_Cars::UpdateControl()
 {
 	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
 		CCar* cp = m_active_cars[i];
+
+		if (cp->m_controlType == CONTROL_TYPE_NONE)
+		{
+			delete cp;
+			m_active_cars.remove(i);
+			i--;
+			continue;
+		}
 
 		//cp->m_thrust = 4096;
 		//cp->m_wheel_angle = -280;
@@ -336,6 +434,8 @@ void CManager_Cars::GlobalTimeStep()
 	int strikeVel, strength, depth;
 	int carsDentedThisFrame;
 	short* felony;
+
+	m_lastUpdateTime = Time::microTicks();
 
 #if 0
 	if (player[0].playerCarId < 0)
@@ -606,7 +706,7 @@ void CManager_Cars::GlobalTimeStep()
 								if (strikeVel > 0x69000)
 									strikeVel = 0x69000;
 
-								m1 = cp->m_ap.carCos->mass;
+								m1 = cp->m_cos.mass;
 								m2 = c1->m_ap.carCos->mass;
 
 								if (m2 < m1)
@@ -650,7 +750,7 @@ void CManager_Cars::GlobalTimeStep()
 									thisDelta[i].n.linearVelocity[1] -= velocity.vy;
 									thisDelta[i].n.linearVelocity[2] -= velocity.vz;
 
-									twistY = cp->m_ap.carCos->twistRateY / 2;
+									twistY = cp->m_cos.twistRateY / 2;
 
 									torque[0] = FIXEDH(velocity.vy * lever0[2] - velocity.vz * lever0[1]) * twistY;
 									torque[1] = FIXEDH(velocity.vz * lever0[0] - velocity.vx * lever0[2]) * twistY;
@@ -689,7 +789,7 @@ void CManager_Cars::GlobalTimeStep()
 									thisDelta[j].n.linearVelocity[1] += velocity.vy;
 									thisDelta[j].n.linearVelocity[2] += velocity.vz;
 
-									twistY = c1->m_ap.carCos->twistRateY / 2;
+									twistY = c1->m_cos.twistRateY / 2;
 
 									torque[0] = FIXEDH(lever1[1] * velocity.vz - lever1[2] * velocity.vy) * twistY;
 									torque[1] = FIXEDH(lever1[2] * velocity.vx - lever1[0] * velocity.vz) * twistY;
@@ -767,6 +867,8 @@ void CManager_Cars::GlobalTimeStep()
 		cp = m_active_cars[i];
 
 		cp->UpdateCarDrawMatrix();
+		
+
 #if 0
 		if (cp->m_ap.needsDenting != 0 && ((CameraCnt + i & 3U) == 0 || carsDentedThisFrame < 5))
 		{
@@ -777,6 +879,8 @@ void CManager_Cars::GlobalTimeStep()
 		}
 #endif
 		cp->m_hd.direction = ratan2(cp->m_hd.where.m[0][2], cp->m_hd.where.m[2][2]);
+
+		cp->CheckCarEffects();
 	}
 }
 
@@ -833,9 +937,18 @@ void CManager_Cars::DrawAllCars()
 		CCar* cp = m_active_cars[i];
 		cp->DrawCar();
 	}
+
+	m_curUpdateTime = Time::microTicks();
+}
+
+double CManager_Cars::GetInterpTime() const
+{
+	const double ticks_to_ms = 1.0 / 1000000.0;
+	return double(m_curUpdateTime - m_lastUpdateTime) * ticks_to_ms;
 }
 
 void CManager_Cars::Draw(const CameraViewParams& view)
 {
+	
 	g_cars->DrawAllCars();
 }

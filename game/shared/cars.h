@@ -55,7 +55,6 @@ struct OrientedBox
 struct HANDLING_DATA
 {
 	MATRIX where;
-	MATRIX drawCarMat;
 	LONGVECTOR4 acc;
 	LONGVECTOR4 aacc;
 	WHEEL wheel[4];
@@ -84,7 +83,6 @@ union RigidBodyState
 struct APPEARANCE_DATA
 {
 	SXYPAIR light_trails[4][4];
-	CAR_COSMETICS* carCos;
 	short old_clock[4];
 	int8 life;
 	int8 coplife;
@@ -205,12 +203,18 @@ enum ECarControlFlags
 };
 //------------------------------------------------------------------
 
+extern const double Car_Fixed_Timestep;
+//------------------------------------------------------------------
+
+
 class CCar
 {
 	friend class CManager_Cars;
 public:
 							CCar();
 							~CCar();
+
+	void					Destroy();
 
 	// handling
 	void					InitCarPhysics(LONGVECTOR4* startpos, int direction);
@@ -228,6 +232,10 @@ public:
 	void					StepOneCar();
 
 	// utility functions (mostly for Lua)
+	VECTOR_NOPAD			GetInterpolatedCogPosition() const;
+	const VECTOR_NOPAD&		GetInterpolatedPosition() const;
+	int						GetInterpolatedDirection() const;
+
 	VECTOR_NOPAD			GetCogPosition() const;
 
 	const VECTOR_NOPAD&		GetPosition() const;
@@ -273,6 +281,15 @@ protected:
 	HANDLING_DATA	m_hd;
 	RigidBodyState	m_st;
 	APPEARANCE_DATA	m_ap;
+	CAR_COSMETICS	m_cos;
+
+	Matrix4x4		m_prevDrawCarMatrix{ identity4() };
+	Matrix4x4		m_drawCarMatrix{ identity4() };
+	VECTOR_NOPAD	m_prevPosition;
+	VECTOR_NOPAD	m_prevCogPosition;
+	int				m_prevDirection;
+
+	CManager_Cars*	m_owner{ nullptr };
 
 	uint8			m_hndType{ 0 };
 

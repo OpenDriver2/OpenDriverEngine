@@ -14,7 +14,8 @@
 #include "renderer/gl_renderer.h"
 #include "renderer/debug_overlay.h"
 
-#include "game/render//render_model.h"
+#include "game/render/render_model.h"
+#include "manager_cars.h"
 
 #include "core/cmdlib.h"
 
@@ -23,8 +24,7 @@
 #include "world.h"
 #include "cars.h"
 
-
-
+const double Car_Fixed_Timestep = 1.0 / 30.0;
 
 struct GEAR_DESC
 {
@@ -82,6 +82,12 @@ CCar::~CCar()
 {
 }
 
+void CCar::Destroy()
+{
+	// too simple
+	m_controlType = CONTROL_TYPE_NONE;
+}
+
 void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 {
 	int oldCompression, newCompression;
@@ -104,7 +110,6 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	int i;
 	int cdx, cdz;
 	int sdx, sdz;
-	CAR_COSMETICS* car_cos;
 	int player_id;
 
 	oldSpeed = m_hd.speed * 3 >> 1;
@@ -123,7 +128,6 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	sdz = icos(dir);
 
 	//player_id = GetPlayerId(cp);
-	car_cos = m_ap.carCos;
 
 	GetFrictionScalesDriver1(cl, frontFS, rearFS);
 
@@ -136,7 +140,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	i = 3;
 	wheel = m_hd.wheel + 3;
 	do {
-		gte_ldv0(&car_cos->wheelDisp[i]);
+		gte_ldv0(&m_cos.wheelDisp[i]);
 
 		gte_rtv0tr();
 		gte_stlvnl(wheelPos);
@@ -494,7 +498,7 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 
 	if (m_wheelspin != 0)
 	{
-		m_thrust = FIXEDH(m_ap.carCos->powerRatio * 5000);
+		m_thrust = FIXEDH(m_cos.powerRatio * 5000);
 	}
 
 	if (m_thrust < 0 && m_hd.wheel_speed > 41943 && cl.aggressive != 0)
@@ -519,7 +523,7 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 		rearFS = (rearFS * 3) / 2;
 	}
 
-	int traction = m_ap.carCos->traction;
+	int traction = m_cos.traction;
 
 	if (traction != 4096)
 	{
@@ -534,10 +538,8 @@ void CCar::ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl)
 	int zd;
 	int i;
 
-	CAR_COSMETICS* car_cos = m_ap.carCos;
-
-	twistY = car_cos->twistRateY;
-	twistZ = car_cos->twistRateZ;
+	twistY = m_cos.twistRateY;
+	twistZ = m_cos.twistRateZ;
 
 	zd = FIXEDH(m_hd.where.m[0][2] * m_hd.aacc[0] + m_hd.where.m[1][2] * m_hd.aacc[1] + m_hd.where.m[2][2] * m_hd.aacc[2]);
 
@@ -559,7 +561,7 @@ void CCar::StepOneCar()
 	};
 
 	volatile int impulse;
-	CAR_COSMETICS* car_cos;
+
 	int friToUse;
 	int lift;
 	int a, b, speed;
@@ -574,6 +576,10 @@ void CCar::StepOneCar()
 	// FIXME: redundant?
 	// if (m_controlType == CONTROL_TYPE_NONE)
 	// 	return;
+
+	m_prevPosition = GetPosition();
+	m_prevCogPosition = GetCogPosition();
+	m_prevDirection = m_hd.direction;
 
 	SurfacePtr = NULL;
 	_cl.aggressive = handlingType[m_hndType].aggressiveBraking;
@@ -602,7 +608,6 @@ void CCar::StepOneCar()
 
 	m_hd.speed = speed;
 
-	car_cos = m_ap.carCos;
 	lift = 0;
 
 	gte_SetRotMatrix(&m_hd.where);
@@ -623,7 +628,7 @@ void CCar::StepOneCar()
 	// calculate lifting factor
 	while (count >= 0)
 	{
-		gte_ldv0(&car_cos->cPoints[count]);
+		gte_ldv0(&m_cos.cPoints[count]);
 
 		gte_rtv0tr();
 
@@ -681,7 +686,7 @@ void CCar::StepOneCar()
 		lever[1] = FIXEDH(_cl.avel[2] * deepestLever[0] - _cl.avel[0] * deepestLever[2]) + _cl.vel[1];
 		lever[2] = FIXEDH(_cl.avel[0] * deepestLever[1] - _cl.avel[1] * deepestLever[0]) + _cl.vel[2];
 
-		twistY = car_cos->twistRateY;
+		twistY = m_cos.twistRateY;
 
 		lever_dot_n = FIXEDH(deepestLever[0] * deepestNormal[0] + deepestLever[1] * deepestNormal[1] + deepestLever[2] * deepestNormal[2]);
 		displacementsquared = FIXEDH(((deepestLever[0] * deepestLever[0] + deepestLever[1] * deepestLever[1] + deepestLever[2] * deepestLever[2]) - lever_dot_n * lever_dot_n) * twistY) + 4096;
@@ -950,48 +955,45 @@ void CCar::ControlCarRevs()
 void CCar::InitOrientedBox()
 {
 	SVECTOR boxDisp;
-	CAR_COSMETICS* car_cos;
 
 	short length;
 
 	gte_SetRotMatrix(&m_hd.where);
 	gte_SetTransMatrix(&m_hd.where);
 
-	car_cos = m_ap.carCos;
-
-	boxDisp.vx = -car_cos->cog.vx;
-	boxDisp.vy = -car_cos->cog.vy;
-	boxDisp.vz = -car_cos->cog.vz;
+	boxDisp.vx = -m_cos.cog.vx;
+	boxDisp.vy = -m_cos.cog.vy;
+	boxDisp.vz = -m_cos.cog.vz;
 
 	gte_ldv0(&boxDisp);
 	gte_rtv0tr();
 
 	if (m_controlType == CONTROL_TYPE_PURSUER_AI)
 	{
-		length = (car_cos->colBox.vx * 14) / 16;
+		length = (m_cos.colBox.vx * 14) / 16;
 		m_hd.oBox.length[0] = length;
 	}
 	else
 	{
-		length = car_cos->colBox.vx;
+		length = m_cos.colBox.vx;
 		m_hd.oBox.length[0] = length;
 	}
 
 	gte_stlvnl(&m_hd.oBox.location);
 
 	VECTOR_NOPAD svx = { length, 0 ,0 };
-	VECTOR_NOPAD svy = { 0, car_cos->colBox.vy ,0 };
-	VECTOR_NOPAD svz = { 0, 0 ,car_cos->colBox.vz };
+	VECTOR_NOPAD svy = { 0, m_cos.colBox.vy ,0 };
+	VECTOR_NOPAD svz = { 0, 0, m_cos.colBox.vz };
 
 	gte_ldlvl(&svx);
 
 	gte_rtir();
-	m_hd.oBox.length[1] = car_cos->colBox.vy;
+	m_hd.oBox.length[1] = m_cos.colBox.vy;
 	gte_stsv(&m_hd.oBox.radii[0]);
 
 	gte_ldlvl(&svy);
 	gte_rtir();
-	m_hd.oBox.length[2] = car_cos->colBox.vz;
+	m_hd.oBox.length[2] = m_cos.colBox.vz;
 	gte_stsv(&m_hd.oBox.radii[1]);
 
 	gte_ldlvl(&svz);
@@ -1145,9 +1147,7 @@ void CCar::InitCarPhysics(LONGVECTOR4* startpos, int direction)
 	int dz;
 	int sn, cs;
 
-	CAR_COSMETICS* car_cos = m_ap.carCos;
-
-	dz = car_cos->wheelDisp[0].vz + car_cos->wheelDisp[1].vz;
+	dz = m_cos.wheelDisp[0].vz + m_cos.wheelDisp[1].vz;
 	ty = dz / 5;
 	odz = dz / 32;
 
@@ -1199,9 +1199,8 @@ void CCar::TempBuildHandlingMatrix(int init)
 {
 	int dz;
 	int sn, cs;
-	CAR_COSMETICS* car_cos = m_ap.carCos;
 
-	dz = (car_cos->wheelDisp[0].vz + car_cos->wheelDisp[1].vz) / 5;
+	dz = (m_cos.wheelDisp[0].vz + m_cos.wheelDisp[1].vz) / 5;
 
 	if (init == 1)
 	{
@@ -1261,21 +1260,8 @@ void CCar::StepCarPhysics()
 
 void CCar::UpdateCarDrawMatrix()
 {
-	// TODO: it must be interpolated here
-
-	m_hd.drawCarMat.m[0][0] = -m_hd.where.m[0][0];
-	m_hd.drawCarMat.m[0][1] = -m_hd.where.m[0][1];
-	m_hd.drawCarMat.m[0][2] = -m_hd.where.m[0][2];
-
-	m_hd.drawCarMat.m[1][0] = m_hd.where.m[1][0];
-	m_hd.drawCarMat.m[1][1] = m_hd.where.m[1][1];
-	m_hd.drawCarMat.m[1][2] = m_hd.where.m[1][2];
-
-	m_hd.drawCarMat.m[2][0] = -m_hd.where.m[2][0];
-	m_hd.drawCarMat.m[2][1] = -m_hd.where.m[2][1];
-	m_hd.drawCarMat.m[2][2] = -m_hd.where.m[2][2];
-
-	// also we probably gonna update wheel positions here
+	m_prevDrawCarMatrix = m_drawCarMatrix;
+	m_drawCarMatrix = FromFixedMatrix(m_hd.where);
 }
 
 void CCar::CreateDentableCar()
@@ -1288,6 +1274,27 @@ void CCar::DentCar()
 	// UNIMPEMENTED!!!
 }
 
+VECTOR_NOPAD CCar::GetInterpolatedCogPosition() const
+{
+	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+
+	return ToFixedVector(lerp(FromFixedVector(m_prevCogPosition), FromFixedVector(GetCogPosition()), factor));
+}
+
+const VECTOR_NOPAD& CCar::GetInterpolatedPosition() const
+{
+	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+
+	return ToFixedVector(lerp(FromFixedVector(m_prevPosition), FromFixedVector(GetPosition()), factor));
+}
+
+int CCar::GetInterpolatedDirection() const
+{
+	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+
+	return lerp((float)m_prevDirection, (float)m_hd.direction, factor);
+}
+
 VECTOR_NOPAD CCar::GetCogPosition() const
 {
 	VECTOR_NOPAD result;
@@ -1295,7 +1302,7 @@ VECTOR_NOPAD CCar::GetCogPosition() const
 	gte_SetRotMatrix(&m_hd.where);
 	gte_SetTransMatrix(&m_hd.where);
 
-	cog = m_ap.carCos->cog;
+	cog = m_cos.cog;
 	cog.vx = -cog.vx;
 	cog.vy = -cog.vy;
 	cog.vz = -cog.vz;
@@ -1351,22 +1358,22 @@ extern CDriverLevelModels g_levModels;
 
 void CCar::DrawCar()
 {
+	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+
+	// this potentially could warp matrix. PLEASE consider using quaternions in future
+	Matrix4x4 drawCarMat(
+		lerp(m_prevDrawCarMatrix.rows[0], m_drawCarMatrix.rows[0], factor),
+		lerp(m_prevDrawCarMatrix.rows[1], m_drawCarMatrix.rows[1], factor),
+		lerp(m_prevDrawCarMatrix.rows[2], m_drawCarMatrix.rows[2], factor),
+		lerp(m_prevDrawCarMatrix.rows[3], m_drawCarMatrix.rows[3], factor)
+	);
+
 	// UNIMPEMENTED!!!
 	CRenderModel::SetupModelShader();
 
-	Vector3D carPos = FromFixedVector((VECTOR_NOPAD&)m_hd.where.t);
+	Vector3D cog = FromFixedVector(m_cos.cog);
 
-	Vector3D carMatX = FromFixedVector(SVECTOR{m_hd.where.m[0][0], m_hd.where.m[0][1], m_hd.where.m[0][2]});
-	Vector3D carMatY = FromFixedVector(SVECTOR{m_hd.where.m[1][0], m_hd.where.m[1][1], m_hd.where.m[1][2]});
-	Vector3D carMatZ = FromFixedVector(SVECTOR{m_hd.where.m[2][0], m_hd.where.m[2][1], m_hd.where.m[2][2]});
-
-
-
-	Matrix4x4 objectMatrix = translate(carPos) * Matrix4x4(Vector4D(carMatX, 0.0f), Vector4D(carMatY, 0.0f), Vector4D(carMatZ, 0.0f), Vector4D(0,0,0,1)) * rotateY4(DEG2RAD(180));
-
-	Vector3D cog = FromFixedVector(m_ap.carCos->cog);
-	cog.y *= -1;
-	objectMatrix = objectMatrix * translate(cog);
+	Matrix4x4 objectMatrix = drawCarMat * (translate(-cog) * rotateY4(DEG2RAD(180)));
 
 	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 	GR_UpdateMatrixUniforms();
@@ -1378,20 +1385,20 @@ void CCar::DrawCar()
 		renderModel->Draw(true, m_ap.palette);
 	}
 
+	// draw wheels
+	objectMatrix = drawCarMat * rotateY4(DEG2RAD(180));
+
 	static int wheelModelId = g_levModels.FindModelIndexByName("CLEANWHEEL");
-
-	objectMatrix = translate(carPos) * Matrix4x4(Vector4D(carMatX, 0.0f), Vector4D(carMatY, 0.0f), Vector4D(carMatZ, 0.0f), Vector4D(0, 0, 0, 1)) * rotateY4(DEG2RAD(180));
-
 	ModelRef_t* wheelModel = g_levModels.GetModelByIndex(wheelModelId);
 	renderModel = (CRenderModel*)wheelModel->userData;
 	if (renderModel)
 	{
-		const int wheelSize = m_ap.carCos->wheelSize;
+		const int wheelSize = m_cos.wheelSize;
 
 		for (int i = 0; i < 4; i++)
 		{
 			const WHEEL& wheel = m_hd.wheel[i];
-			const SVECTOR& wheelDisp = m_ap.carCos->wheelDisp[i];
+			const SVECTOR& wheelDisp = m_cos.wheelDisp[i];
 
 			SVECTOR sWheelPos;
 			if ((i & 2) == 0)
