@@ -3,6 +3,7 @@ dofile "scripts/common.lua"
 dofile "scripts/city.lua"
 dofile "scripts/updates.lua"
 dofile "scripts/free_camera.lua"
+dofile "scripts/test_game.lua"
 
 -- "engine" namespace has everything dynamically updated
 -- "driver" & "driver2" namespace has every class to be used with "engine"
@@ -15,22 +16,39 @@ local sky = engine.Sky							-- Sky renderer
 local levRenderProps = engine.LevelRenderProps	-- Level render properties (mode, lighting, etc)
 local camera = engine.Camera
 
+local timeAccumulator = 0
+local fixed_timestep = 1.0 / 30.0
 
 function StepSim(dt)
-	-- TODO: direct port from MAIN.C
-	-- 
-	-- events:Update()
-	-- mission:Update()
-	-- civAI:PingIn()
-	cars:UpdateControl()	-- controls and replay
-	
-	-- cops.Update()
-	-- peds.Update()
 
-	cars:GlobalTimeStep( dt )
-	--players:Update()
-	cars:DoScenaryCollisions()
-	--players:CheckMiscFelonies()
+	timeAccumulator = timeAccumulator + dt
+	
+	if timeAccumulator < fixed_timestep then
+		return
+	end
+	
+	while timeAccumulator > fixed_timestep do
+
+		UpdateCarPads()
+
+		-- TODO: direct port from MAIN.C
+		-- 
+		-- events:Update()
+		-- mission:Update()
+		-- civAI:PingIn()
+		cars:UpdateControl()	-- controls and replay
+		
+		-- cops.Update()
+		-- peds.Update()
+
+		cars:GlobalTimeStep()
+		--players:Update()
+		cars:DoScenaryCollisions()
+		--players:CheckMiscFelonies()
+
+		PlaceCameraFollowCar()
+		timeAccumulator = timeAccumulator - fixed_timestep
+	end
 end
 
 function InitCamera( params )
@@ -48,11 +66,11 @@ function GameLoop(dt)
 	world.PurgeCellObjects()
 
 	FreeCamera.UpdateCameraMovement(dt)
-	InitCamera({
+	--[[InitCamera({
 		position = FreeCamera.Position,
 		angles = FreeCamera.Angles,
 		fov = FreeCamera.FOV
-	})
+	})]]
 	
 	local spoolPos = fix.ToFixedVector(camera.MainView.position)
 	world.SpoolRegions(spoolPos, 1)
@@ -71,7 +89,7 @@ function GameLoop(dt)
 		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2434, -300, -9641), 128 / 64, truckModel.index))
 	end
 	
-	--StepSim( dt )
+	StepSim( dt )
 end
 
 CurrentCityInfo = nil
@@ -134,6 +152,7 @@ function ChangeCity(newCity, newCityType, newWeather)
 	if triggerLoading then
 		if world.LoadLevel(CurrentCityInfo.levPath[CurrentCityType]) then
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
+					
 			SetUpdateFunc("GameLoop", GameLoop)
 			
 			trainModel = world.GetModelByName("ELTRAIN")
@@ -143,10 +162,12 @@ function ChangeCity(newCity, newCityType, newWeather)
 		-- reload sky only
 		sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 	end
+	
+	InitTestGame()
 end
 
 function ResetFreeCamera()
-	FreeCamera.Position = vec.vec3(0)
+	FreeCamera.Position = vec.vec3(5100 / fix.ONE, 590 / fix.ONE, -13651 / fix.ONE)
 	FreeCamera.Angles = vec.vec3(25.0, 45.0, 0)
 	
 	--g_cameraPosition = FromFixedVector({ 230347, 372, 704038 });
@@ -160,9 +181,10 @@ function StartTest()
 	CurrentCityInfo = {}
 	CurrentCityType = CityType.Day
 	CurrentSkyType = SkyType.Day
+
 	
 	ResetFreeCamera()
-
+	
 	--ChangeCity(CityInfo["Chicago"], CityType.Day, SkyType.Day)
 end
 
@@ -170,47 +192,6 @@ function StopTest()
 	world.UnloadLevel()
 	SetUpdateFunc("GameLoop", nil)
 end
-
---[[
-function StartTestGame()
-	-- We are going to load Driver 2 level TODO: factory
-	local level = driver2.Level.new()
-
-	CurrentCityInfo = CityInfo["Havana"]
-	CurrentCityType = CityType.Day
-	CurrentSkyType = SkyType.Dusk
-
-	-- set level to be used for rendering, collision etc
-	world:SetLevel(level)
-
-	-- load a level file
-	if level:Load( CurrentCityInfo.levPath[CurrentCityType] ) then
-		-- load sky
-		sky:Load( CurrentCityInfo.skyPath, 0 )
-		
-		-- load car models, cosmetics and denting
-		cars:Load( CurrentCityInfo, level )
-		
-		-- TODO: ability to load cars from another city. Need to somehow handle additional model slots
-		--cars:Load()
-	end
-	
-	-- create a car and a player
-	local model = 0
-	local palette = 2
-		
-	positionInfo = {X = 200000, Z = 300000, dir = 2048} -- X, Z, direction. Not specifying Y will place car at level.MapHeight(XZ)
-		
-	local car = cars:Create(model, palette, CONTROL_TYPE_PLAYER, positionInfo)
-
-	-- create player at slot 0
-	local localPlayer = players:InitWithCar(0, car)
-	
-	players:SetLocalPlayer(localPlayer)
-	
-	SetUpdateFunc("GameLoop", GameLoop)
-end]]
-
 
 function RenderUI()
 
@@ -304,7 +285,9 @@ end
 EngineHost = {
 	-- This function is called every frame before drawing world
 	Frame = function( dt )
-		xpcall(function() DoUpdateFuncs(dt) end, errorHandler)
+		xpcall(function() 
+			DoUpdateFuncs(dt) 
+		end, errorHandler)
 	end,
 
 	-- This function called every frame after drawing world
@@ -314,17 +297,27 @@ EngineHost = {
 	end,
 	
 	MouseMove = function( x, y, xrel, yrel)
-		FreeCamera.MouseMove(xrel, yrel)
+		xpcall(function() 
+			FreeCamera.MouseMove(xrel, yrel)
+		end, errorHandler)
 	end,
 	
 	MouseButton = function( num, down )
-		if num == 1 then
-			FreeCamera.Look = down
-		end
+		xpcall(function() 
+			if num == 1 then
+				FreeCamera.Look = down
+			end
+		end, errorHandler)
+
 	end,
 	
 	KeyPress = function( num, down )
-		FreeCamera.KeyPress(num, down)
+		xpcall(function() 
+			FreeCamera.KeyPress(num, down)
+			
+			UpdateCarControls(num, down)
+		end, errorHandler)
+
 	end
 }
 
