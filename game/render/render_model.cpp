@@ -408,6 +408,8 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 	}
 }
 
+extern TextureID g_whiteTexture;
+
 void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 {
 	if(fullSetup)
@@ -419,8 +421,16 @@ void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 	{
 		modelBatch_t& batch = m_batches[i];
 		
-		if(fullSetup)
-			GR_SetTexture(CWorld::GetHWTexture(batch.tpage, paletteSet));
+		if (fullSetup)
+		{
+			// check if palette tex is not empty
+			TextureID desiredTex = CWorld::GetHWTexture(batch.tpage, paletteSet);
+
+			if(paletteSet > 0 && desiredTex == g_whiteTexture)
+				desiredTex = CWorld::GetHWTexture(batch.tpage, 0);
+
+			GR_SetTexture(desiredTex);
+		}
 
 		GR_DrawIndexed(PRIM_TRIANGLES, batch.startIndex, batch.numIndices);
 	}
