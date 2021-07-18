@@ -204,7 +204,7 @@ void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 	}
 }
 
-extern sdPlane g_seaPlane;
+extern sdPlane g_defaultPlane;
 
 int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 {
@@ -215,7 +215,7 @@ int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane) const
 {
 	{
-		*outPlane = &g_seaPlane;
+		*outPlane = &g_defaultPlane;
 
 		outPoint.vx = position.vx;
 		outPoint.vz = position.vz;
