@@ -408,7 +408,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 	}
 }
 
-void CRenderModel::Draw(bool fullSetup /*= true*/)
+void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 {
 	if(fullSetup)
 		SetupModelShader();
@@ -420,7 +420,7 @@ void CRenderModel::Draw(bool fullSetup /*= true*/)
 		modelBatch_t& batch = m_batches[i];
 		
 		if(fullSetup)
-			GR_SetTexture(CWorld::GetHWTexture(batch.tpage, 0));
+			GR_SetTexture(CWorld::GetHWTexture(batch.tpage, paletteSet));
 
 		GR_DrawIndexed(PRIM_TRIANGLES, batch.startIndex, batch.numIndices);
 	}

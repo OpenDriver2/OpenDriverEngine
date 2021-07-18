@@ -162,8 +162,7 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 
 		if (anyMatched)
 		{
-			g_hwTexturePages[tpageId][numPalettes + 1] = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-			numPalettes++;
+			g_hwTexturePages[tpageId][++numPalettes] = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
 		}
 	}
 	

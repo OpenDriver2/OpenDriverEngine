@@ -1288,6 +1288,64 @@ void CCar::DentCar()
 	// UNIMPEMENTED!!!
 }
 
+VECTOR_NOPAD CCar::GetCogPosition() const
+{
+	VECTOR_NOPAD result;
+	SVECTOR cog;
+	gte_SetRotMatrix(&m_hd.where);
+	gte_SetTransMatrix(&m_hd.where);
+
+	cog = m_ap.carCos->cog;
+	cog.vx = -cog.vx;
+	cog.vy = -cog.vy;
+	cog.vz = -cog.vz;
+
+	gte_ldv0(&cog);
+
+	gte_rtv0tr();
+	gte_stlvnl(&result);
+
+	return result;
+}
+
+const VECTOR_NOPAD& CCar::GetPosition() const
+{
+	return *(VECTOR_NOPAD*)m_hd.where.t;
+}
+
+void CCar::SetPosition(const VECTOR_NOPAD& value)
+{
+	m_hd.where.t[0] = value.vx;
+	m_hd.where.t[1] = value.vy;
+	m_hd.where.t[2] = value.vz;
+}
+
+int	CCar::GetDirection() const
+{
+	return m_hd.direction;
+}
+
+void CCar::SetDirection(const int& newDir)
+{
+	m_hd.direction = newDir;
+	TempBuildHandlingMatrix(0);
+}
+
+bool CCar::get_changingGear() const
+{
+	return m_hd.changingGear;
+}
+
+int8 CCar::get_autobrake() const
+{
+	return m_hd.autoBrake;
+}
+
+void CCar::set_autobrake(const int8& value)
+{
+	m_hd.autoBrake = value;
+}
+
 #include "routines/models.h"
 extern CDriverLevelModels g_levModels;
 
@@ -1306,7 +1364,9 @@ void CCar::DrawCar()
 
 	Matrix4x4 objectMatrix = translate(carPos) * Matrix4x4(Vector4D(carMatX, 0.0f), Vector4D(carMatY, 0.0f), Vector4D(carMatZ, 0.0f), Vector4D(0,0,0,1)) * rotateY4(DEG2RAD(180));
 
-	objectMatrix = objectMatrix * translate(-FromFixedVector(m_ap.carCos->cog));
+	Vector3D cog = FromFixedVector(m_ap.carCos->cog);
+	cog.y *= -1;
+	objectMatrix = objectMatrix * translate(cog);
 
 	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 	GR_UpdateMatrixUniforms();
@@ -1340,7 +1400,7 @@ void CCar::DrawCar()
 				sWheelPos.vx = -17 - wheelDisp.vx;
 
 			sWheelPos.vz = -wheelDisp.vz;
-			sWheelPos.vy = (-wheelSize - wheelDisp.vy) + wheel.susCompression + 14;
+			sWheelPos.vy = -((-wheelSize - wheelDisp.vy) - wheel.susCompression + 14);
 
 			Vector3D wheelPos = FromFixedVector(sWheelPos);
 
@@ -1348,19 +1408,13 @@ void CCar::DrawCar()
 
 			if ((i & 1) == 0)
 			{
-				wheelMat = wheelMat * rotateY4(-DEG2RAD(float(m_wheel_angle) / 24.0f));
+				wheelMat = wheelMat * rotateY4(-float(m_wheel_angle) / 4096.0f * PI_F * 2.0f);
 			}
 
 			GR_SetMatrix(MATRIX_WORLD, wheelMat);
 			GR_UpdateMatrixUniforms();
 
-			renderModel->Draw();
+			renderModel->Draw(true, m_ap.palette);
 		}
 	}
-
-	objectMatrix = transpose(objectMatrix);
-
-	CDebugOverlay::Line(carPos, carPos + objectMatrix.rows[0].xyz(), ColorRGBA(1, 0, 0, 1));
-	CDebugOverlay::Line(carPos, carPos + objectMatrix.rows[1].xyz(), ColorRGBA(0, 1, 0, 1));
-	CDebugOverlay::Line(carPos, carPos + objectMatrix.rows[2].xyz(), ColorRGBA(0, 0, 1, 1));
 }

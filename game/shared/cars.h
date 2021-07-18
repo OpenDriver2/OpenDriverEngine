@@ -52,7 +52,7 @@ struct OrientedBox
 	short length[3];
 };
 
-typedef struct _HANDLING_DATA
+struct HANDLING_DATA
 {
 	MATRIX where;
 	MATRIX drawCarMat;
@@ -64,11 +64,11 @@ typedef struct _HANDLING_DATA
 	int front_vel, rear_vel;
 	int mayBeColliding;		// [A] now used as a bitfield to create collision pairs
 	short revs;
-	char gear, changingGear;
-	char autoBrake;
+	int8 gear, changingGear;
+	int8 autoBrake;
 
 	OrientedBox oBox;
-} HANDLING_DATA;
+};
 
 union RigidBodyState
 {
@@ -81,23 +81,23 @@ union RigidBodyState
 	} n;
 };
 
-typedef struct _APPEARANCE_DATA
+struct APPEARANCE_DATA
 {
 	SXYPAIR light_trails[4][4];
 	CAR_COSMETICS* carCos;
 	short old_clock[4];
-	char life;
-	char coplife;
+	int8 life;
+	int8 coplife;
 	short qy, qw;
-	char life2;
-	char model;
-	char palette;
+	int8 life2;
+	int8 model;
+	int8 palette;
 
-	char needsDenting : 1;
+	int8 needsDenting : 1;
 	char flags : 7;			// [A] new: appearance flags, 1,2,3,4 = wheel hubcaps lost
 
 	short damage[6];
-} APPEARANCE_DATA;
+};
 
 struct CIV_ROUTE_ENTRY
 {
@@ -209,23 +209,32 @@ class CCar
 {
 	friend class CManager_Cars;
 public:
-					CCar();
-					~CCar();
+							CCar();
+							~CCar();
 
 	// handling
-	void			InitCarPhysics(LONGVECTOR4* startpos, int direction);
-	void			TempBuildHandlingMatrix(int init);
-	void			StepCarPhysics();
+	void					InitCarPhysics(LONGVECTOR4* startpos, int direction);
+	void					TempBuildHandlingMatrix(int init);
+	void					StepCarPhysics();
 
-	void			CheckCarEffects();
+	void					CheckCarEffects();
 
 	// drawing
-	void			UpdateCarDrawMatrix();
-	void			DentCar();
-	void			DrawCar();
+	void					UpdateCarDrawMatrix();
+	void					DentCar();
+	void					DrawCar();
 
 	// wheel forces
-	void			StepOneCar();
+	void					StepOneCar();
+
+	// utility functions (mostly for Lua)
+	VECTOR_NOPAD			GetCogPosition() const;
+
+	const VECTOR_NOPAD&		GetPosition() const;
+	void					SetPosition(const VECTOR_NOPAD& value);
+
+	int						GetDirection() const;
+	void					SetDirection(const int& newDir);
 
 protected:
 
@@ -254,6 +263,11 @@ protected:
 	void			GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS);
 	void			AddWheelForcesDriver1(CAR_LOCALS& cl);
 	void			ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl);
+
+	bool			get_changingGear() const;
+
+	int8			get_autobrake() const;
+	void			set_autobrake(const int8& value);
 
 	// --------------------
 	HANDLING_DATA	m_hd;

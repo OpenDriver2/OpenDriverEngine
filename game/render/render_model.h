@@ -39,7 +39,7 @@ public:
 	bool				Initialize(ModelRef_t* model);
 	void				Destroy();
 
-	void				Draw(bool fullSetup = true);
+	void				Draw(bool fullSetup = true, int paletteSet = 0);
 
 	void				GetExtents(Vector3D& outMin, Vector3D& outMax) const;
 

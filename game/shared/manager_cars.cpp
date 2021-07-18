@@ -91,7 +91,14 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 	lua.new_usertype<CCar>(
 		"CCar",
 		"thrust", &CCar::m_thrust,
-		"wheel_angle", &CCar::m_wheel_angle);
+		"wheel_angle", &CCar::m_wheel_angle,
+		"handbrake", &CCar::m_handbrake,
+		"wheelspin", &CCar::m_wheelspin,
+		"changingGear", sol::property(&CCar::get_changingGear),
+		"autobrake", sol::property(&CCar::get_autobrake, &CCar::set_autobrake),
+		"cog_position", sol::property(&CCar::GetCogPosition),
+		"position", sol::property(&CCar::GetPosition, &CCar::SetPosition),
+		"direction", sol::property(&CCar::GetDirection, &CCar::SetDirection));
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
