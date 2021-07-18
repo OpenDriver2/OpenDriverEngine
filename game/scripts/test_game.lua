@@ -1,10 +1,24 @@
 local cars = engine.Cars
 local world = engine.World
 
-local car
-local carCos
+TestGame = {
 
-function FixCarCos(carCos)
+}
+
+local car = nil
+local carCos = nil
+
+-- car controls
+local buttonState = {
+	[SDL.Scancode.Up] = false,
+	[SDL.Scancode.Down] = false,
+	[SDL.Scancode.Left] = false,
+	[SDL.Scancode.Right] = false,
+}
+
+-- Fixes car cosmetics in REDRIVER2 way
+-- TODO: move to CarCosmetics lua
+local function FixCarCos(carCos)
 	local delta = fix.SVECTOR(0,0,0)
 	delta.vy = -(carCos:wheelDisp(1).vz + carCos:wheelDisp(2).vz - 14) / 2
 
@@ -28,7 +42,66 @@ function FixCarCos(carCos)
 	UpdateCarPoints()
 end
 
-function InitTestGame()
+-- TODO: move to Camera.lua
+local cameraAngle = 1024
+
+local function PlaceCameraFollowCar()
+	if car == nil then
+		return
+	end
+
+	local basePos = car.cog_position
+	local direction = car.direction
+	
+	local cameraPos = fix.VECTOR(0,0,0)
+	
+	local maxCameraDist = carCos.colBox.vz * 2 + carCos.colBox.vy + 248
+	local carHeight = carCos.colBox.vy * -3 + 85
+	
+	local cameraDist = maxCameraDist
+	
+	-- smooth follow
+	local angleDelta = fix.DIFF_ANGLES(cameraAngle, direction)
+	cameraAngle = cameraAngle + (angleDelta / 8)
+	
+	local sn = gte.isin(cameraAngle)
+	local cs = gte.icos(cameraAngle)
+	
+	cameraPos.vx = basePos.vx - (cameraDist * sn) / fix.ONE;
+	cameraPos.vy = basePos.vy
+	cameraPos.vz = basePos.vz - (cameraDist * cs) / fix.ONE;
+
+	local camPosVy = world.MapHeight(cameraPos)
+	cameraPos.vy = carHeight - basePos.vy	
+	
+	local cammapht = (carHeight - camPosVy) - 100 -- + gCameraOffset.vy;
+	local camera_angle = fix.VECTOR(25, -cameraAngle, 0)
+
+	if cameraPos.vy > cammapht then
+		local height = world.MapHeight(basePos);
+
+		if math.abs(height - camPosVy) < 900 then
+			camera_angle.vx = (cameraPos.vy - cammapht) / 2 + 25
+			cameraPos.vy = cammapht;
+		end
+	end
+	
+	cameraPos.vy = -cameraPos.vy
+	
+	InitCamera({
+		position = fix.FromFixedVector(cameraPos),
+		angles = vec.vec3(camera_angle.vx / fix.ONE * 360.0,camera_angle.vy / fix.ONE * 360.0,0),
+		fov = 50
+	})
+end
+
+-------------------------------------------------------
+
+TestGame.UpdateCamera = function()
+	PlaceCameraFollowCar()
+end
+
+TestGame.Init = function()
 
 	-- load current city cars
 	cars:LoadModel(1)
@@ -90,17 +163,10 @@ function InitTestGame()
 	car = cars:Create(carCos, 1 --[[ CONTROL_TYPE_PLAYER ]], model, palette, positionInfo)
 end
 
-local cameraAngle = 1024
-
-local buttonState = {
-	[SDL.Scancode.Up] = false,
-	[SDL.Scancode.Down] = false,
-	[SDL.Scancode.Left] = false,
-	[SDL.Scancode.Right] = false,
-}
-
-function UpdateCarPads()
-
+TestGame.UpdateCarPads = function()
+	if car == nil then
+		return
+	end
 	-- update steering
 	
 	if buttonState[SDL.Scancode.Left] then
@@ -112,6 +178,8 @@ function UpdateCarPads()
 		car.wheel_angle = car.wheel_angle + 32
 		car.autobrake = car.autobrake + 1
 	end
+	
+	car.handbrake = buttonState[SDL.Scancode.Space] == true
 	
 	if car.wheel_angle < -352 then
 		car.wheel_angle = -352
@@ -154,52 +222,6 @@ function UpdateCarPads()
 	end
 end
 
-function PlaceCameraFollowCar()
-	local basePos = car.cog_position
-	local direction = car.direction
-	
-	local cameraPos = fix.VECTOR(0,0,0)
-	
-	local maxCameraDist = carCos.colBox.vz * 2 + carCos.colBox.vy + 248
-	local carHeight = carCos.colBox.vy * -3 + 85
-	
-	local cameraDist = maxCameraDist
-	
-	-- smooth follow
-	local angleDelta = fix.DIFF_ANGLES(cameraAngle, direction)
-	cameraAngle = cameraAngle + (angleDelta / 8)
-	
-	local sn = gte.isin(cameraAngle)
-	local cs = gte.icos(cameraAngle)
-	
-	cameraPos.vx = basePos.vx - (cameraDist * sn) / fix.ONE;
-	cameraPos.vy = basePos.vy
-	cameraPos.vz = basePos.vz - (cameraDist * cs) / fix.ONE;
-
-	local camPosVy = world.MapHeight(cameraPos)
-	cameraPos.vy = carHeight - basePos.vy	
-	
-	local cammapht = (carHeight - camPosVy) - 100 -- + gCameraOffset.vy;
-	local camera_angle = fix.VECTOR(25, -cameraAngle, 0)
-
-	if cameraPos.vy > cammapht then
-		local height = world.MapHeight(basePos);
-
-		if math.abs(height - camPosVy) < 900 then
-			camera_angle.vx = (cameraPos.vy - cammapht) / 2 + 25
-			cameraPos.vy = cammapht;
-		end
-	end
-	
-	cameraPos.vy = -cameraPos.vy
-	
-	InitCamera({
-		position = fix.FromFixedVector(cameraPos),
-		angles = vec.vec3(camera_angle.vx / fix.ONE * 360.0,camera_angle.vy / fix.ONE * 360.0,0),
-		fov = 50
-	})
-end
-
-function UpdateCarControls(num, down)
+TestGame.UpdateCarControls = function(num, down)
 	buttonState[num] = down
 end

@@ -19,6 +19,8 @@ local camera = engine.Camera
 local timeAccumulator = 0
 local fixed_timestep = 1.0 / 30.0
 
+local testGameCamera = false
+
 function StepSim(dt)
 
 	timeAccumulator = timeAccumulator + dt
@@ -29,7 +31,7 @@ function StepSim(dt)
 	
 	while timeAccumulator > fixed_timestep do
 
-		UpdateCarPads()
+		TestGame.UpdateCarPads()
 
 		-- TODO: direct port from MAIN.C
 		-- 
@@ -46,7 +48,10 @@ function StepSim(dt)
 		cars:DoScenaryCollisions()
 		--players:CheckMiscFelonies()
 
-		PlaceCameraFollowCar()
+		if testGameCamera then
+			TestGame.UpdateCamera()
+		end
+		
 		timeAccumulator = timeAccumulator - fixed_timestep
 	end
 end
@@ -66,11 +71,13 @@ function GameLoop(dt)
 	world.PurgeCellObjects()
 
 	FreeCamera.UpdateCameraMovement(dt)
-	--[[InitCamera({
-		position = FreeCamera.Position,
-		angles = FreeCamera.Angles,
-		fov = FreeCamera.FOV
-	})]]
+	if testGameCamera == false then
+		InitCamera({
+			position = FreeCamera.Position,
+			angles = FreeCamera.Angles,
+			fov = FreeCamera.FOV
+		})
+	end
 	
 	local spoolPos = fix.ToFixedVector(camera.MainView.position)
 	world.SpoolRegions(spoolPos, 1)
@@ -162,8 +169,6 @@ function ChangeCity(newCity, newCityType, newWeather)
 		-- reload sky only
 		sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 	end
-	
-	InitTestGame()
 end
 
 function ResetFreeCamera()
@@ -268,6 +273,19 @@ function RenderUI()
 
 			ImGui.EndMenu();
 		end
+		
+		if ImGui.BeginMenu("Test") then
+			local selected,activated;
+			if ImGui.MenuItem("Begin game") then
+				TestGame.Init()
+			end
+			
+			selected,activated = ImGui.MenuItem("Game camera", "", testGameCamera)
+			if activated then
+				testGameCamera = not testGameCamera
+			end
+			ImGui.EndMenu()
+		end
 
 		ImGui.EndMainMenuBar();
 	end
@@ -315,7 +333,7 @@ EngineHost = {
 		xpcall(function() 
 			FreeCamera.KeyPress(num, down)
 			
-			UpdateCarControls(num, down)
+			TestGame.UpdateCarControls(num, down)
 		end, errorHandler)
 
 	end
