@@ -219,7 +219,7 @@ VECTOR_NOPAD _vr0, _vr1, _vr2, _vr3;
 VECTOR_NOPAD _mac;
 SVECTOR_NOPAD _ir;
 
-void gte_SetRotMatrix(MATRIX* m)
+void gte_SetRotMatrix(const MATRIX* m)
 {
 	_globmat.m[0][0] = m->m[0][0];
 	_globmat.m[0][1] = m->m[0][1];
@@ -232,7 +232,7 @@ void gte_SetRotMatrix(MATRIX* m)
 	_globmat.m[2][2] = m->m[2][2];
 }
 
-void gte_SetTransMatrix(MATRIX* m)
+void gte_SetTransMatrix(const MATRIX* m)
 {
 	_globmat.t[0] = m->t[0];
 	_globmat.t[1] = m->t[1];

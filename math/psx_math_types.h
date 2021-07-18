@@ -9,6 +9,9 @@
 #define	FIXEDH(a)					FixHalfRound(a, ONE_BITS)		// Fixed Half Round number
 #define	FIXED(a)					((a) >> ONE_BITS)				// Fixed number (unsigned)
 
+#define DIFF_ANGLES( _ang1, _ang2 ) \
+	(((((_ang2) - (_ang1)) + 2048) & 4095) - 2048)
+
 struct VECTOR_NOPAD
 {
 	int vx, vy, vz;

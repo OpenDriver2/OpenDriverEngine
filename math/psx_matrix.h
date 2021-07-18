@@ -43,8 +43,8 @@ extern VECTOR_NOPAD _vr0, _vr1, _vr2, _vr3;
 extern VECTOR_NOPAD _mac;
 extern SVECTOR_NOPAD _ir;
 
-void gte_SetRotMatrix(MATRIX* m);
-void gte_SetTransMatrix(MATRIX* m);
+void gte_SetRotMatrix(const MATRIX* m);
+void gte_SetTransMatrix(const MATRIX* m);
 void GTE_RTV();
 
 // load short vector

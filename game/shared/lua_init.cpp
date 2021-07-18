@@ -220,6 +220,9 @@ void LuaInit(sol::state& lua)
 
 	fix["ToFixedVector"] = &ToFixedVector;
 	fix["FromFixedVector"] = sol::resolve<Vector3D(const VECTOR_NOPAD&)>(&FromFixedVector);
+	fix["DIFF_ANGLES"] = [](const int& x, const int& y) {
+		return DIFF_ANGLES(x, y);
+	};
 
 	// extend Lua math
 	auto& gte = lua["gte"].get_or_create<sol::table>();
