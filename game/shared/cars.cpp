@@ -1375,7 +1375,7 @@ void CCar::DrawCar()
 
 	if (renderModel)
 	{
-		renderModel->Draw();
+		renderModel->Draw(true, m_ap.palette);
 	}
 
 	static int wheelModelId = g_levModels.FindModelIndexByName("CLEANWHEEL");
@@ -1414,7 +1414,7 @@ void CCar::DrawCar()
 			GR_SetMatrix(MATRIX_WORLD, wheelMat);
 			GR_UpdateMatrixUniforms();
 
-			renderModel->Draw(true, m_ap.palette);
+			renderModel->Draw();
 		}
 	}
 }

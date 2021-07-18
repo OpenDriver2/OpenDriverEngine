@@ -307,7 +307,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 					vertMap.normalIndex = dec_face.nindices[VERT_IDX];
 					
 					SVECTOR* norm = vertex_ref->pPointNormal(vertMap.normalIndex);
-					*(Vector3D*)&newVert.nx = Vector3D(norm->vx * RENDER_SCALING, norm->vy * -RENDER_SCALING, norm->vz * RENDER_SCALING);
+					*(Vector3D*)&newVert.nx = -Vector3D(norm->vx * RENDER_SCALING, norm->vy * -RENDER_SCALING, norm->vz * RENDER_SCALING);
 				}
 				
 				if (dec_face.flags & FACE_TEXTURED)

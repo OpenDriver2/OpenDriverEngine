@@ -34,55 +34,58 @@ function InitTestGame()
 	cars:LoadModel(1)
 	
 	-- add test car
-	carCos = CAR_COSMETICS.new()
-	carCos.headLight = fix.SVECTOR(93,14,-351)
-	carCos.frontInd = fix.SVECTOR(110,16,-340)
-	carCos.backInd = fix.SVECTOR(55,32,368)
-	carCos.brakeLight = fix.SVECTOR(68,33,368)
-	carCos.revLight = fix.SVECTOR(57,35,359)
-	carCos.policeLight = fix.SVECTOR(34,0,0)
-	carCos.exhaust = fix.SVECTOR(68,68,359)
-	carCos.smoke = fix.SVECTOR(0,-4,-335)
-	carCos.fire = fix.SVECTOR(0,-4,-341)
-	
-	carCos:setWheelDisp(1, fix.SVECTOR(128,-30,217))
-	carCos:setWheelDisp(2, fix.SVECTOR(128,-30,-181))
-	carCos:setWheelDisp(3, fix.SVECTOR(-129,-30,217))
-	carCos:setWheelDisp(4, fix.SVECTOR(-129,-30,-181))
-	
-	carCos.extraInfo = -31720 -- FLAGS
-	carCos.powerRatio = 4096
-	carCos.cbYoffset = 0
-	carCos.susCoeff = 4096
-	carCos.traction = 4096
-	carCos.wheelSize = 52
-	
-	carCos:setcPoints(1, fix.SVECTOR(-126, 11, -370))
-	carCos:setcPoints(2, fix.SVECTOR(125, 11, -370))
-	carCos:setcPoints(3, fix.SVECTOR(-126, 2, 370))
-	carCos:setcPoints(4, fix.SVECTOR(125, 2, 370))
-	carCos:setcPoints(5, fix.SVECTOR(-126, 89, -367))
-	carCos:setcPoints(6, fix.SVECTOR(125, 89, -367))
-	carCos:setcPoints(7, fix.SVECTOR(-83, 163, -124))
-	carCos:setcPoints(8, fix.SVECTOR(82, 163, -124))
-	carCos:setcPoints(9, fix.SVECTOR(-83, 164, 52))
-	carCos:setcPoints(10, fix.SVECTOR(82, 164, 52))
-	carCos:setcPoints(11, fix.SVECTOR(-126, 91, 371))
-	carCos:setcPoints(12, fix.SVECTOR(125, 91, 371))
-	
-	carCos.colBox = fix.SVECTOR(129,84,375)
-	carCos.cog = fix.SVECTOR(0,-85,11)
-	carCos.twistRateX = 224
-	carCos.twistRateY = 224
-	carCos.twistRateZ = 1120
-	carCos.mass = 4096
-	
-	FixCarCos(carCos)
+	if carCos == nil then
+		carCos = CAR_COSMETICS.new()
+		carCos.headLight = fix.SVECTOR(93,14,-351)
+		carCos.frontInd = fix.SVECTOR(110,16,-340)
+		carCos.backInd = fix.SVECTOR(55,32,368)
+		carCos.brakeLight = fix.SVECTOR(68,33,368)
+		carCos.revLight = fix.SVECTOR(57,35,359)
+		carCos.policeLight = fix.SVECTOR(34,0,0)
+		carCos.exhaust = fix.SVECTOR(68,68,359)
+		carCos.smoke = fix.SVECTOR(0,-4,-335)
+		carCos.fire = fix.SVECTOR(0,-4,-341)
+		
+		carCos:setWheelDisp(1, fix.SVECTOR(128,-30,217))
+		carCos:setWheelDisp(2, fix.SVECTOR(128,-30,-181))
+		carCos:setWheelDisp(3, fix.SVECTOR(-129,-30,217))
+		carCos:setWheelDisp(4, fix.SVECTOR(-129,-30,-181))
+		
+		carCos.extraInfo = -31720 -- FLAGS
+		carCos.powerRatio = 4096
+		carCos.cbYoffset = 0
+		carCos.susCoeff = 4096
+		carCos.traction = 4096
+		carCos.wheelSize = 52
+		
+		carCos:setcPoints(1, fix.SVECTOR(-126, 11, -370))
+		carCos:setcPoints(2, fix.SVECTOR(125, 11, -370))
+		carCos:setcPoints(3, fix.SVECTOR(-126, 2, 370))
+		carCos:setcPoints(4, fix.SVECTOR(125, 2, 370))
+		carCos:setcPoints(5, fix.SVECTOR(-126, 89, -367))
+		carCos:setcPoints(6, fix.SVECTOR(125, 89, -367))
+		carCos:setcPoints(7, fix.SVECTOR(-83, 163, -124))
+		carCos:setcPoints(8, fix.SVECTOR(82, 163, -124))
+		carCos:setcPoints(9, fix.SVECTOR(-83, 164, 52))
+		carCos:setcPoints(10, fix.SVECTOR(82, 164, 52))
+		carCos:setcPoints(11, fix.SVECTOR(-126, 91, 371))
+		carCos:setcPoints(12, fix.SVECTOR(125, 91, 371))
+		
+		carCos.colBox = fix.SVECTOR(129,84,375)
+		carCos.cog = fix.SVECTOR(0,-85,11)
+		carCos.twistRateX = 224
+		carCos.twistRateY = 224
+		carCos.twistRateZ = 1120
+		carCos.mass = 4096
+		
+		FixCarCos(carCos)
+	end
 
 	local positionInfo = POSITION_INFO {x = 3166, z = -11787, direction = 0}
 	
 	local model = 0
-	local palette = 1
+	
+	local palette = math.random(0, 5)
 	
 	car = cars:Create(carCos, 1 --[[ CONTROL_TYPE_PLAYER ]], model, palette, positionInfo)
 end
