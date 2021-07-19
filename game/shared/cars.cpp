@@ -1292,7 +1292,9 @@ int CCar::GetInterpolatedDirection() const
 {
 	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
 
-	return lerp((float)m_prevDirection, (float)m_hd.direction, factor);
+	int shortest_angle = DIFF_ANGLES(m_hd.direction, m_prevDirection);
+
+	return m_prevDirection + float(shortest_angle) * factor;
 }
 
 VECTOR_NOPAD CCar::GetCogPosition() const
