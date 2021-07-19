@@ -216,11 +216,11 @@ void MainLoop()
 		GR_BeginScene();
 
 		GR_ClearDepth(1.0f);
-		/*
+
 		GR_SetCullMode(CULL_NONE);
 		GR_SetBlendMode(BM_NONE);
 		GR_SetDepth(1);
-		
+		/*
 		if (g_nightMode)
 			GR_ClearColor(19 / 255.0f, 23 / 255.0f, 25 / 255.0f);
 		else
