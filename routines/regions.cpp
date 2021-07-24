@@ -54,9 +54,6 @@ void CBaseLevelRegion::FreeAll()
 		free(m_cellObjects);
 	m_cellObjects = nullptr;
 	
-	m_pvsData = nullptr;	
-	m_roadmapData = nullptr;
-
 	m_loaded = false;
 }
 

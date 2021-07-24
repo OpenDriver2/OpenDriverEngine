@@ -112,7 +112,8 @@ public:
 	void					LoadTextureInfoLump(IVirtualStream* pFile);
 	void					LoadPermanentTPages(IVirtualStream* pFile);
 	void					LoadTextureNamesLump(IVirtualStream* pFile, int size);
-	void					ProcessPalletLump(IVirtualStream* pFile);
+	void					LoadOverlayMapLump(IVirtualStream* pFile, int size);
+	void					LoadPalletLump(IVirtualStream* pFile);
 
 	// release all data
 	void					FreeAll();
@@ -123,6 +124,10 @@ public:
 
 	TexDetailInfo_t*		FindTextureDetail(const char* name) const;
 	const char*				GetTextureDetailName(TEXINF* info) const;
+
+	// unpacks RNC2 overlay map segment into RGBA buffer (32x32)
+	void					GetOverlayMapSegmentRGBA(TVec4D<ubyte>* destination, int index) const;
+	int						GetOverlayMapSegmentCount() const;
 
 protected:
 	void					OnTexturePageLoaded(CTexturePage* tp);
@@ -143,6 +148,8 @@ protected:
 
 	ExtClutData_t*			m_extraPalettes{ nullptr };
 	int						m_numExtraPalettes{ 0 };
+
+	char*					m_overlayMapData{ nullptr };
 
 	OnTexturePageLoaded_t	m_onTPageLoaded{ nullptr };
 	OnTexturePageFreed_t	m_onTPageFreed{ nullptr };

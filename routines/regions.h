@@ -55,9 +55,6 @@ protected:
 	ushort*					m_cellPointers{ nullptr };		// cell pointers - pointing to CELL_DATA
 	CELL_OBJECT*			m_cellObjects{ nullptr };		// cell objects that represents objects placed in the world
 
-	ushort*					m_pvsData{ nullptr };			// potentially visibile set of cells
-	short*					m_roadmapData{ nullptr };		// heightfield with planes and BSP
-
 	int						m_regionX{ -1 };
 	int						m_regionZ{ -1 };
 	int						m_regionNumber{ -1 };
@@ -106,7 +103,7 @@ public:
 	virtual CBaseLevelRegion*	GetRegion(int regionIdx) const = 0;
 
 	virtual int					MapHeight(const VECTOR_NOPAD& position) const = 0;
-	virtual int					FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane) const = 0;
+	virtual int					FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const = 0;
 
 	// converters
 	void						WorldPositionToCellXZ(XZPAIR& cell, const VECTOR_NOPAD& position) const;

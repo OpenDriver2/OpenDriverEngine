@@ -1,6 +1,7 @@
 ﻿#include "core/cmdlib.h"
 #include "core/IVirtualStream.h"
 #include "math/Vector.h"
+#include "util/rnc2.h"
 
 #include <string.h>
 
@@ -8,6 +9,7 @@
 
 #include "textures.h"
 #include "level.h"
+
 
 //-------------------------------------------------------------------------------
 
@@ -408,10 +410,16 @@ void CDriverLevelTextures::LoadTextureNamesLump(IVirtualStream* pFile, int size)
 	} while (sz < size);
 }
 
+void CDriverLevelTextures::LoadOverlayMapLump(IVirtualStream* pFile, int lumpSize)
+{
+	m_overlayMapData = new char[lumpSize];
+	pFile->Read(m_overlayMapData, 1, lumpSize);
+}
+
 //-------------------------------------------------------------
 // Loads car and pedestrians palletes
 //-------------------------------------------------------------
-void CDriverLevelTextures::ProcessPalletLump(IVirtualStream* pFile)
+void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 {
 	ushort* clutTablePtr;
 	int total_cluts;
@@ -517,16 +525,74 @@ const char* CDriverLevelTextures::GetTextureDetailName(TEXINF* info) const
 	return m_textureNamesData + info->nameoffset;
 }
 
+// unpacks RNC2 overlay map segment into RGBA buffer (32x32)
+void CDriverLevelTextures::GetOverlayMapSegmentRGBA(TVec4D<ubyte>* destination, int index) const
+{
+	// 8 bit texture so...
+	char mapBuffer[16 * 32];
+
+	int clut_offset;
+
+	if (m_format >= LEV_FORMAT_DRIVER2_ALPHA16)
+		clut_offset = 512;
+	else
+		clut_offset = 328;
+
+	ushort* offsets = (ushort*)m_overlayMapData;
+	ushort* clut = (ushort*)(m_overlayMapData + clut_offset);
+
+	UnpackRNC(m_overlayMapData + offsets[index], mapBuffer);
+
+	// convert to RGBA
+	for (int y = 0; y < 32; y++)
+	{
+		for (int x = 0; x < 32; x++)
+		{
+			int px, py;
+
+			ubyte colorIndex = (ubyte)mapBuffer[y * 16 + x / 2];
+
+			if (0 != (x & 1))
+				colorIndex >>= 4;
+
+			colorIndex &= 0xf;
+
+			destination[y * 32 + x] = rgb5a1_ToBGRA8(clut[colorIndex]);
+		}
+	}
+}
+
+// computes overlay map segment count
+int	CDriverLevelTextures::GetOverlayMapSegmentCount() const
+{
+	ushort* offsets = (ushort*)m_overlayMapData;
+	int numValid = 0;
+
+	// max offset count for overlay map is 256, next is palette
+	for (int i = 0; i < 256; i++)
+	{
+		char* rncData = m_overlayMapData + offsets[i];
+		if (rncData[0] == 'R' && rncData[1] == 'N' && rncData[2] == 'C')
+		{
+			numValid++;
+		}
+	}
+
+	return numValid;
+}
+
 // release all data
 void CDriverLevelTextures::FreeAll()
 {
 	delete[] m_textureNamesData;
 	delete[] m_texPages;
 	delete[] m_extraPalettes;
+	delete[] m_overlayMapData;
 
 	m_textureNamesData = nullptr;
 	m_texPages = nullptr;
 	m_extraPalettes = nullptr;
+	m_overlayMapData = nullptr;
 
 	m_numTexPages = 0;
 	m_numPermanentPages = 0;

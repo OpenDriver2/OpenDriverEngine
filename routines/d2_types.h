@@ -378,6 +378,48 @@ struct DRIVER2_JUNCTION
 };
 
 //------------------------------------------------------------------------------------------------------------
+// Driver 1 PSX is so wasteful
+
+struct ROAD_MAP_LUMP_DATA
+{
+	int width, height;
+	int unitXMid, unitZMid;
+};
+
+struct LONGPLANE
+{
+	int a, b, c, d;
+};
+
+struct SIPOLY
+{
+	XYPAIR			xz[4];
+	LONGPLANE		normals;
+	short			num_vertices;
+};
+
+struct SURFACEINFO
+{
+	short			type;
+	short			info;
+	short			heading;
+	short			numpolys;
+
+	inline SIPOLY* GetPoly(int num)
+	{
+		return (SIPOLY*)(this + 1) + num;
+	}
+};
+
+struct ROUTE_DATA
+{
+	int type;
+	int height;
+	int objectAngle;
+	uint value;
+};
+
+//------------------------------------------------------------------------------------------------------------
 
 struct AreaDataStr {
 	uint16	gfx_offset;
