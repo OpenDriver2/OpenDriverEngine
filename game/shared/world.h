@@ -43,7 +43,7 @@ public:
 	static ModelRef_t*		GetModelByName(const char* name);
 
 	static int				MapHeight(const VECTOR_NOPAD& position);
-	static int				FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane);
+	static int				FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane);
 
 	//------------------------------------------
 	// objects and collision

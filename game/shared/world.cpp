@@ -401,15 +401,11 @@ int CWorld::MapHeight(const VECTOR_NOPAD& position)
 	return g_levMap->MapHeight(position);
 }
 
-int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane** outPlane)
+int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane)
 {
 	int fr = g_levMap->FindSurface(position, outNormal, outPoint, outPlane);
 
-	if (*outPlane == NULL)
-	{
-		return fr;
-	}
-	else if ((*outPlane)->surfaceType == 4)
+	 if (outPlane.surfaceType == 4)
 	{
 		// TODO: move this hardcoding away
 #if 0

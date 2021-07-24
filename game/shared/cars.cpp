@@ -106,7 +106,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	LONGVECTOR4 pointVel;
 	int frontFS;
 	int rearFS;
-	sdPlane* SurfacePtr;
+	sdPlane Surface;
 	int i;
 	int cdx, cdz;
 	int sdx, sdz;
@@ -145,7 +145,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		gte_rtv0tr();
 		gte_stlvnl(wheelPos);
 
-		newCompression = CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, &SurfacePtr);
+		newCompression = CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, Surface);
 
 		Vector3D lineA = FromFixedVector(*(VECTOR_NOPAD*)&wheelPos) * Vector3D(1, -1, 1);
 		Vector3D lineB = FromFixedVector(*(VECTOR_NOPAD*)&surfacePoint) * Vector3D(1,-1,1);
@@ -153,14 +153,11 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 
 		friction_coef = (newCompression * (32400 - wetness) >> 15) + 500;
 
-		if (SurfacePtr != nullptr)
-			wheel->onGrass = SurfacePtr->surfaceType == 4;
-		else
-			wheel->onGrass = 0;
+		wheel->onGrass = Surface.surfaceType == 4;
+		wheel->surface = 0;
 
-		if (SurfacePtr)
 		{
-			switch (SurfacePtr->surfaceType)
+			switch (Surface.surfaceType)
 			{
 				case 4:
 				case 6:
@@ -173,10 +170,10 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 			}
 
 			// [A] indication of Event surface which means we can't add tyre tracks for that wheel
-			if (SurfacePtr->surfaceType - 16U < 16)
+			if (Surface.surfaceType - 16U < 16)
 				wheel->surface |= 0x8;
 
-			switch (SurfacePtr->surfaceType)
+			switch (Surface.surfaceType)
 			{
 				case 8:
 					wheel->surface |= 0x2;
@@ -189,10 +186,6 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 					wheel->surface |= 0x3;
 					break;
 			}
-		}
-		else
-		{
-			wheel->surface = 0;
 		}
 
 		oldCompression = wheel->susCompression;
@@ -571,7 +564,7 @@ void CCar::StepOneCar()
 	LONGVECTOR4 pointPos, surfacePoint, surfaceNormal;
 	LONGVECTOR4 lever, reaction;
 	VECTOR_NOPAD direction;
-	sdPlane* SurfacePtr;
+	sdPlane Surface;
 
 	// FIXME: redundant?
 	// if (m_controlType == CONTROL_TYPE_NONE)
@@ -581,7 +574,6 @@ void CCar::StepOneCar()
 	m_prevCogPosition = GetCogPosition();
 	m_prevDirection = m_hd.direction;
 
-	SurfacePtr = NULL;
 	_cl.aggressive = handlingType[m_hndType].aggressiveBraking;
 	_cl.extraangulardamping = 0;
 
@@ -638,7 +630,7 @@ void CCar::StepOneCar()
 		lever[1] = pointPos[1] - m_hd.where.t[1];
 		lever[2] = pointPos[2] - m_hd.where.t[2];
 
-		CWorld::FindSurface(*(VECTOR_NOPAD*)&pointPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, &SurfacePtr);
+		CWorld::FindSurface(*(VECTOR_NOPAD*)&pointPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, Surface);
 
 		if ((surfacePoint[1] - pointPos[1]) - 1U < 799)
 		{
