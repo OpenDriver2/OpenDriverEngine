@@ -156,11 +156,11 @@ void CCar::Lua_Init(sol::state& lua)
 	lua.new_usertype<CarCosmetics>(
 		"CAR_COSMETICS",
 		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
+			[](sol::table& table) {
 
-				sol::table& wheelDispTable = table["wheelDisp"].get<sol::table>();
-				sol::table& cPointsTable = table["cPoints"].get<sol::table>();
-				sol::table& gearsTable = table["gears"].get<sol::table>();
+				auto wheelDispTable = table["wheelDisp"].get_or_create<sol::table>();
+				auto cPointsTable = table["cPoints"].get_or_create<sol::table>();
+				auto gearsTable = table["gears"].get_or_create<sol::table>();
 
 				CarCosmetics newCosmetics;
 

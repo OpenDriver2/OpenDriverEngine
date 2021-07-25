@@ -36,7 +36,7 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 				return POSITION_INFO{ VECTOR_NOPAD{x, y, z}, direction };
 			},
 			[](const sol::table& table) {
-				return POSITION_INFO{ VECTOR_NOPAD{ table["x"], table["y"], table["z"] }, table["direction"] };
+				return POSITION_INFO{ VECTOR_NOPAD{ table["x"], table["y"].get_or(0), table["z"] }, table["direction"].get_or(0) };
 			},
 			[]() { return POSITION_INFO{ 0 }; }),
 		"position", &POSITION_INFO::position,
@@ -830,8 +830,9 @@ void CManager_Cars::DoScenaryCollisions()
 
 	auto i = m_active_cars.end();
 
-	do
+	while (i != m_active_cars.begin())
 	{
+		--i;
 		cp = *i;
 		// civ AI and dead cop cars perform less collision detection frames
 		if (cp->m_controlType == CONTROL_TYPE_CIV_AI ||
@@ -846,8 +847,7 @@ void CManager_Cars::DoScenaryCollisions()
 		{
 			CheckScenaryCollisions(cp);
 		}
-
-	} while (i == m_active_cars.begin());
+	}
 }
 
 void CManager_Cars::StepCars()

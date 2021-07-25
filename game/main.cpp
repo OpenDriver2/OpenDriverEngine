@@ -310,20 +310,23 @@ int main(int argc, char* argv[])
 	CWorld::InitHWModels();
 	CSky::Init();
 
+	bool canRunLoop = true;
+
 	// load lua script
 	try {
-		auto result = g_luaState.safe_script_file("scripts/_init.lua");
+		auto result = g_luaState.unsafe_script_file("scripts/_init.lua");
 	}
 	catch (const sol::error& e)
 	{
 		MsgError("_init error: %s\n", e.what());
-
-		GR_Shutdown();
-		return -1;
+		canRunLoop = false;
 	}
 
 	// loop and stuff
-	MainLoop();
+	if (canRunLoop)
+	{
+		MainLoop();
+	}
 
 	// free all
 	CWorld::UnloadLevel();
