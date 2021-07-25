@@ -46,6 +46,8 @@ void CDriverLevelModels::FreeAll()
 		if (carModelData.lowmodel)
 			free(carModelData.lowmodel);
 	}
+
+	m_model_names.clear();
 }
 
 ModelRef_t* CDriverLevelModels::GetModelByIndex(int nIndex) const
