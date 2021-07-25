@@ -174,12 +174,13 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 void CWorld::FreeHWTexturePage(CTexturePage* tpage)
 {
 	int tpageId = tpage->GetId();
-	GR_DestroyTexture(g_hwTexturePages[tpageId][0]);
 
 	for (int pal = 0; pal < 16; pal++)
 	{
-		if(g_hwTexturePages[tpageId][pal + 1] != g_whiteTexture)
-			GR_DestroyTexture(g_hwTexturePages[tpageId][pal + 1]);
+		if(g_hwTexturePages[tpageId][pal] != g_whiteTexture)
+			GR_DestroyTexture(g_hwTexturePages[tpageId][pal]);
+
+		g_hwTexturePages[tpageId][pal] = g_whiteTexture;
 	}
 }
 
