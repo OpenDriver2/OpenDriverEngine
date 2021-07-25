@@ -1,6 +1,9 @@
+local carsCommon = dofile("scripts/cars_common.lua")
 
-
-local skylark = {
+local playerCar0Cosmetics = {
+	gears = carsCommon.GearDesc[1],
+	handlingType = carsCommon.HandlingType[1],
+	gravity = carsCommon.Gravity[1],
 	headLight = fix.SVECTOR(93,14,-351),
 	frontInd = fix.SVECTOR(110,16,-340),
 	backInd = fix.SVECTOR(55,32,368),
@@ -44,12 +47,13 @@ local skylark = {
 	mass = 4096,
 }
 
+-- temporary
 local function ScaleUp(carCos)
 
 	for i=1,12 do
-		carCos.cPoints[i].vx = carCos.cPoints[i].vx
-		carCos.cPoints[i].vy = carCos.cPoints[i].vy
-		carCos.cPoints[i].vz = carCos.cPoints[i].vz
+		carCos.cPoints[i].vx = carCos.cPoints[i].vx * 1.5
+		carCos.cPoints[i].vy = carCos.cPoints[i].vy * 1.5
+		carCos.cPoints[i].vz = carCos.cPoints[i].vz * 1.5
 	end
 
 	for i=1,4 do
@@ -58,23 +62,36 @@ local function ScaleUp(carCos)
 		carCos.wheelDisp[i].vz = carCos.wheelDisp[i].vz * 1.5
 	end
 	
-	carCos.colBox.vx = carCos.colBox.vx * 1.5
-	carCos.colBox.vy = carCos.colBox.vy * 1.5
-	carCos.colBox.vz = carCos.colBox.vz * 1.5
+	carCos.colBox.vx = carCos.colBox.vx * 1.6
+	carCos.colBox.vy = carCos.colBox.vy * 1.6
+	carCos.colBox.vz = carCos.colBox.vz * 1.6
 	
-	carCos.cog.vx = carCos.cog.vx * 1.5
-	carCos.cog.vy = carCos.cog.vy * 1.5
-	carCos.cog.vz = carCos.cog.vz * 1.5
+	carCos.cog.vx = carCos.cog.vx * 1.6
+	carCos.cog.vy = carCos.cog.vy * 1.6
+	carCos.cog.vz = carCos.cog.vz * 1.6
 	
-	carCos.twistRateX = carCos.twistRateX * 0.85
-	carCos.twistRateY = carCos.twistRateY * 0.85
-	carCos.twistRateZ = carCos.twistRateZ * 0.85
+	carCos.twistRateX = carCos.twistRateX * 0.65
+	carCos.twistRateY = carCos.twistRateY * 0.65
+	carCos.twistRateZ = carCos.twistRateZ * 0.65
 	
-	carCos.powerRatio = carCos.powerRatio * 1.5
+	carCos.powerRatio = carCos.powerRatio * 1.4
 end
 
-ScaleUp(skylark)
+ScaleUp(playerCar0Cosmetics)
 
+-- basicmcnally, all cosmetics in D1 are EQUAL!
 return {
-	[1] = skylark,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
+	playerCar0Cosmetics,
 }

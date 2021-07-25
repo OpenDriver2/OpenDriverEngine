@@ -1,6 +1,9 @@
-
+local carsCommon = dofile("scripts/cars_common.lua")
 
 local toronado = {
+	gears = carsCommon.GearDesc[2],
+	handlingType = carsCommon.HandlingType[1],
+	gravity = carsCommon.Gravity[2],
 	headLight = fix.SVECTOR(93,14,-351),
 	frontInd = fix.SVECTOR(110,16,-340),
 	backInd = fix.SVECTOR(55,32,368),
