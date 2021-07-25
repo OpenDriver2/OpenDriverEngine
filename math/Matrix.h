@@ -175,6 +175,8 @@ struct TMat4 // Matrix4x4
 
 	void				setRotation(const TVec3D<T> &v);
 	void				setTranslation(const TVec3D<T> &v);
+	void				setTranslationTransposed(const TVec3D<T>& v);
+
 	void				translate(const TVec3D<T> &v);
 
 	const TVec3D<T>&	getTranslationComponent() const;

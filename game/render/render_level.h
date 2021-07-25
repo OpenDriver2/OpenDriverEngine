@@ -67,6 +67,8 @@ struct LevelRenderProps
 
 extern LevelRenderProps g_levRenderProps;
 
+void InitObjectMatrix();
+
 void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume);
 
 void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume, bool buildingLighting);

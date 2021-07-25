@@ -173,6 +173,14 @@ inline void TMat4<T>::setTranslation(const TVec3D<T> &v)
 }
 
 template <typename T>
+inline void TMat4<T>::setTranslationTransposed(const TVec3D<T>& v)
+{
+	rows[0][3] = v.x;
+	rows[1][3] = v.y;
+	rows[2][3] = v.z;
+}
+
+template <typename T>
 inline void TMat4<T>::setRotation(const TVec3D<T> &v)
 {
 	float cx,sx,cy,sy,cz,sz;

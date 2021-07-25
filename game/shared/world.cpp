@@ -209,6 +209,7 @@ void CWorld::InitHWTextures()
 
 void CWorld::InitHWModels()
 {
+	InitObjectMatrix();
 	CRenderModel::InitModelShader();
 	g_levModels.SetModelLoadingCallbacks(CRenderModel::OnModelLoaded, CRenderModel::OnModelFreed);
 }

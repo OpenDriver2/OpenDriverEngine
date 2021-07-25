@@ -65,6 +65,17 @@ int g_drawnCells;
 int g_drawnModels;
 int g_drawnPolygons;
 
+Matrix4x4 g_objectMatrix[64];
+
+void InitObjectMatrix()
+{
+	for (int i = 0; i < 64; i++)
+	{
+		const float cellRotationRad = -i / 64.0f * PI_F * 2.0f;
+		g_objectMatrix[i] = rotateY4(cellRotationRad);
+	}
+}
+
 void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume, bool buildingLighting)
 {
 	if (co.type >= MAX_MODELS)
@@ -80,17 +91,21 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 
 	ModelRef_t* ref = GetModelCheckLods(co.type, distanceFromCamera);
 
-	MODEL* model = ref->model;
-
-	float cellRotationRad = -co.yang / 64.0f * PI_F * 2.0f;
-
 	bool isGround = false;
 
-	if (model)
+	Matrix4x4 objectMatrix;
+
+	if (ref->model)
 	{
+		MODEL* model = ref->model;
+
 		if (model->shape_flags & SHAPE_FLAG_SPRITE)
 		{
-			cellRotationRad = DEG2RAD(cameraAngleY);
+			objectMatrix = rotateY4(DEG2RAD(cameraAngleY));
+		}
+		else
+		{
+			objectMatrix = g_objectMatrix[co.yang];
 		}
 
 		if ((model->shape_flags & (SHAPE_FLAG_WATER | SHAPE_FLAG_TILE)) ||
@@ -99,8 +114,7 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 			isGround = true;
 		}
 	}
-
-	Matrix4x4 objectMatrix = translate(absCellPosition) * rotateY4(cellRotationRad);
+	objectMatrix.setTranslationTransposed(absCellPosition);
 	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 	GR_UpdateMatrixUniforms();
 
@@ -223,6 +237,6 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 	// draw object list
 	for (uint i = 0; i < drawObjects.size(); i++)
 	{
-		DrawCellObject(*drawObjects[i], cameraPos, cameraAngleY, frustrumVolume, true);
+		DrawCellObject(*drawObjects[i], cameraPos, cameraAngleY, frustrumVolume, driver2Map);
 	}
 }
