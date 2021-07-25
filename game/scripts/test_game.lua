@@ -5,6 +5,63 @@ TestGame = {
 
 }
 
+local PlayerStartInfo = {
+	----------- Driver 2 freeride startpos -------------
+	["Chicago"] = {
+		-- D2 default
+		{
+			startPos = POSITION_INFO {x = 6216, z = -222456, direction = 0},
+		}
+	},
+	["Havana"] = {
+		-- D2 default
+		{
+			startPos = POSITION_INFO {x = -238668, z = -235595, direction = 1024},
+		}
+	},
+	["LasVegas"] = {
+		-- D2 default
+		{
+			startPos = POSITION_INFO {x = 143285, z = 621193, direction = -2046},
+		}
+	},
+	["RioDeJaneiro"] = {
+		-- D2 default
+		{
+			startPos = POSITION_INFO {x = 24453, z = -497793, direction = 1024},
+		}
+	},
+	----------- Driver 1 freeride startpos -------------
+	["Miami"] = {
+		-- D1 default
+		{
+			startPos = POSITION_INFO {x = 129853, z = 421288, direction = -1024},
+			playerCarId = 5,
+		}
+	},
+	["SanFrancisco"] = {
+		-- D1 default
+		{
+			startPos = POSITION_INFO {x = -454890, z = 202343, direction = 1024},
+			playerCarId = 5,
+		}
+	},
+	["LosAngeles"] = {
+		-- D1 default
+		{
+			startPos = POSITION_INFO {x = 376500, z = -212560, direction = 0},
+			playerCarId = 5,
+		}
+	},
+	["NewYork"] = {
+		-- D1 default
+		{
+			startPos = POSITION_INFO {x = -138000, z = -358815, direction = -1024},
+			playerCarId = 5,
+		}
+	},
+}
+
 local car = nil
 
 -- car controls
@@ -103,29 +160,35 @@ TestGame.UpdateCamera = function(dt)
 	PlaceCameraFollowCar(dt)
 end
 
-TestGame.Init = function()
-
+TestGame.Terminate = function()
 	-- destroy old car
 	if car ~= nil then
 		car:Destroy()
 		car = nil
 	end
+end
+
+TestGame.Init = function()
+
+	-- terminate old game
+	TestGame.Terminate()
+
+	local cityStart = PlayerStartInfo[CurrentCityName][1]
 
 	-- add test car
 	-- create car cosmetics from table
-	--local miamiCos = dofile("scripts/driver1_miami_cosmetics.lua")
-	local chicagoCos = dofile("scripts/driver2_chicago_cosmetics.lua")
-	FixCarCos(chicagoCos[1])		
+	local cityCosmetics = dofile(CurrentCityInfo.cosmetics)
 
-	--local positionInfo = POSITION_INFO {x = 6216, z = -222456, direction = 0}
-	local positionInfo = POSITION_INFO {x = -59057, z = -63321, direction = 0}
-	local residentModel = 1
+	local positionInfo = cityStart.startPos
+	local residentModel = cityStart.playerCarId or 0
 	local palette = math.random(0, 5)
+	
+	world.SpoolRegions(positionInfo.position, 1)
 	
 	-- load current city cars
 	local modelIdx = cars:LoadModel(residentModel)
 
-	car = cars:Create(CAR_COSMETICS(chicagoCos[1]), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+	car = cars:Create(CAR_COSMETICS(cityCosmetics[residentModel + 1]), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
 end
 
 TestGame.UpdateCarPads = function()

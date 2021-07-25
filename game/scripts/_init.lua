@@ -99,11 +99,17 @@ function GameLoop(dt)
 	StepSim( dt )
 end
 
+CurrentCityName = nil
 CurrentCityInfo = nil
 CurrentCityType = nil
 CurrentSkyType = nil
 
-function ChangeCity(newCity, newCityType, newWeather)
+function ChangeCity(newCityName, newCityType, newWeather)
+
+	local newCity = CurrentCityInfo
+	if newCityName ~= nil then
+		newCity = CityInfo[newCityName]
+	end
 
 	-- sky is night? make level night!
 	if newWeather == SkyType.Night then
@@ -137,17 +143,19 @@ function ChangeCity(newCity, newCityType, newWeather)
 	
 	CurrentCityInfo = newCity
 	CurrentCityType = newCityType
-	CurrentSkyType = newWeather
+	CurrentSkyType = if_then_else(newCity.forceNight, SkyType.Night, newWeather)
 	
 	if newCity.levPath == nil then
 		return
 	end
+	
+	CurrentCityName = newCityName
 
-	levRenderProps.nightMode = (CurrentCityType == CityType.Night)
+	levRenderProps.nightMode = newCity.forceNight or (CurrentCityType == CityType.Night)
 	
 	-- TODO: City lighting presets for each mode
 	if levRenderProps.nightMode then
-		levRenderProps.nightAmbientScale = 0.8
+		levRenderProps.nightAmbientScale = 0.8 * (CurrentCityInfo.brightnessScale or 1)
 		levRenderProps.nightLightScale = 0
 		levRenderProps.ambientScale = 3
 		levRenderProps.lightScale = 0
@@ -158,10 +166,21 @@ function ChangeCity(newCity, newCityType, newWeather)
 	
 	if triggerLoading then
 		
+		-- terminate the game
+		TestGame.Terminate()
+	
 		-- drop all cars
 		cars:RemoveAll()
+
 		
-		if world.LoadLevel(CurrentCityInfo.levPath[CurrentCityType]) then
+		local levPath
+		if type(CurrentCityInfo.levPath) == "table" then
+			levPath = CurrentCityInfo.levPath[CurrentCityType]
+		else
+			levPath = CurrentCityInfo.levPath
+		end
+		
+		if world.LoadLevel(levPath) then
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 					
 			SetUpdateFunc("GameLoop", GameLoop)
@@ -209,7 +228,7 @@ function RenderUI()
 			if ImGui.BeginMenu("Change level") then
 				for k,v in pairs(CityInfo) do
 					if ImGui.MenuItem(k) then
-						ChangeCity(v, CurrentCityType, CurrentSkyType)
+						ChangeCity(k, CurrentCityType, CurrentSkyType)
 					end
 				end
 				ImGui.EndMenu()
@@ -222,7 +241,7 @@ function RenderUI()
 				for k,v in pairs(SkyType) do
 
 					if ImGui.MenuItem(k, tostring(num)) then
-						ChangeCity(CurrentCityInfo, CurrentCityType, v)
+						ChangeCity(nil, CurrentCityType, v)
 					end
 					
 					num = num + 1
