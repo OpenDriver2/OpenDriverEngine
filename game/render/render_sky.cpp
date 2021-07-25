@@ -188,8 +188,7 @@ void VertexSkyCb(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& ve
 	}
 }
 
-// Generate UVs just like REDRIVER2 does
-void GenerateSkyUVs()
+void GenerateSkyUVs_Driver2()
 {
 	int flipped, single;
 
@@ -293,18 +292,62 @@ void GenerateSkyUVs()
 
 			g_skytpage[i][0] = tp_x & 0xffffffc0;
 			g_skytpage[i][1] = ry * SKY_SIZE_H & 768;
-			
+
 			tp_x += 32;
 			i++;
 		}
 
 		flipped = y < 7;
 	}
+}
+
+void GenerateSkyUVs_Driver1()
+{
+	const int bmpWidth = 64 >> 2;
+	const int bmpHeight = 42;
+
+	int rect_x = 0; // 512;
+	int rect_y = 0;
+
+	for (int i = 0; i < 12; i++)
+	{
+		UV& uvs = g_skytexuv[i];
+
+		uvs.u0 = rect_x << 2;
+		uvs.u1 = rect_x * 4 + (bmpWidth << 2) - 1;
+		uvs.u2 = rect_x << 2;
+		uvs.u3 = rect_x * 4 + (bmpWidth << 2) - 1;
+		uvs.v0 = rect_y;
+		uvs.v1 = rect_y;
+		uvs.v2 = bmpHeight + rect_y - 1;
+		uvs.v3 = bmpHeight + rect_y - 1;
+
+		rect_x += 16;
+		if (rect_x == 576)
+		{
+			rect_x = 512;
+			rect_y += bmpHeight;
+		}
+
+		g_skytpage[i][0] = 0;
+		g_skytpage[i][1] = 0;
+	}
+}
+
+// Generate UVs just like REDRIVER2 does
+void GenerateSkyUVs()
+{
+	ModelRef_t* skyModel = CWorld::GetModelByIndex(0);
+	if (skyModel->model->num_polys == 20)
+		GenerateSkyUVs_Driver2();
+	else
+		GenerateSkyUVs_Driver1();
 
 	// pre-process models
 	for (int i = 0; i < 4; i++)
 	{
 		ModelRef_t* ref = CWorld::GetModelByIndex(i);
+		ref->model->num_polys;
 		vertexSky_horizontaboffset = g_HorizonLookup[/*GameLevel*/0][i];
 
 		if (ref && ref->userData)
