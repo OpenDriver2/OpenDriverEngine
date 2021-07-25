@@ -70,6 +70,7 @@ void LuaInit(sol::state& lua)
 	lua.open_libraries(sol::lib::math);
 	lua.open_libraries(sol::lib::bit32);
 	lua.open_libraries(sol::lib::string);
+	lua.open_libraries(sol::lib::table);
 
 	sol_ImGui::InitBindings(lua);
 

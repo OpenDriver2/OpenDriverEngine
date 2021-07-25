@@ -19,9 +19,10 @@ struct HANDLING_TYPE
 	int autoBrakeOn;
 };
 
-struct CAR_COSMETICS
+struct CarCosmetics
 {
-	CAR_COSMETICS();
+	CarCosmetics();
+	void InitFrom(const CAR_COSMETICS_D2& srcCos);
 
 	HANDLING_TYPE handlingType;
 	Array<GEAR_DESC> gears;
@@ -36,6 +37,8 @@ struct CAR_COSMETICS
 	short powerRatio;
 	short cbYoffset;
 	short susCoeff;
+	short susCompressionLimit;
+	short susTopLimit;
 	short traction;
 	short wheelSize;
 	SVECTOR cPoints[12];
@@ -263,6 +266,9 @@ public:
 	int						GetDirection() const;
 	void					SetDirection(const int& newDir);
 
+	//--------------
+	static void				Lua_Init(sol::state& lua);
+
 protected:
 
 	struct CAR_LOCALS
@@ -304,7 +310,7 @@ protected:
 	HANDLING_DATA		m_hd;
 	RigidBodyState		m_st;
 	APPEARANCE_DATA		m_ap;
-	CAR_COSMETICS		m_cos;
+	CarCosmetics		m_cos;
 
 	Matrix4x4			m_prevDrawCarMatrix{ identity4() };
 	Matrix4x4			m_drawCarMatrix{ identity4() };

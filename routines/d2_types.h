@@ -467,4 +467,34 @@ struct Spool
 
 #define REGION_EMPTY	(0xFFFF)
 
+//----------------------------------------------------------------------------
+
+// LCF car cosmetics
+struct CAR_COSMETICS_D2
+{
+	SVECTOR headLight;
+	SVECTOR frontInd;
+	SVECTOR backInd;
+	SVECTOR brakeLight;
+	SVECTOR revLight;
+	SVECTOR policeLight;
+	SVECTOR exhaust;
+	SVECTOR smoke;
+	SVECTOR fire;
+	SVECTOR wheelDisp[4];
+	short extraInfo;
+	short powerRatio;
+	short cbYoffset;
+	short susCoeff;
+	short traction;
+	short wheelSize;
+	SVECTOR cPoints[12];
+	SVECTOR colBox;
+	SVECTOR cog;
+	short twistRateX;
+	short twistRateY;
+	short twistRateZ;
+	short mass;
+};
+
 #endif

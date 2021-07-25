@@ -27,159 +27,7 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 /*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
 {
-	lua.new_usertype<GEAR_DESC>(
-		"GEAR_DESC",
-		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
-				return GEAR_DESC { 
-					table["lowidl_ws"],
-					table["low_ws"],
-					table["hi_ws"],
-					table["ratio_ac"],
-					table["ratio_id"]
-				};
-			}),
-			"lowidl_ws", &GEAR_DESC::lowidl_ws,
-			"low_ws", &GEAR_DESC::low_ws,
-			"hi_ws", &GEAR_DESC::hi_ws,
-			"ratio_ac", &GEAR_DESC::ratio_ac,
-			"ratio_id", &GEAR_DESC::ratio_id
-		);
-
-	lua.new_usertype<HANDLING_TYPE>(
-		"HANDLING_TYPE",
-		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
-				return HANDLING_TYPE{
-					table["frictionScaleRatio"],
-					table["aggressiveBraking"],
-					table["fourWheelDrive"],
-					table["autoBrakeOn"],
-				};
-			}),
-			"frictionScaleRatio", &HANDLING_TYPE::frictionScaleRatio,
-			"aggressiveBraking", &HANDLING_TYPE::aggressiveBraking,
-			"fourWheelDrive", &HANDLING_TYPE::fourWheelDrive,
-			"autoBrakeOn", &HANDLING_TYPE::autoBrakeOn
-		);
-
-	lua.new_usertype<CAR_COSMETICS>(
-		"CAR_COSMETICS",
-		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
-
-				sol::table& wheelDispTable = table["wheelDisp"].get<sol::table>();
-				sol::table& cPointsTable = table["cPoints"].get<sol::table>();
-				sol::table& gearsTable = table["gears"].get<sol::table>();
-
-				CAR_COSMETICS newCosmetics;
-
-				if (!table.valid())
-					return newCosmetics;
-
-				if (!wheelDispTable.valid())
-				{
-					throw new sol::error("wheelDisp is null for CAR_COSMETICS");
-				}
-
-				if (!cPointsTable.valid())
-				{
-					throw new sol::error("cPoints is null for CAR_COSMETICS");
-				}
-
-				if (wheelDispTable.size() != 4)
-				{
-					throw new sol::error("wheelDisp count must be 4!");
-				}
-
-				if (cPointsTable.size() != 12)
-				{
-					throw new sol::error("cPoints count is not 12!");
-				}
-
-				if (gearsTable.valid() && gearsTable.size())
-				{
-					newCosmetics.gears.clear();
-					for (int i = 0; i < gearsTable.size(); i++)
-					{
-						GEAR_DESC newGear = gearsTable[i + 1];
-						newCosmetics.gears.append(newGear);
-					}
-				}
-
-				if(table["handlingType"].valid())
-					newCosmetics.handlingType = table["handlingType"];
-
-				newCosmetics.headLight = table["headLight"];
-				newCosmetics.frontInd = table["frontInd"];
-				newCosmetics.backInd = table["backInd"];
-				newCosmetics.brakeLight = table["brakeLight"];
-				newCosmetics.revLight = table["revLight"];
-				newCosmetics.policeLight = table["policeLight"];
-				newCosmetics.exhaust = table["exhaust"];
-				newCosmetics.smoke = table["smoke"];
-				newCosmetics.fire = table["fire"];
-				newCosmetics.gravity = table["gravity"];
-
-				for(int i = 0; i < 4; i++)
-					newCosmetics.wheelDisp[i] = wheelDispTable[i + 1];
-
-				for (int i = 0; i < 12; i++)
-					newCosmetics.cPoints[i] = cPointsTable[i + 1];
-
-				newCosmetics.extraInfo = table["extraInfo"];
-				newCosmetics.powerRatio = table["powerRatio"];
-				newCosmetics.cbYoffset = table["cbYoffset"];
-				newCosmetics.susCoeff = table["susCoeff"];
-				newCosmetics.traction = table["traction"];
-				newCosmetics.wheelSize = table["wheelSize"];
-				newCosmetics.colBox = table["colBox"];
-				newCosmetics.cog = table["cog"];
-				newCosmetics.twistRateX = table["twistRateX"];
-				newCosmetics.twistRateY = table["twistRateY"];
-				newCosmetics.twistRateZ = table["twistRateZ"];
-				newCosmetics.mass = table["mass"];
-
-				return newCosmetics;
-			}),
-		"headLight", &CAR_COSMETICS::headLight,
-		"frontInd", &CAR_COSMETICS::frontInd,
-		"backInd", &CAR_COSMETICS::backInd,
-		"brakeLight", &CAR_COSMETICS::brakeLight,
-		"revLight", &CAR_COSMETICS::revLight,
-		"policeLight", &CAR_COSMETICS::policeLight,
-		"exhaust", &CAR_COSMETICS::exhaust,
-		"smoke", &CAR_COSMETICS::smoke,
-		"fire", &CAR_COSMETICS::fire,
-		"wheelDisp", 
-			[](CAR_COSMETICS& self, int i) {
-				return self.wheelDisp[i - 1];
-			},
-		"setWheelDisp",
-			[](CAR_COSMETICS& self, int i, SVECTOR& v) {
-				self.wheelDisp[i - 1] = v;
-			},
-		"extraInfo", &CAR_COSMETICS::extraInfo,
-		"powerRatio", &CAR_COSMETICS::powerRatio,
-		"cbYoffset", &CAR_COSMETICS::cbYoffset,
-		"susCoeff", &CAR_COSMETICS::susCoeff,
-		"traction", &CAR_COSMETICS::traction,
-		"wheelSize", &CAR_COSMETICS::wheelSize,
-		"cPoints", [](CAR_COSMETICS& self, int i) {
-			return self.cPoints[i];
-		},
-		"setcPoints",
-			[](CAR_COSMETICS& self, int i, SVECTOR& v) {
-			self.cPoints[i - 1] = v;
-		},
-		"colBox", &CAR_COSMETICS::colBox,
-		"cog", &CAR_COSMETICS::cog,
-		"twistRateX", &CAR_COSMETICS::twistRateX,
-		"twistRateY", &CAR_COSMETICS::twistRateY,
-		"twistRateZ", &CAR_COSMETICS::twistRateZ,
-		"mass", &CAR_COSMETICS::mass);
-
-	//----------------------------------------------------------
+	CCar::Lua_Init(lua);
 
 	lua.new_usertype<POSITION_INFO>(
 		"POSITION_INFO",
@@ -199,9 +47,18 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 	lua.new_usertype<CManager_Cars>(
 		"CManager_Cars",
-		"LoadModel", sol::overload([](CManager_Cars& self, int idx) {
+		"LoadModel", [](CManager_Cars& self, int idx) {
 			return self.LoadModel(idx);
-		}),
+		},
+		"LoadCosmeticsFile", [](CManager_Cars& self, std::string& filename, int residentModel, sol::this_state s) {
+			sol::state_view lua(s);
+			CarCosmetics cosmetic;
+			bool result = self.LoadDriver2CosmeticsFile(cosmetic, filename.c_str(), residentModel);
+
+			if (result)
+				return sol::make_object(lua, cosmetic);
+			return sol::make_object(lua, sol::nil);
+		},
 		"Create", &CManager_Cars::Create,
 		"Remove", &CManager_Cars::Remove,
 		"RemoveAll", &CManager_Cars::RemoveAll,
@@ -209,25 +66,6 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
 		"DoScenaryCollisions", &CManager_Cars::DoScenaryCollisions
 	);
-
-	lua.new_usertype<CCar>(
-		"CCar",
-		"Destroy", &CCar::Destroy,
-		"thrust", &CCar::m_thrust,
-		"wheel_angle", &CCar::m_wheel_angle,
-		"handbrake", &CCar::m_handbrake,
-		"wheelspin", &CCar::m_wheelspin,
-		"changingGear", sol::property(&CCar::get_changingGear),
-		"wheel_speed", sol::property(&CCar::get_wheel_speed),
-		"speed", sol::property(&CCar::get_speed),
-		"autobrake", sol::property(&CCar::get_autobrake, &CCar::set_autobrake),
-		"cog_position", sol::property(&CCar::GetCogPosition),
-		"position", sol::property(&CCar::GetPosition, &CCar::SetPosition),
-		"direction", sol::property(&CCar::GetDirection, &CCar::SetDirection),
-		"i_cog_position", sol::property(&CCar::GetInterpolatedCogPosition),
-		"i_position", sol::property(&CCar::GetInterpolatedPosition),
-		"i_direction", sol::property(&CCar::GetInterpolatedDirection),
-		"cosmetics", &CCar::m_cos);
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
@@ -269,7 +107,38 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	return carModelIndex;
 }
 
-CCar* CManager_Cars::Create(const CAR_COSMETICS& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
+bool CManager_Cars::LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel)
+{
+	if (residentModel < 0 || residentModel >= MAX_CAR_MODELS)
+	{
+		MsgError("LoadDriver2Cosmetics error: residentModel %d is not valid", residentModel);
+		return false;
+	}
+
+	FILE* fp = fopen(filename, "rb");
+	if (!fp)
+	{
+		MsgError("Cannot open '%s'\n", filename);
+		return false;
+	}
+
+	// read whole offsets table first
+	int offsetTable[13];
+	fread(offsetTable, 1, sizeof(offsetTable), fp);
+
+	CAR_COSMETICS_D2 cosmetics;
+
+	fseek(fp, offsetTable[residentModel], SEEK_SET);
+	fread(&cosmetics, sizeof(cosmetics), 1, fp);
+
+	outCosmetics.InitFrom(cosmetics);
+
+	fclose(fp);
+
+	return true;
+}
+
+CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
 {
 	// not valid request
 	if (control == CONTROL_TYPE_NONE)
@@ -495,7 +364,8 @@ void CManager_Cars::GlobalTimeStep()
 	int carsDentedThisFrame;
 	short* felony;
 
-	m_lastUpdateTime = Time::microTicks();
+	// global timestep is a starting point for interpolation
+	m_lastUpdateTime = m_curUpdateTime;
 
 #if 0
 	if (player[0].playerCarId < 0)
@@ -998,7 +868,7 @@ void CManager_Cars::DrawAllCars()
 		cp->DrawCar();
 	}
 
-	m_curUpdateTime = Time::microTicks();
+	//m_curUpdateTime = Time::microTicks();
 }
 
 double CManager_Cars::GetInterpTime() const
@@ -1015,4 +885,9 @@ void CManager_Cars::Draw(const CameraViewParams& view)
 		CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
 
 	g_cars->DrawAllCars();
+}
+
+void CManager_Cars::UpdateTime(int64 ticks)
+{
+	g_cars->m_curUpdateTime = ticks;
 }

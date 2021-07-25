@@ -246,6 +246,8 @@ void MainLoop()
 			CSky::Draw(view);
 			CWorld::RenderLevelView(view);
 			CManager_Cars::Draw(view);
+
+			CManager_Cars::UpdateTime(curTicks);
 		}
 
 		CDebugOverlay::Draw();

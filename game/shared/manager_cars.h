@@ -6,7 +6,7 @@
 
 class CCar;
 class CDriverLevelModels;
-struct CAR_COSMETICS;
+struct CarCosmetics;
 
 
 struct POSITION_INFO
@@ -19,7 +19,9 @@ class CManager_Cars
 {
 public:
 	int				LoadModel(int modelNumber, CDriverLevelModels* levelModels = nullptr);
-	CCar*			Create(const CAR_COSMETICS& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo);
+	bool			LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel);
+
+	CCar*			Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo);
 
 	void			RemoveAll();
 	void			Remove(CCar* car);
@@ -36,6 +38,7 @@ public:
 	void			DrawAllCars();
 
 	static void		Draw(const struct CameraViewParams& view);
+	static void		UpdateTime(int64 ticks);
 
 	static void		Lua_Init(sol::state& lua);
 protected:
