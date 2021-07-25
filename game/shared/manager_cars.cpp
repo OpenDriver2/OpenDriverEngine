@@ -297,6 +297,7 @@ CCar* CManager_Cars::Create(const CAR_COSMETICS& cosmetic, int control, int mode
 
 	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_cos.wheelDisp[0].vy;
 
+	cp->InitWheelModels();
 	cp->InitCarPhysics((LONGVECTOR4*)&tmpStart, positionInfo.direction);
 	cp->m_controlType = control;
 

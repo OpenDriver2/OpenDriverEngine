@@ -273,6 +273,7 @@ protected:
 		int aggressive;
 	};
 
+	void				InitWheelModels();
 	void				CreateDentableCar();
 
 	// handling
@@ -343,6 +344,7 @@ protected:
 	int				m_backWheelRotation{ 0 };
 
 	ModelRef_t*		m_model{ nullptr };
+	ModelRef_t*		m_wheelModels[3]{ nullptr };
 };
 
 #endif // CARS_H

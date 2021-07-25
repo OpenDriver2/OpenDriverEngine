@@ -24,6 +24,8 @@
 #include "world.h"
 #include "cars.h"
 
+extern CDriverLevelModels g_levModels;
+
 const short DEFAULT_GRAVITY_FORCE = -7456; // D1 has -10922
 const double Car_Fixed_Timestep = 1.0 / 30.0;
 
@@ -498,6 +500,7 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 		m_thrust = FIXEDH(m_cos.powerRatio * 5000);
 	}
 
+	// [A] 41943 in D2, 61440 in D1
 	if (m_thrust < 0 && m_hd.wheel_speed > 41943 && cl.aggressive != 0)
 	{
 		frontFS = (frontFS * 10) / 8;
@@ -1254,6 +1257,30 @@ void CCar::UpdateCarDrawMatrix()
 	m_drawCarMatrix = FromFixedMatrix(m_hd.where);
 }
 
+void CCar::InitWheelModels()
+{
+	// clean
+	if (!m_wheelModels[0])
+	{
+		int modelIdx = g_levModels.FindModelIndexByName("CLEANWHEEL");
+		m_wheelModels[0] = g_levModels.GetModelByIndex(modelIdx);
+	}
+
+	// fast
+	if (!m_wheelModels[1])
+	{
+		int modelIdx = g_levModels.FindModelIndexByName("FASTWHEEL");
+		m_wheelModels[1] = g_levModels.GetModelByIndex(modelIdx);
+	}
+
+	// damaged
+	if (!m_wheelModels[2])
+	{
+		int modelIdx = g_levModels.FindModelIndexByName("DAMWHEEL");
+		m_wheelModels[2] = g_levModels.GetModelByIndex(modelIdx);
+	}
+}
+
 void CCar::CreateDentableCar()
 {
 	// UNIMPEMENTED!!!
@@ -1345,8 +1372,7 @@ void CCar::set_autobrake(const int8& value)
 	m_hd.autoBrake = value;
 }
 
-#include "routines/models.h"
-extern CDriverLevelModels g_levModels;
+
 
 void CCar::DrawCar()
 {
@@ -1380,12 +1406,33 @@ void CCar::DrawCar()
 	// draw wheels
 	objectMatrix = drawCarMat * rotateY4(DEG2RAD(180));
 
-	static int wheelModelId = g_levModels.FindModelIndexByName("CLEANWHEEL");
-	ModelRef_t* wheelModel = g_levModels.GetModelByIndex(wheelModelId);
-	renderModel = (CRenderModel*)wheelModel->userData;
-	if (renderModel)
 	{
 		const int wheelSize = m_cos.wheelSize;
+		int BackWheelIncrement, FrontWheelIncrement;
+
+		BackWheelIncrement = FrontWheelIncrement = m_hd.wheel_speed >> 8;
+
+		if (m_wheelspin != 0)
+			BackWheelIncrement = 700;
+
+		if (m_hd.wheel[0].locked != 0)
+			FrontWheelIncrement = 0;
+
+		if (m_hd.wheel[3].locked != 0)
+			BackWheelIncrement = 0;
+
+		ModelRef_t* wheelModelFront = m_wheelModels[0];
+		ModelRef_t* wheelModelBack = m_wheelModels[0];
+
+		if (FrontWheelIncrement + 400U < 801)
+			wheelModelFront = m_wheelModels[0];
+		else
+			wheelModelFront = m_wheelModels[1];
+
+		if (BackWheelIncrement + 400U < 801)
+			wheelModelBack = m_wheelModels[0];
+		else
+			wheelModelBack = m_wheelModels[1];
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -1405,15 +1452,27 @@ void CCar::DrawCar()
 
 			Matrix4x4 wheelMat = objectMatrix * translate(wheelPos);
 
-			if ((i & 1) == 0)
+			if ((i & 1) != 0)
 			{
+				renderModel = (CRenderModel*)wheelModelBack->userData;
+				wheelMat = wheelMat * rotateX4(-float(m_backWheelRotation) / 4096.0f * PI_F * 2.0f);
+			}
+			else
+			{
+				renderModel = (CRenderModel*)wheelModelFront->userData;
+				
 				wheelMat = wheelMat * rotateY4(-float(m_wheel_angle) / 4096.0f * PI_F * 2.0f);
+
+				wheelMat = wheelMat * rotateX4(-float(m_frontWheelRotation) / 4096.0f * PI_F * 2.0f);
 			}
 
-			GR_SetMatrix(MATRIX_WORLD, wheelMat);
-			GR_UpdateMatrixUniforms();
+			if (renderModel)
+			{
+				GR_SetMatrix(MATRIX_WORLD, wheelMat);
+				GR_UpdateMatrixUniforms();
 
-			renderModel->Draw();
+				renderModel->Draw();
+			}
 		}
 	}
 }
