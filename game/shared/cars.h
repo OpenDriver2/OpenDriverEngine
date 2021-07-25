@@ -6,14 +6,32 @@ typedef int		LONGVECTOR3[3];
 typedef int		LONGVECTOR4[4];
 typedef int		LONGQUATERNION[4];
 
+struct GEAR_DESC
+{
+	int lowidl_ws, low_ws, hi_ws;
+	int ratio_ac, ratio_id;
+};
+
+struct HANDLING_TYPE
+{
+	int frictionScaleRatio;
+	bool aggressiveBraking, fourWheelDrive;
+	int autoBrakeOn;
+};
+
 struct CAR_COSMETICS
 {
+	CAR_COSMETICS();
+
+	HANDLING_TYPE handlingType;
+	Array<GEAR_DESC> gears;
 	SVECTOR headLight;
 	SVECTOR frontInd, backInd;
 	SVECTOR brakeLight, revLight;
 	SVECTOR policeLight;
 	SVECTOR exhaust, smoke, fire;
-	SVECTOR wheelDisp[4];
+	SVECTOR wheelDisp[4];			// TODO: array
+	short gravity;
 	short extraInfo;
 	short powerRatio;
 	short cbYoffset;
@@ -204,6 +222,7 @@ enum ECarControlFlags
 //------------------------------------------------------------------
 
 extern const double Car_Fixed_Timestep;
+
 //------------------------------------------------------------------
 
 
@@ -254,49 +273,49 @@ protected:
 		int aggressive;
 	};
 
-	void			CreateDentableCar();
+	void				CreateDentableCar();
 
 	// handling
-	void			InitOrientedBox();
-	void			RebuildCarMatrix(RigidBodyState& st);
+	void				InitOrientedBox();
+	void				RebuildCarMatrix(RigidBodyState& st);
 
-	void			JumpDebris();
-	void			NoseDown();
+	void				JumpDebris();
+	void				NoseDown();
 
 	// game sound
-	uint16			GetEngineRevs();
-	void			ControlCarRevs();
+	uint16				GetEngineRevs();
+	void				ControlCarRevs();
 
 	// wheel forces
-	void			GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS);
-	void			AddWheelForcesDriver1(CAR_LOCALS& cl);
-	void			ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl);
+	void				GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS);
+	void				AddWheelForcesDriver1(CAR_LOCALS& cl);
+	void				ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl);
 
-	bool			get_changingGear() const;
+	bool				get_changingGear() const;
 
-	int8			get_autobrake() const;
-	void			set_autobrake(const int8& value);
+	int8				get_autobrake() const;
+	void				set_autobrake(const int8& value);
 
 	// --------------------
-	HANDLING_DATA	m_hd;
-	RigidBodyState	m_st;
-	APPEARANCE_DATA	m_ap;
-	CAR_COSMETICS	m_cos;
+	HANDLING_DATA		m_hd;
+	RigidBodyState		m_st;
+	APPEARANCE_DATA		m_ap;
+	CAR_COSMETICS		m_cos;
 
-	Matrix4x4		m_prevDrawCarMatrix{ identity4() };
-	Matrix4x4		m_drawCarMatrix{ identity4() };
-	VECTOR_NOPAD	m_prevPosition;
-	VECTOR_NOPAD	m_prevCogPosition;
-	int				m_prevDirection;
+	Matrix4x4			m_prevDrawCarMatrix{ identity4() };
+	Matrix4x4			m_drawCarMatrix{ identity4() };
+	VECTOR_NOPAD		m_prevPosition;
+	VECTOR_NOPAD		m_prevCogPosition;
+	int					m_prevDirection;
 
-	CManager_Cars*	m_owner{ nullptr };
+	CManager_Cars*		m_owner{ nullptr };
 
-	uint8			m_hndType{ 0 };
+	uint8				m_hndType{ 0 };
 
-	uint8			m_controlType{ 0 };
-	uint8			m_controlFlags{ 0 };
+	uint8				m_controlType{ 0 };
+	uint8				m_controlFlags{ 0 };
 
-	int8			m_id{ -1 };
+	int8				m_id{ -1 };
 
 	union {
 		char* padid{ 0 };		// CONTROL_TYPE_PLAYER or CONTROL_TYPE_CUTSCENE

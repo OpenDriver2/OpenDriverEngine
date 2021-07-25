@@ -24,47 +24,53 @@
 #include "world.h"
 #include "cars.h"
 
+const short DEFAULT_GRAVITY_FORCE = -7456; // D1 has -10922
 const double Car_Fixed_Timestep = 1.0 / 30.0;
 
-struct GEAR_DESC
-{
-	int lowidl_ws, low_ws, hi_ws;
-	int ratio_ac, ratio_id;
-};
-
-struct HANDLING_TYPE
-{
-	int8 frictionScaleRatio, aggressiveBraking, fourWheelDrive, autoBrakeOn;
-};
-
-HANDLING_TYPE handlingType[7] =
+HANDLING_TYPE g_handlingType[7] =
 {
 	// frictionScaleRatio, aggressiveBraking, fourWheelDrive, autoBrakeOn
-	{ 32, 1, 0, 1 },
-	{ 29, 0, 0, 0 },
-	{ 45, 1, 1, 0 },
-	{ 55, 1, 1, 0 },
-	{ 68, 1, 1, 0 },
-	{ 32, 1, 0, 1 },
-	{ 29, 0, 0, 0 }
+	{ 32,	true,		false,	1 },
+	{ 29,	false,		false,	0 },
+	{ 45,	false,		true,	0 },
+	{ 55,	false,		true,	0 },
+	{ 68,	false,		true,	0 },
+	{ 32,	false,		false,	1 },
+	{ 29,	false,		false,	0 }
 };
 
-// gear ratios for different handling types
-static const GEAR_DESC s_gearDesc[2][4] =
+// default gear ratios
+static const GEAR_DESC s_gearDesc[][4] =
 {
+	// Driver 2 player car
 	{
 		{ 0, 0, 163, 144, 135 },
 		{ 86, 133, 260, 90, 85 },
 		{ 186, 233, 360, 60, 57 },
 		{ 286, 326, 9999, 48, 45 }
 	},
+	// Driver 2 civ car
 	{
 		{ 0, 0, 50, 144, 135 },
 		{ 43, 66, 100, 90, 85 },
 		{ 93, 116, 150, 60, 57 },
 		{ 143, 163, 9999, 48, 45 }
+	},
+	// Driver 1 cars
+	{
+		{ 0, 0, 245, 96, 90 },
+		{ 130, 200, 390, 60, 57 },
+		{ 130, 350, 540, 40, 38 },
+		{ 130, 490, 9999, 32, 30}
 	}
 };
+
+CAR_COSMETICS::CAR_COSMETICS()
+{
+	handlingType = g_handlingType[0];
+	gears.append(s_gearDesc[0], 4);
+	gravity = DEFAULT_GRAVITY_FORCE;
+}
 
 int gCopDifficultyLevel = 0;		// TODO: Lua parameter on difficulty?
 int wetness = 0;					// TODO: CWorld::GetWetness()
@@ -302,7 +308,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				{
 					sidevel = FIXEDH(rearFS * slidevel);
 
-					if (handlingType[m_hndType].autoBrakeOn != 0 && 0 < sidevel * m_wheel_angle)
+					if (m_cos.handlingType.autoBrakeOn != 0 && 0 < sidevel * m_wheel_angle)
 						m_hd.autoBrake = -1;
 
 					force.vx = -lfz * m_thrust;
@@ -417,9 +423,7 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 {
 	int autoBrake;
 	int q;
-	const HANDLING_TYPE* hp;
-
-	hp = &handlingType[m_hndType];
+	HANDLING_TYPE& hp = m_cos.handlingType;
 
 	if (m_thrust < 0)
 		frontFS = 1453;
@@ -430,7 +434,7 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 
 	autoBrake = m_hd.autoBrake;
 
-	if (m_wheelspin == 0 && hp->autoBrakeOn != 0 && autoBrake > 0 && m_hd.wheel_speed > 0)
+	if (m_wheelspin == 0 && hp.autoBrakeOn != 0 && autoBrake > 0 && m_hd.wheel_speed > 0)
 	{
 		q = autoBrake << 1;
 
@@ -442,7 +446,7 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 
 		frontFS += (q + autoBrake) * 15;
 
-		if(hp->autoBrakeOn == 2)
+		if(hp.autoBrakeOn == 2)
 			MsgError("invalid autoBrakeOn");
 	}
 
@@ -507,8 +511,8 @@ void CCar::GetFrictionScalesDriver1(CAR_LOCALS& cl, int& frontFS, int& rearFS)
 			frontFS = (frontFS * 40 - frontFS) / 32;
 	}
 
-	frontFS = (frontFS * hp->frictionScaleRatio) / 32;
-	rearFS = (rearFS * hp->frictionScaleRatio) / 32;
+	frontFS = (frontFS * hp.frictionScaleRatio) / 32;
+	rearFS = (rearFS * hp.frictionScaleRatio) / 32;
 
 	if ((m_hndType == 5) && (m_ai.l.dstate == 5))
 	{
@@ -574,7 +578,7 @@ void CCar::StepOneCar()
 	m_prevCogPosition = GetCogPosition();
 	m_prevDirection = m_hd.direction;
 
-	_cl.aggressive = handlingType[m_hndType].aggressiveBraking;
+	_cl.aggressive = m_cos.handlingType.aggressiveBraking;
 	_cl.extraangulardamping = 0;
 
 	for (i = 0; i < 3; i++)
@@ -586,7 +590,7 @@ void CCar::StepOneCar()
 	}
 
 	m_hd.acc[0] = 0;
-	m_hd.acc[1] = -7456; // apply gravity
+	m_hd.acc[1] = m_cos.gravity;
 	m_hd.acc[2] = 0;
 
 	// calculate car speed
@@ -780,21 +784,21 @@ uint16 CCar::GetEngineRevs()
 	int gear;
 	int lastgear;
 	int ws, lws;
-	int type;
+	
+	const int maxGear = m_cos.gears.size() - 1;
 
 	gear = m_hd.gear;
 	ws = m_hd.wheel_speed;
 	acc = m_thrust;
-	type = (m_controlType == CONTROL_TYPE_CIV_AI);
 
 	if (ws > 0)
 	{
 		ws >>= 11;
 
-		if (gear > 3)
-			gear = 3;
+		if (gear > maxGear)
+			gear = maxGear;
 
-		gd = &s_gearDesc[type][gear];
+		gd = &m_cos.gears[gear];
 
 		do {
 			if (acc < 1)
@@ -834,9 +838,9 @@ uint16 CCar::GetEngineRevs()
 	}
 
 	if (acc != 0)
-		return ws * s_gearDesc[type][lastgear].ratio_ac;
+		return ws * m_cos.gears[lastgear].ratio_ac;
 
-	return ws * s_gearDesc[type][lastgear].ratio_id;
+	return ws * m_cos.gears[lastgear].ratio_id;
 }
 
 void CCar::ControlCarRevs()
@@ -1214,18 +1218,12 @@ void CCar::TempBuildHandlingMatrix(int init)
 
 void CCar::StepCarPhysics()
 {
-	HANDLING_TYPE* hp;
 	int car_id;
 
 	int frontWheelSpeed;
 	int backWheelSpeed;
 
-	hp = &handlingType[m_hndType];
-
-	if (m_hndType == 1)
-		hp->aggressiveBraking = 0;
-	else
-		hp->aggressiveBraking = 1;
+	HANDLING_TYPE& hp = m_cos.handlingType;
 
 	// [A] update wheel rotation - fix for multiplayer outside cameras
 	frontWheelSpeed = m_hd.wheel_speed / 256;

@@ -25,18 +25,40 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 /*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
 {
-	lua.new_usertype<POSITION_INFO>(
-		"POSITION_INFO",
+	lua.new_usertype<GEAR_DESC>(
+		"GEAR_DESC",
 		sol::call_constructor, sol::factories(
-			[](const int& x, const int& y, const int& z, const int& direction) {
-				return POSITION_INFO{ VECTOR_NOPAD{x, y, z}, direction };
-			},
 			[](const sol::table& table) {
-				return POSITION_INFO{ VECTOR_NOPAD{ table["x"], table["y"], table["z"] }, table["direction"] };
-			},
-			[]() { return POSITION_INFO{ 0 }; }),
-		"position", &POSITION_INFO::position,
-		"direction", &POSITION_INFO::direction
+				return GEAR_DESC { 
+					table["lowidl_ws"],
+					table["low_ws"],
+					table["hi_ws"],
+					table["ratio_ac"],
+					table["ratio_id"]
+				};
+			}),
+			"lowidl_ws", &GEAR_DESC::lowidl_ws,
+			"low_ws", &GEAR_DESC::low_ws,
+			"hi_ws", &GEAR_DESC::hi_ws,
+			"ratio_ac", &GEAR_DESC::ratio_ac,
+			"ratio_id", &GEAR_DESC::ratio_id
+		);
+
+	lua.new_usertype<HANDLING_TYPE>(
+		"HANDLING_TYPE",
+		sol::call_constructor, sol::factories(
+			[](const sol::table& table) {
+				return HANDLING_TYPE{
+					table["frictionScaleRatio"],
+					table["aggressiveBraking"],
+					table["fourWheelDrive"],
+					table["autoBrakeOn"],
+				};
+			}),
+			"frictionScaleRatio", &HANDLING_TYPE::frictionScaleRatio,
+			"aggressiveBraking", &HANDLING_TYPE::aggressiveBraking,
+			"fourWheelDrive", &HANDLING_TYPE::fourWheelDrive,
+			"autoBrakeOn", &HANDLING_TYPE::autoBrakeOn
 		);
 
 	lua.new_usertype<CAR_COSMETICS>(
@@ -46,6 +68,7 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 				sol::table& wheelDispTable = table["wheelDisp"].get<sol::table>();
 				sol::table& cPointsTable = table["cPoints"].get<sol::table>();
+				sol::table& gearsTable = table["gears"].get<sol::table>();
 
 				CAR_COSMETICS newCosmetics;
 
@@ -72,6 +95,19 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 					throw new sol::error("cPoints count is not 12!");
 				}
 
+				if (gearsTable.valid() && gearsTable.size())
+				{
+					newCosmetics.gears.clear();
+					for (int i = 0; i < gearsTable.size(); i++)
+					{
+						GEAR_DESC newGear = gearsTable[i + 1];
+						newCosmetics.gears.append(newGear);
+					}
+				}
+
+				if(table["handlingType"].valid())
+					newCosmetics.handlingType = table["handlingType"];
+
 				newCosmetics.headLight = table["headLight"];
 				newCosmetics.frontInd = table["frontInd"];
 				newCosmetics.backInd = table["backInd"];
@@ -81,9 +117,10 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 				newCosmetics.exhaust = table["exhaust"];
 				newCosmetics.smoke = table["smoke"];
 				newCosmetics.fire = table["fire"];
+				newCosmetics.gravity = table["gravity"];
 
 				for(int i = 0; i < 4; i++)
-					newCosmetics.wheelDisp[i] = wheelDispTable[i+1];
+					newCosmetics.wheelDisp[i] = wheelDispTable[i + 1];
 
 				for (int i = 0; i < 12; i++)
 					newCosmetics.cPoints[i] = cPointsTable[i + 1];
@@ -139,6 +176,24 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"twistRateY", &CAR_COSMETICS::twistRateY,
 		"twistRateZ", &CAR_COSMETICS::twistRateZ,
 		"mass", &CAR_COSMETICS::mass);
+
+	//----------------------------------------------------------
+
+	lua.new_usertype<POSITION_INFO>(
+		"POSITION_INFO",
+		sol::call_constructor, sol::factories(
+			[](const int& x, const int& y, const int& z, const int& direction) {
+				return POSITION_INFO{ VECTOR_NOPAD{x, y, z}, direction };
+			},
+			[](const sol::table& table) {
+				return POSITION_INFO{ VECTOR_NOPAD{ table["x"], table["y"], table["z"] }, table["direction"] };
+			},
+			[]() { return POSITION_INFO{ 0 }; }),
+		"position", &POSITION_INFO::position,
+		"direction", &POSITION_INFO::direction
+		);
+
+	//-------------------------------------------
 
 	lua.new_usertype<CManager_Cars>(
 		"CManager_Cars",
