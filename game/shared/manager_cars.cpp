@@ -8,7 +8,9 @@
 
 #include "routines/models.h"
 #include "renderer/gl_renderer.h"
+
 #include "game/render/render_model.h"
+#include "game/render/render_level.h"
 
 #include "math/psx_math_types.h"
 #include "math/ratan2.h"
@@ -1004,6 +1006,10 @@ double CManager_Cars::GetInterpTime() const
 
 void CManager_Cars::Draw(const CameraViewParams& view)
 {
-	
+	if (g_levRenderProps.nightMode)
+		CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
+	else
+		CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
+
 	g_cars->DrawAllCars();
 }
