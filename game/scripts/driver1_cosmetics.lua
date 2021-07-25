@@ -24,7 +24,7 @@ local playerCar0Cosmetics = {
 	cbYoffset = 0,
 	susCoeff = 4096,
 	traction = 4096,
-	wheelSize = 52,
+	wheelSize = 62,
 	cPoints = {
 		fix.SVECTOR(-126, 11, -370),
 		fix.SVECTOR(125, 11, -370),
@@ -74,7 +74,7 @@ local function ScaleUp(carCos)
 	carCos.twistRateY = carCos.twistRateY * 0.65
 	carCos.twistRateZ = carCos.twistRateZ * 0.65
 	
-	carCos.powerRatio = carCos.powerRatio * 1.4
+	carCos.powerRatio = carCos.powerRatio * 1.5
 end
 
 ScaleUp(playerCar0Cosmetics)

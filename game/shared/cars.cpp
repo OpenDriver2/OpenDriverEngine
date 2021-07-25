@@ -1362,6 +1362,16 @@ bool CCar::get_changingGear() const
 	return m_hd.changingGear;
 }
 
+int	CCar::get_wheel_speed() const
+{
+	return m_hd.wheel_speed;
+}
+
+int	CCar::get_speed() const
+{
+	return m_hd.speed;
+}
+
 int8 CCar::get_autobrake() const
 {
 	return m_hd.autoBrake;

@@ -1,9 +1,7 @@
 local cars = engine.Cars
 local world = engine.World
 
-TestGame = {
-
-}
+TestGame = {}
 
 local PlayerStartInfo = {
 	----------- Driver 2 freeride startpos -------------
@@ -70,6 +68,8 @@ local buttonState = {
 	[SDL.Scancode.Down] = false,
 	[SDL.Scancode.Left] = false,
 	[SDL.Scancode.Right] = false,
+	[SDL.Scancode.Space] = false,
+	[SDL.Scancode.LeftShift] = false
 }
 
 -- Fixes car cosmetics in REDRIVER2 way
@@ -196,22 +196,37 @@ TestGame.UpdateCarPads = function()
 		return
 	end
 	
+	local input = {
+		accel = buttonState[SDL.Scancode.Up],
+		brake = buttonState[SDL.Scancode.Down],
+		wheelspin = buttonState[SDL.Scancode.LeftShift],
+		handbrake = buttonState[SDL.Scancode.Space],
+		steering = 0,
+	}
+	
+
+	if buttonState[SDL.Scancode.Left] then
+		input.steering = -1
+	end
+
+	if buttonState[SDL.Scancode.Right] then
+		input.steering = 1
+	end
+	
 	local carCos = car.cosmetics
 	
 	-- update steering
 	
-	if buttonState[SDL.Scancode.Left] then
+	if input.steering < 0 then
 		car.wheel_angle = car.wheel_angle - 32
 		car.autobrake = car.autobrake + 1
 	end
 	
-	if buttonState[SDL.Scancode.Right] then
+	if input.steering > 0 then
 		car.wheel_angle = car.wheel_angle + 32
 		car.autobrake = car.autobrake + 1
 	end
-	
-	car.handbrake = buttonState[SDL.Scancode.Space] == true
-	
+
 	if car.wheel_angle < -352 then
 		car.wheel_angle = -352
 	end
@@ -224,7 +239,7 @@ TestGame.UpdateCarPads = function()
 		car.autobrake = 90
 	end
 	
-	if buttonState[SDL.Scancode.Left] ~= true and buttonState[SDL.Scancode.Right] ~= true then
+	if input.steering == 0 then
 		if car.wheel_angle < -64 then
 			car.wheel_angle = car.wheel_angle + 64
 		elseif car.wheel_angle < 65 then
@@ -236,15 +251,40 @@ TestGame.UpdateCarPads = function()
 	end
 	
 	-- update acceleration
-	if buttonState[SDL.Scancode.Up] then
-		car.thrust = (4915 * carCos.powerRatio) / fix.ONE
+	if input.handbrake == true then
+		car.handbrake = 1
+	else
+		car.handbrake = 0
+		
+		if input.wheelspin == true then
+			car.wheelspin = 1
+		else
+			car.wheelspin = 0
+		end
+		
+		-- continue without burnout
+		if car.wheelspin ~= 0 and car.wheel_speed > 452952 then
+			car.wheelspin = 0
+			input.accel = true
+		end
+	end
+	
+	if input.accel then
+		car.thrust = (4915 * carCos.powerRatio) + 2048 >> 12
 	end
 
-	if buttonState[SDL.Scancode.Down] then
+	if input.brake then
+		local rws = (car.wheel_speed * 1500 // 1024) + 2048 >> 12
+		if -rws < 23 then
+			rws = -5000;
+		else
+			rws = ((rws + 278) * -4778) >> 8
+		end
+				
 		car.thrust = -4096
 	end
 	
-	if buttonState[SDL.Scancode.Up] ~= true and buttonState[SDL.Scancode.Down] ~= true then
+	if input.accel ~= true and input.brake ~= true then
 		car.thrust = 0
 	end
 	

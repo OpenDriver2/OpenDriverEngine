@@ -218,6 +218,8 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"handbrake", &CCar::m_handbrake,
 		"wheelspin", &CCar::m_wheelspin,
 		"changingGear", sol::property(&CCar::get_changingGear),
+		"wheel_speed", sol::property(&CCar::get_wheel_speed),
+		"speed", sol::property(&CCar::get_speed),
 		"autobrake", sol::property(&CCar::get_autobrake, &CCar::set_autobrake),
 		"cog_position", sol::property(&CCar::GetCogPosition),
 		"position", sol::property(&CCar::GetPosition, &CCar::SetPosition),

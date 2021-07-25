@@ -294,6 +294,9 @@ protected:
 
 	bool				get_changingGear() const;
 
+	int					get_wheel_speed() const;
+	int					get_speed() const;
+
 	int8				get_autobrake() const;
 	void				set_autobrake(const int8& value);
 

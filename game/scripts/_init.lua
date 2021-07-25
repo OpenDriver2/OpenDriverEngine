@@ -16,11 +16,14 @@ local sky = engine.Sky							-- Sky renderer
 local levRenderProps = engine.LevelRenderProps	-- Level render properties (mode, lighting, etc)
 local camera = engine.Camera
 
+local testGameCamera = false					-- See: RenderUI
+
 local timeAccumulator = 0
-local fixed_timestep = 1.0 / 30.0
+local fixed_timestep <const> = 1.0 / 30.0
 
-local testGameCamera = false
-
+--
+-- StepSim: performs physics fixed time step (callback)
+--
 function StepSim(dt)
 
 	timeAccumulator = timeAccumulator + dt
@@ -56,6 +59,10 @@ function StepSim(dt)
 	end
 end
 
+--
+-- InitCamera : updates the game engine main camera with specified parameters
+-- 		@params: 	a table of { position: vec.vec3, angles: vec.vec3, fov: float}
+--
 function InitCamera( params )
 	-- you can't replace MainView but we can copy all parameters
 	camera.MainView.position = params.position
@@ -66,6 +73,9 @@ end
 local trainModel
 local truckModel
 
+--
+-- Main game loop (callback)
+--
 function GameLoop(dt)
 
 	world.PurgeCellObjects()
@@ -104,6 +114,12 @@ CurrentCityInfo = nil
 CurrentCityType = nil
 CurrentSkyType = nil
 
+--
+-- ChangeCity : level changer
+-- 		@newCityName: 	new city name according to CityInfo table keys
+--		@newCityType: 	city type (Night, MPDay etc)
+--		@newWeather:	weather and sky to use
+--
 function ChangeCity(newCityName, newCityType, newWeather)
 
 	local newCity = CurrentCityInfo
@@ -166,13 +182,12 @@ function ChangeCity(newCityName, newCityType, newWeather)
 	
 	if triggerLoading then
 		
-		-- terminate the game
+		-- TODO: call a callback instead of this
 		TestGame.Terminate()
-	
-		-- drop all cars
 		cars:RemoveAll()
-
+		ResetFreeCamera()
 		
+		-- pick the LEV file from the table
 		local levPath
 		if type(CurrentCityInfo.levPath) == "table" then
 			levPath = CurrentCityInfo.levPath[CurrentCityType]
@@ -193,6 +208,10 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 	end
 end
+
+--------------------------------------------------------------------------
+--          UI STUFF
+--------------------------------------------------------------------------
 
 function ResetFreeCamera()
 	FreeCamera.Position = vec.vec3(5100 / fix.ONE, 590 / fix.ONE, -13651 / fix.ONE)
@@ -314,6 +333,10 @@ function RenderUI()
 	end
 end
 
+-------------------------------------------------
+-- Game engine host.
+-- Don't touch this code 
+--    unless you know what it is
 -------------------------------------------------
 
 local function errorHandler ( errobj )
