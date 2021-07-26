@@ -14,6 +14,7 @@
 #include "math/convert.h"
 #include "game/shared/world.h"
 
+
 // extern some vars
 extern String					g_levname;
 
@@ -64,17 +65,6 @@ ModelRef_t* GetModelCheckLods(int index, float distSqr)
 int g_drawnCells;
 int g_drawnModels;
 int g_drawnPolygons;
-
-Matrix4x4 g_objectMatrix[64];
-
-void InitObjectMatrix()
-{
-	for (int i = 0; i < 64; i++)
-	{
-		const float cellRotationRad = -i / 64.0f * PI_F * 2.0f;
-		g_objectMatrix[i] = rotateY4(cellRotationRad);
-	}
-}
 
 void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume, bool buildingLighting)
 {

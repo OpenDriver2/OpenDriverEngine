@@ -28,6 +28,7 @@
 #include "math/convert.h"
 #include "math/Volume.h"
 #include "math/isin.h"
+#include "math/psx_matrix.h"
 
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
@@ -39,6 +40,9 @@ CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
 Array<CELL_OBJECT>		CWorld::m_CellObjects;
+
+Matrix4x4	g_objectMatrix[64];
+MATRIX		g_objectMatrixFixed[64];
 
 void CWorld::Lua_Init(sol::state& lua)
 {
@@ -95,6 +99,23 @@ void CWorld::Lua_Init(sol::state& lua)
 
 	engine["LevelRenderProps"] = &g_levRenderProps;
 }
+
+//-----------------------------------------------------------------
+
+void CWorld::InitObjectMatrix()
+{
+	for (int i = 0; i < 64; i++)
+	{
+		MATRIX& m = g_objectMatrixFixed[i];
+
+		InitMatrix(m);
+		RotMatrixY(i * 64, &m);
+
+		const float cellRotationRad = -i / 64.0f * PI_F * 2.0f;
+		g_objectMatrix[i] = rotateY4(cellRotationRad);
+	}
+}
+
 
 //-----------------------------------------------------------------
 
@@ -210,7 +231,6 @@ void CWorld::InitHWTextures()
 
 void CWorld::InitHWModels()
 {
-	InitObjectMatrix();
 	CRenderModel::InitModelShader();
 	g_levModels.SetModelLoadingCallbacks(CRenderModel::OnModelLoaded, CRenderModel::OnModelFreed);
 }

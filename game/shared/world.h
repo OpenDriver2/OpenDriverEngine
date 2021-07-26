@@ -13,10 +13,18 @@ struct ModelRef_t;
 
 typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
 
+extern Matrix4x4 g_objectMatrix[64];
+extern MATRIX g_objectMatrixFixed[64];
+
 class CWorld
 {
 public:
 
+	// shared object and rendering stuff
+	static void				InitObjectMatrix();
+
+	//------------------------------------------
+	// 
 	// texture management
 	static void				InitHWTexturePage(CTexturePage* tpage);
 	static void				FreeHWTexturePage(CTexturePage* tpage);
