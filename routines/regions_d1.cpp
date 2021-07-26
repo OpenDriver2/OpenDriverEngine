@@ -433,7 +433,7 @@ bool CDriver1LevelMap::GetRoadInfo(ROUTE_DATA& outData, const VECTOR_NOPAD& posi
 			uint value = *(uint*)(loc_x + loc_z * double_region_size + region->m_roadMap);
 
 			outData.height = *(short*)&value;
-			outData.type = value >> 0x10 & 0x3ff;
+			outData.type = value >> 16 & 0x3ff;
 			outData.objectAngle = value >> 30;
 			outData.value = value;
 
@@ -476,7 +476,6 @@ int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 					py = -py;
 				}
 
-
 				for (int i = 0; i < si->numpolys; i++)
 				{
 					SIPOLY* poly = si->GetPoly(i);
@@ -492,9 +491,6 @@ int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 						int _height = ((normFac / ONE) - poly->normals.d) - routeData.height;
 
 						return _height;
-
-						// TODO!!! LINK WITH MODELS! Grass model has to make wavy effect on height
-						//return _height + ((int)((uint) * (ushort*)((int)rcossin_tbl + ((px + py) * 8 & 0x3ff8U)) << 0x10) >> 0x19);
 					}
 				}
 			}
@@ -525,6 +521,13 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 		// check collision
 		if (routeData.type < 900)
 		{
+			ModelRef_t* ref = m_models->GetModelByIndex(routeData.type);
+
+			if (ref && ref->baseInstance)
+				ref = ref->baseInstance;
+
+			MODEL* model = ref ? ref->model : nullptr;
+
 			SURFACEINFO* si = m_surfacePtrs[routeData.type];
 
 			if (si)
@@ -568,11 +571,15 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 						int n_vy = poly->normals.b;
 
 						int n_vz = _n_vz;
-						if ((routeData.value & 0x40000000) != 0) {
+
+						if ((routeData.value & 0x40000000) != 0)
+						{
 							n_vz = -n_vx;
 							n_vx = _n_vz;
 						}
-						if ((routeData.value & 0x80000000) == 0) {
+
+						if ((routeData.value & 0x80000000) == 0)
+						{
 							n_vx = -n_vx;
 							n_vz = -n_vz;
 						}
@@ -582,13 +589,17 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 						outNormal.vz = n_vz;
 
 						outPoint.vy = _height;
-
-						return 4096;
-
-						// TODO!!! LINK WITH MODELS! Grass model has to make wavy effect on height
-						//return _height + ((int)((uint) * (ushort*)((int)rcossin_tbl + ((px + py) * 8 & 0x3ff8U)) << 0x10) >> 0x19);
 					}
 				}
+			} // si != null
+
+			if (model)
+			{
+				if (model->shape_flags & SHAPE_FLAG_WATER)
+					outPlane.surfaceType = SurfType_Water;
+
+				if (model->flags2 & MODEL_FLAG_GRASS)
+					outPlane.surfaceType = SurfType_Grass;
 			}
 		}
 

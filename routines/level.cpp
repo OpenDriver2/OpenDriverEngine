@@ -277,9 +277,13 @@ ELevelFormat CDriverLevelLoader::GetFormat() const
 void CDriverLevelLoader::Initialize(OUT_CITYLUMP_INFO& lumpInfo, CDriverLevelTextures* textures, CDriverLevelModels* models, CBaseLevelMap* map)
 {
 	m_lumpInfo = &lumpInfo;
+
 	m_textures = textures;
 	m_models = models;
+
 	m_map = map;
+
+	m_map->Init(models, textures);
 }
 
 void CDriverLevelLoader::Release()

@@ -93,9 +93,9 @@ protected:
 
 	OUT_CITYLUMP_INFO*		m_lumpInfo;
 
+	CBaseLevelMap*			m_map{ nullptr };
 	CDriverLevelTextures*	m_textures{ nullptr };
 	CDriverLevelModels*		m_models{ nullptr };
-	CBaseLevelMap*			m_map{ nullptr };
 };
 
 #endif // LEVEL_H

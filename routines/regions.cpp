@@ -187,6 +187,12 @@ CBaseLevelMap::~CBaseLevelMap()
 {
 }
 
+void CBaseLevelMap::Init(CDriverLevelModels* models, CDriverLevelTextures* textures)
+{
+	m_models = models;
+	m_textures = textures;
+}
+
 void CBaseLevelMap::FreeAll()
 {
 	if (m_regionSpoolInfo)
@@ -385,6 +391,9 @@ void CBaseLevelMap::LoadInAreaTPages(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 	if (areaDataNum == 255)
 		return;
 
+	if (!m_textures)
+		return;
+
 	AreaDataStr& areaData = m_areaData[areaDataNum];
 	AreaTpageList& areaTPages = m_areaTPages[areaDataNum];
 
@@ -397,7 +406,7 @@ void CBaseLevelMap::LoadInAreaTPages(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 		if (areaTPages.pageIndexes[i] == 0xFF)
 			break;
 
-		CTexturePage* tpage = ctx.textures->GetTPage(areaTPages.pageIndexes[i]);
+		CTexturePage* tpage = m_textures->GetTPage(areaTPages.pageIndexes[i]);
 
 		// assign
 		areaTPages.tpage[i] = tpage;
@@ -412,6 +421,9 @@ void CBaseLevelMap::LoadInAreaTPages(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) const
 {
 	if (areaDataNum == -1)
+		return;
+
+	if (!m_models)
 		return;
 
 	AreaDataStr& areaData = m_areaData[areaDataNum];
@@ -440,7 +452,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 
 		if (modelSize > 0)
 		{
-			ModelRef_t* ref = ctx.models->GetModelByIndex(new_model_numbers[i]);
+			ModelRef_t* ref = m_models->GetModelByIndex(new_model_numbers[i]);
 
 			// @FIXME: is that correct? Analyze duplicated models...
 			if (ref->model)
@@ -458,7 +470,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 
 			ctx.dataStream->Read(ref->model, modelSize, 1);
 
-			ctx.models->OnModelLoaded(ref);
+			m_models->OnModelLoaded(ref);
 		}
 	}
 

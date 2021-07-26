@@ -323,7 +323,7 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	
 	DrawMap(view.position, view.angles.y, frustumVolume);
 
-	for (int i = 0; i < m_CellObjects.size(); i++)
+	for (usize i = 0; i < m_CellObjects.size(); i++)
 	{
 		DrawCellObject(m_CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
 	}
@@ -339,8 +339,6 @@ void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 	SPOOL_CONTEXT spoolContext;
 	spoolContext.dataStream = &stream;
 	spoolContext.lumpInfo = &g_levInfo;
-	spoolContext.models = &g_levModels;
-	spoolContext.textures = &g_levTextures;
 
 	int regionsAcross = g_levMap->GetRegionsAcross();
 	int regionsDown = g_levMap->GetRegionsDown();
@@ -396,8 +394,6 @@ void CWorld::SpoolAllRegions()
 	SPOOL_CONTEXT spoolContext;
 	spoolContext.dataStream = &stream;
 	spoolContext.lumpInfo = &g_levInfo;
-	spoolContext.models = &g_levModels;
-	spoolContext.textures = &g_levTextures;
 
 	int totalRegions = g_levMap->GetRegionsAcross() * g_levMap->GetRegionsDown();
 		
@@ -427,7 +423,7 @@ int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, V
 {
 	int fr = g_levMap->FindSurface(position, outNormal, outPoint, outPlane);
 
-	 if (outPlane.surfaceType == 4)
+	 if (outPlane.surfaceType == SurfType_Grass)
 	{
 		// TODO: move this hardcoding away
 #if 0
