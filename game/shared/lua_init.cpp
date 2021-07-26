@@ -215,9 +215,11 @@ void LuaInit(sol::state& lua)
 		"vz", &SVECTOR::vz);
 
 	fix["ONE"] = ONE;
+	fix["ONE_BITS"] = ONE_BITS;
 
 	fix["ToFixed"]		= [](const float& a)	{ return int(a * ONE_F); };
 	fix["FromFixed"]	= [](const int& a)		{ return float(a) / ONE_F; };
+	fix["DivHalfRound"]	= [](const int& a, const int& bits)		{ return FixDivHalfRound(a, bits); };
 
 	fix["ToFixedVector"] = &ToFixedVector;
 	fix["FromFixedVector"] = sol::resolve<Vector3D(const VECTOR_NOPAD&)>(&FromFixedVector);

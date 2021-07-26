@@ -5,8 +5,8 @@
 #define ONE_F		float(ONE)
 #define ONE_BITS	12
 
-#define FixHalfRound(x, bits)		(((x) + (1 << (bits-1))) >> bits)
-#define	FIXEDH(a)					FixHalfRound(a, ONE_BITS)		// Fixed Half Round number
+#define FixDivHalfRound(x, bits)		(((x) + (1 << (bits-1))) >> bits)
+#define	FIXEDH(a)					FixDivHalfRound(a, ONE_BITS)		// Fixed Half Round number
 #define	FIXED(a)					((a) >> ONE_BITS)				// Fixed number (unsigned)
 
 #define DIFF_ANGLES( _ang1, _ang2 ) \

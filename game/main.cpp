@@ -306,8 +306,11 @@ int main(int argc, char* argv[])
 
 	CDebugOverlay::Init();
 
+	CWorld::InitObjectMatrix();
+
 	CWorld::InitHWTextures();
 	CWorld::InitHWModels();
+
 	CSky::Init();
 
 	bool canRunLoop = true;

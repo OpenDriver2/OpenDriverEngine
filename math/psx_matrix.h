@@ -39,6 +39,17 @@ MATRIX* TransMatrix(MATRIX* m, VECTOR_NOPAD* v);
 // scales the matrix by arbitary value
 MATRIX* ScaleMatrix(MATRIX* m, VECTOR_NOPAD* v);
 
+#define	InitMatrix( __m )	\
+		( __m ).m[ 0 ][ 0 ] = ONE,	\
+		( __m ).m[ 1 ][ 0 ] = 0,	\
+		( __m ).m[ 2 ][ 0 ] = 0,	\
+		( __m ).m[ 0 ][ 1 ] = 0,	\
+		( __m ).m[ 1 ][ 1 ] = ONE,	\
+		( __m ).m[ 2 ][ 1 ] = 0,	\
+		( __m ).m[ 0 ][ 2 ] = 0,	\
+		( __m ).m[ 1 ][ 2 ] = 0,	\
+		( __m ).m[ 2 ][ 2 ] = ONE
+
 extern VECTOR_NOPAD _vr0, _vr1, _vr2, _vr3;
 extern VECTOR_NOPAD _mac;
 extern SVECTOR_NOPAD _ir;
@@ -70,9 +81,9 @@ void GTE_RTV();
 
 // store short vector
 #define gte_stsv(x) \
-	((VECTOR_NOPAD*)( x ))->vx = _ir.vx;	\
-	((VECTOR_NOPAD*)( x ))->vy = _ir.vy;	\
-	((VECTOR_NOPAD*)( x ))->vz = _ir.vz
+	((SVECTOR*)( x ))->vx = _ir.vx;	\
+	((SVECTOR*)( x ))->vy = _ir.vy;	\
+	((SVECTOR*)( x ))->vz = _ir.vz
 
 #define gte_rtir()		GTE_RTV()
 #define gte_rtv0tr()	GTE_RTV()

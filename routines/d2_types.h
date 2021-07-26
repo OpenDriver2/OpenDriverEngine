@@ -272,7 +272,7 @@ struct MODEL
 
 	int GetCollisionBoxCount()
 	{
-		if(collision_block != 0)
+		if(collision_block > 0)
 			return *(int*)((ubyte*)this + collision_block);
 
 		return 0;
