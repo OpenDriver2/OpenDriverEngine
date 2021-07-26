@@ -239,14 +239,16 @@ int CBaseLevelMap::GetRegionsDown() const
 	return m_regions_down;
 }
 
-void CBaseLevelMap::WorldPositionToCellXZ(XZPAIR& cell, const VECTOR_NOPAD& position) const
+void CBaseLevelMap::WorldPositionToCellXZ(XZPAIR& cell, const VECTOR_NOPAD& position, const XZPAIR& offset /*= { 0 }*/) const
 {
 	// @TODO: constants
 	int units_across_halved = m_mapInfo.cells_across / 2 * m_mapInfo.cell_size;
 	int units_down_halved = m_mapInfo.cells_down / 2 * m_mapInfo.cell_size;
 
-	cell.x = (position.vx + units_across_halved) / m_mapInfo.cell_size;
-	cell.z = (position.vz + units_down_halved) / m_mapInfo.cell_size;
+	const int squared_reg_size = m_mapInfo.region_size * m_mapInfo.region_size;
+
+	cell.x = (position.vx + units_across_halved + offset.x) / m_mapInfo.cell_size;
+	cell.z = (position.vz + units_down_halved + offset.z) / m_mapInfo.cell_size;
 }
 
 //-------------------------------------------------------------

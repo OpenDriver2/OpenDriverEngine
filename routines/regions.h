@@ -106,7 +106,7 @@ public:
 	virtual int					FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const = 0;
 
 	// converters
-	void						WorldPositionToCellXZ(XZPAIR& cell, const VECTOR_NOPAD& position) const;
+	void						WorldPositionToCellXZ(XZPAIR& cell, const VECTOR_NOPAD& position, const XZPAIR& offset = {0}) const;
 
 	const OUT_CELL_FILE_HEADER&	GetMapInfo() const;
 	
