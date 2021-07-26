@@ -228,6 +228,13 @@ extern const double Car_Fixed_Timestep;
 
 //------------------------------------------------------------------
 
+struct BUILDING_BOX
+{
+	VECTOR_NOPAD pos;
+	int xsize, zsize;
+	int theta, height;
+	struct MODEL* model;
+};
 
 class CCar
 {
@@ -252,6 +259,9 @@ public:
 
 	// wheel forces
 	void					StepOneCar();
+
+	// collision
+	int						CarBuildingCollision(struct BUILDING_BOX& building, CELL_OBJECT* cop, int flags);
 
 	// utility functions (mostly for Lua)
 	VECTOR_NOPAD			GetInterpolatedCogPosition() const;
@@ -289,6 +299,9 @@ protected:
 	void				JumpDebris();
 	void				NoseDown();
 
+	// collision
+	void				DamageCar(struct CDATA2D* cd, struct CRET2D* collisionResult, int strikeVel);
+
 	// game sound
 	uint16				GetEngineRevs();
 	void				ControlCarRevs();
@@ -310,7 +323,7 @@ protected:
 	HANDLING_DATA		m_hd;
 	RigidBodyState		m_st;
 	APPEARANCE_DATA		m_ap;
-	CarCosmetics		m_cos;
+	CarCosmetics		m_cosmetics;
 
 	Matrix4x4			m_prevDrawCarMatrix{ identity4() };
 	Matrix4x4			m_drawCarMatrix{ identity4() };

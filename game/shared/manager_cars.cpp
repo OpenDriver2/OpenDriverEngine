@@ -7,6 +7,7 @@
 #include "core/cmdlib.h"
 
 #include "routines/models.h"
+#include "routines/regions.h"
 #include "renderer/gl_renderer.h"
 
 #include "game/render/render_model.h"
@@ -21,6 +22,8 @@
 
 // TODO: move it
 int	CameraCnt = 0;
+
+extern CBaseLevelMap* g_levMap;
 
 static CManager_Cars s_carManagerInstance;
 CManager_Cars* g_cars = &s_carManagerInstance;
@@ -158,7 +161,7 @@ CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int model
 	cp->m_lowDetail = -1;
 	cp->m_ap.qy = 0;
 	cp->m_ap.qw = 0;
-	cp->m_cos = cosmetic;
+	cp->m_cosmetics = cosmetic;
 
 	cp->m_model = m_carModels[modelId];
 
@@ -166,7 +169,7 @@ CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int model
 	tmpStart.vy = positionInfo.position.vy;
 	tmpStart.vz = positionInfo.position.vz;
 
-	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_cos.wheelDisp[0].vy;
+	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_cosmetics.wheelDisp[0].vy;
 
 	cp->InitWheelModels();
 	cp->InitCarPhysics((LONGVECTOR4*)&tmpStart, positionInfo.direction);
@@ -438,9 +441,9 @@ void CManager_Cars::GlobalTimeStep()
 			st.n.fposition[1] += st.n.linearVelocity[1] >> 8;
 			st.n.fposition[2] += st.n.linearVelocity[2] >> 8;
 
-			AV[0] = FixHalfRound(st.n.angularVelocity[0], 13);
-			AV[1] = FixHalfRound(st.n.angularVelocity[1], 13);
-			AV[2] = FixHalfRound(st.n.angularVelocity[2], 13);
+			AV[0] = FixDivHalfRound(st.n.angularVelocity[0], 13);
+			AV[1] = FixDivHalfRound(st.n.angularVelocity[1], 13);
+			AV[2] = FixDivHalfRound(st.n.angularVelocity[2], 13);
 
 			// TODO: MulQuaternions macro
 			delta_orientation[0] = -orient[1] * AV[2] + orient[2] * AV[1] + orient[3] * AV[0];
@@ -496,9 +499,9 @@ void CManager_Cars::GlobalTimeStep()
 					thisDelta[i].n.fposition[1] = thisState_i->n.linearVelocity[1] >> 8;
 					thisDelta[i].n.fposition[2] = thisState_i->n.linearVelocity[2] >> 8;
 
-					AV[0] = FixHalfRound(thisState_i->n.angularVelocity[0], 13);
-					AV[1] = FixHalfRound(thisState_i->n.angularVelocity[1], 13);
-					AV[2] = FixHalfRound(thisState_i->n.angularVelocity[2], 13);
+					AV[0] = FixDivHalfRound(thisState_i->n.angularVelocity[0], 13);
+					AV[1] = FixDivHalfRound(thisState_i->n.angularVelocity[1], 13);
+					AV[2] = FixDivHalfRound(thisState_i->n.angularVelocity[2], 13);
 
 					thisDelta[i].n.orientation[0] = FIXEDH(-orient[1] * AV[2] + orient[2] * AV[1] + orient[3] * AV[0]);
 					thisDelta[i].n.orientation[1] = FIXEDH(orient[0] * AV[2] - orient[2] * AV[0] + orient[3] * AV[1]);
@@ -636,7 +639,7 @@ void CManager_Cars::GlobalTimeStep()
 								if (strikeVel > 0x69000)
 									strikeVel = 0x69000;
 
-								m1 = cp->m_cos.mass;
+								m1 = cp->m_cosmetics.mass;
 								m2 = c1->m_ap.carCos->mass;
 
 								if (m2 < m1)
@@ -680,7 +683,7 @@ void CManager_Cars::GlobalTimeStep()
 									thisDelta[i].n.linearVelocity[1] -= velocity.vy;
 									thisDelta[i].n.linearVelocity[2] -= velocity.vz;
 
-									twistY = cp->m_cos.twistRateY / 2;
+									twistY = cp->m_cosmetics.twistRateY / 2;
 
 									torque[0] = FIXEDH(velocity.vy * lever0[2] - velocity.vz * lever0[1]) * twistY;
 									torque[1] = FIXEDH(velocity.vz * lever0[0] - velocity.vx * lever0[2]) * twistY;
@@ -719,7 +722,7 @@ void CManager_Cars::GlobalTimeStep()
 									thisDelta[j].n.linearVelocity[1] += velocity.vy;
 									thisDelta[j].n.linearVelocity[2] += velocity.vz;
 
-									twistY = c1->m_cos.twistRateY / 2;
+									twistY = c1->m_cosmetics.twistRateY / 2;
 
 									torque[0] = FIXEDH(lever1[1] * velocity.vz - lever1[2] * velocity.vy) * twistY;
 									torque[1] = FIXEDH(lever1[2] * velocity.vx - lever1[0] * velocity.vz) * twistY;
@@ -816,12 +819,121 @@ void CManager_Cars::GlobalTimeStep()
 
 void CManager_Cars::CheckScenaryCollisions(CCar* cp)
 {
-	// UNIMPLEMENTED!!!
+	auto& mapInfo = g_levMap->GetMapInfo();
+	const int squared_reg_size = mapInfo.region_size * mapInfo.region_size;
+
+	VECTOR_NOPAD position;
+	XZPAIR initial, cell;
+
+	position.vx = cp->m_hd.where.t[0];// -squared_reg_size;
+	position.vy = cp->m_hd.where.t[1];
+	position.vz = cp->m_hd.where.t[2];// -squared_reg_size;
+
+	g_levMap->WorldPositionToCellXZ(initial, position, XZPAIR{ -squared_reg_size, -squared_reg_size });
+
+	static Array<CELL_OBJECT*> collisionObjects;
+	collisionObjects.reserve(32);
+	collisionObjects.clear();
+
+	// collect objects
+	cell.x = initial.x;
+	for (int i = 0; i < 2; i++)
+	{
+		cell.z = initial.z;
+		for (int j = 0; j < 2; j++)
+		{
+			CWorld::ForEachCellObjectAt(cell, [](int listType, CELL_OBJECT* co) {
+				//if (listType != -1 && !g_levRenderProps.displayAllCellLevels)
+				//	return false;
+
+				ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
+				MODEL* model = ref->model;
+
+				if (ref->baseInstance)
+					ref = ref->baseInstance;
+
+				if (ref->model->GetCollisionBoxCount())
+					collisionObjects.append(co);
+
+				return true;
+			});
+
+			cell.z++;
+		}
+
+		cell.x++;
+	}
+
+	int extraDist = 580;
+
+	// check collisions
+	for (usize i = 0; i < collisionObjects.size(); i++)
+	{
+		CELL_OBJECT* co = collisionObjects[i];
+		ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
+
+		if (ref->baseInstance)
+			ref = ref->baseInstance;
+
+		MODEL* model = ref->model;
+
+		int numCollisionBoxes = model->GetCollisionBoxCount();
+
+		int dx = co->pos.vx - position.vx;
+		int dz = co->pos.vz - position.vz;
+		int yang = -co->yang & 63;
+
+		int sphereSq = model->bounding_sphere + extraDist + cp->m_hd.speed;
+
+
+		if (dx * dx + dz * dz < sphereSq * sphereSq)
+		{
+			
+			for (int j = 0; j < numCollisionBoxes; j++)
+			{
+				BUILDING_BOX bbox;
+				COLLISION_PACKET* collide = model->pCollisionBox(j);
+
+				// box 'rotated' by matrix
+				// [A] FIXME: replace add+shift by division
+				bbox.pos.vx = co->pos.vx + FIXEDH(collide->xpos * g_objectMatrixFixed[yang].m[0][0] + collide->zpos * g_objectMatrixFixed[yang].m[2][0]);
+				bbox.pos.vy = co->pos.vy + collide->ypos;
+				bbox.pos.vz = co->pos.vz + FIXEDH(collide->xpos * g_objectMatrixFixed[yang].m[0][2] + collide->zpos * g_objectMatrixFixed[yang].m[2][2]);
+
+#if 0
+				// [A] purposely make chair box smaller for Tanner
+				if (cp->controlType == CONTROL_TYPE_TANNERCOLLIDER && (model->flags2 & MODEL_FLAG_CHAIR))
+				{
+					bbox.xsize = (collide->zsize >> 1) - 20;
+					bbox.zsize = (collide->xsize >> 1) - 20;
+				}
+				else
+#endif
+				{
+					bbox.xsize = collide->zsize >> 1;
+					bbox.zsize = collide->xsize >> 1;
+				}
+
+
+				bbox.height = collide->ysize;
+				bbox.theta = (co->yang + collide->yang) * 64 & 0xfff;
+				bbox.model = model;
+
+				// TEMPORARY
+				cp->CarBuildingCollision(bbox, co, 0);
+			}
+		}
+	}
 }
 
 void CManager_Cars::CheckCarToCarCollisions()
 {
 	// UNIMPLEMENTED!!!
+	for (usize i = 0; i < m_active_cars.size(); i++)
+	{
+		CCar* cp = m_active_cars[i];
+		cp->m_hd.mayBeColliding = 0x80000000;
+	}
 }
 
 void CManager_Cars::DoScenaryCollisions()
