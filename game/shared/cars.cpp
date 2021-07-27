@@ -76,6 +76,7 @@ CarCosmetics::CarCosmetics()
 	handlingType = g_handlingType[0];
 	gears.append(s_gearDesc[0], 4);
 	gravity = DEFAULT_GRAVITY_FORCE;
+	wheelspinMaxSpeed = 452952;
 }
 
 void CarCosmetics::InitFrom(const CAR_COSMETICS_D2& srcCos)
@@ -218,6 +219,7 @@ void CCar::Lua_Init(sol::state& lua)
 				for (int i = 0; i < 12; i++)
 					newCosmetics.cPoints[i] = cPointsTable[i + 1];
 
+				newCosmetics.wheelspinMaxSpeed = table["wheelspinMaxSpeed"];
 				newCosmetics.extraInfo = table["extraInfo"];
 				newCosmetics.powerRatio = table["powerRatio"];
 				newCosmetics.cbYoffset = table["cbYoffset"];
@@ -261,6 +263,7 @@ void CCar::Lua_Init(sol::state& lua)
 			for (int i = 0; i < 12; i++)
 				cPointsTable[i + 1] = self.cPoints[i];
 
+			table["wheelspinMaxSpeed"] = self.wheelspinMaxSpeed;
 			table["extraInfo"] = self.extraInfo;
 			table["powerRatio"] = self.powerRatio;
 			table["cbYoffset"] = self.cbYoffset;
@@ -295,6 +298,7 @@ void CCar::Lua_Init(sol::state& lua)
 			[](CarCosmetics& self, int i, SVECTOR& v) {
 				self.wheelDisp[i - 1] = v;
 			},
+		"wheelspinMaxSpeed", &CarCosmetics::wheelspinMaxSpeed,
 		"extraInfo", &CarCosmetics::extraInfo,
 		"powerRatio", &CarCosmetics::powerRatio,
 		"cbYoffset", &CarCosmetics::cbYoffset,

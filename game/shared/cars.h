@@ -32,6 +32,7 @@ struct CarCosmetics
 	SVECTOR policeLight;
 	SVECTOR exhaust, smoke, fire;
 	SVECTOR wheelDisp[4];			// TODO: array
+	int wheelspinMaxSpeed;
 	short gravity;
 	short extraInfo;
 	short powerRatio;
