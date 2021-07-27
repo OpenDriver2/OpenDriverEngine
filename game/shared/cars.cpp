@@ -838,6 +838,7 @@ void CCar::StepOneCar()
 	m_prevPosition = GetPosition();
 	m_prevCogPosition = GetCogPosition();
 	m_prevDirection = m_hd.direction;
+	m_prevDrawCarMatrix = m_drawCarMatrix;
 
 	_cl.aggressive = m_cosmetics.handlingType.aggressiveBraking;
 	_cl.extraangulardamping = 0;
@@ -1516,9 +1517,16 @@ void CCar::StepCarPhysics()
 
 //----------------------------------------------------------
 
+void CCar::ResetInterpolation()
+{
+	m_prevDrawCarMatrix = m_drawCarMatrix = FromFixedMatrix(m_hd.where);
+	m_prevCogPosition = GetCogPosition();
+	m_prevPosition = GetPosition();
+	m_prevDirection = GetDirection(); 
+}
+
 void CCar::UpdateCarDrawMatrix()
 {
-	m_prevDrawCarMatrix = m_drawCarMatrix;
 	m_drawCarMatrix = FromFixedMatrix(m_hd.where);
 }
 
@@ -1558,21 +1566,21 @@ void CCar::DentCar()
 
 VECTOR_NOPAD CCar::GetInterpolatedCogPosition() const
 {
-	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
 
 	return ToFixedVector(lerp(FromFixedVector(m_prevCogPosition), FromFixedVector(GetCogPosition()), factor));
 }
 
 const VECTOR_NOPAD& CCar::GetInterpolatedPosition() const
 {
-	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
 
 	return ToFixedVector(lerp(FromFixedVector(m_prevPosition), FromFixedVector(GetPosition()), factor));
 }
 
 int CCar::GetInterpolatedDirection() const
 {
-	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
 
 	int shortest_angle = DIFF_ANGLES(m_hd.direction, m_prevDirection);
 
@@ -1651,7 +1659,7 @@ void CCar::set_autobrake(const int8& value)
 
 void CCar::DrawCar()
 {
-	float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
 
 	// this potentially could warp matrix. PLEASE consider using quaternions in future
 	Matrix4x4 drawCarMat(
@@ -2036,7 +2044,7 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 					displacement = FIXEDH(lever[0] * collisionResult.surfNormal.vx + lever[1] * collisionResult.surfNormal.vy + lever[2] * collisionResult.surfNormal.vz);
 					displacement = FIXEDH(((lever[0] * lever[0] + lever[2] * lever[2]) - displacement * displacement) * m_cosmetics.twistRateY) + 4096;
 
-					if (strikeVel < 0x7f001)
+					if (strikeVel <= 127 * 4096)
 						denom = (strikeVel * 4096) / displacement;
 					else
 						denom = (strikeVel / displacement) * 4096;

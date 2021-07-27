@@ -253,6 +253,7 @@ public:
 	void					CheckCarEffects();
 
 	// drawing
+	void					ResetInterpolation();
 	void					UpdateCarDrawMatrix();
 	void					DentCar();
 	void					DrawCar();
