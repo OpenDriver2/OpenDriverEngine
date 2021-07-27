@@ -29,6 +29,39 @@ local testGameCamera = false					-- See: RenderUI
 local timeAccumulator = 0
 local fixed_timestep <const> = 1.0 / 30.0
 
+local trainModel
+local truckModel
+
+--
+-- InitEventModels: initializes models
+--
+function InitEventModels()
+	trainModel = world.GetModelByName("ELTRAIN")
+	truckModel = world.GetModelByName("LORRY")
+end
+
+--
+-- AddEventObjects: adding event object to rendering system and collision
+--
+function AddEventObjects()
+	-- delete old event objects
+	world.PurgeCellObjects()
+	
+	-- Chicago ONLY
+	if trainModel then
+	
+		-- push event cell object
+		-- any collision checks afterwards will have an effect with it
+		world.PushCellObject(CELL_OBJECT { position = fix.VECTOR(4749, -250, -11082), yang = 512 // 64, type = trainModel.index })
+	
+	end
+	
+	if truckModel then
+		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2579, -300, -14235), 1024 // 64, truckModel.index))
+		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2434, -300, -9641), 128 // 64, truckModel.index))
+	end
+end
+
 --
 -- StepSim: performs physics fixed time step (callback)
 --
@@ -39,6 +72,8 @@ function StepSim(dt)
 	if timeAccumulator >= fixed_timestep then
 		while timeAccumulator > fixed_timestep do
 
+			AddEventObjects()
+			
 			TestGame.UpdateCarPads()
 
 			-- TODO: direct port from MAIN.C
@@ -78,16 +113,10 @@ function InitCamera( params )
 	camera.MainView.fov = params.fov
 end
 
-local trainModel
-local truckModel
-
 --
 -- Main game loop (callback)
 --
 function GameLoop(dt)
-
-	-- delete old event objects
-	world.PurgeCellObjects()
 
 	FreeCamera.UpdateCameraMovement(dt)
 	if testGameCamera == false then
@@ -100,21 +129,7 @@ function GameLoop(dt)
 	
 	local spoolPos = fix.ToFixedVector(camera.MainView.position)
 	world.SpoolRegions(spoolPos, 1)
-	
-	-- Chicago ONLY
-	if trainModel then
-	
-		-- push event cell object
-		-- any collision checks afterwards will have an effect with it
-		world.PushCellObject(CELL_OBJECT { position = fix.VECTOR(4749, -250, -11082), yang = 512 // 64, type = trainModel.index })
-	
-	end
-	
-	if truckModel then
-		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2579, -300, -14235), 1024 // 64, truckModel.index))
-		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2434, -300, -9641), 128 // 64, truckModel.index))
-	end
-	
+		
 	StepSim( dt )
 end
 
@@ -208,12 +223,11 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		end
 		
 		if world.LoadLevel(levPath) then
+			InitEventModels()
+		
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 					
 			SetUpdateFunc("GameLoop", GameLoop)
-			
-			trainModel = world.GetModelByName("ELTRAIN")
-			truckModel = world.GetModelByName("LORRY")
 		end
 	else
 		-- reload sky only

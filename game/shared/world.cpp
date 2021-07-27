@@ -485,16 +485,26 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 		cell.x++;
 	}
 
+	// add event cell objects to list
+	for(usize i = 0; i < m_CellObjects.size(); i++)
+		collisionObjects.append(&m_CellObjects[i]);
+
 	// check collisions
 	for (usize i = 0; i < collisionObjects.size(); i++)
 	{
 		CELL_OBJECT* co = collisionObjects[i];
 		ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
 
-		if (ref->baseInstance)
+		if (ref && ref->baseInstance)
 			ref = ref->baseInstance;
 
+		if (!ref)
+			continue;
+
 		MODEL* model = ref->model;
+
+		if (!model)
+			return;
 
 		int numCollisionBoxes = model->GetCollisionBoxCount();
 
