@@ -1,32 +1,34 @@
 local cars = engine.Cars
 local world = engine.World
 
-TestGame = {}
-
 local PlayerStartInfo = {
 	----------- Driver 2 freeride startpos -------------
 	["Chicago"] = {
 		-- D2 default
 		{
 			startPos = POSITION_INFO {x = 6216, z = -222456, direction = 0},
+			playerCarId = 1,
 		}
 	},
 	["Havana"] = {
 		-- D2 default
 		{
 			startPos = POSITION_INFO {x = -238668, z = -235595, direction = 1024},
+			playerCarId = 1,
 		}
 	},
 	["LasVegas"] = {
 		-- D2 default
 		{
 			startPos = POSITION_INFO {x = 143285, z = 621193, direction = -2046},
+			playerCarId = 1,
 		}
 	},
 	["RioDeJaneiro"] = {
 		-- D2 default
 		{
 			startPos = POSITION_INFO {x = 24453, z = -497793, direction = 1024},
+			playerCarId = 1,
 		}
 	},
 	----------- Driver 1 freeride startpos -------------
@@ -41,7 +43,7 @@ local PlayerStartInfo = {
 		-- D1 default
 		{
 			startPos = POSITION_INFO {x = -454890, z = 202343, direction = 1024},
-			playerCarId = 5,
+			playerCarId = 7,
 		}
 	},
 	["LosAngeles"] = {
@@ -121,14 +123,14 @@ local function PlaceCameraFollowCar(dt)
 	
 	-- smooth follow
 	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
-	cameraAngle = cameraAngle + (angleDelta / 8) * dt * 30
+	cameraAngle = math.floor(cameraAngle + (angleDelta / 8) * dt * 30)
 	
 	local sn = gte.isin(cameraAngle)
 	local cs = gte.icos(cameraAngle)
 	
-	cameraPos.vx = basePos.vx - (cameraDist * sn) / fix.ONE;
-	cameraPos.vy = basePos.vy
-	cameraPos.vz = basePos.vz - (cameraDist * cs) / fix.ONE;
+	cameraPos.vx = math.floor(basePos.vx - (cameraDist * sn) // fix.ONE)
+	cameraPos.vy = math.floor(basePos.vy)
+	cameraPos.vz = math.floor(basePos.vz - (cameraDist * cs) // fix.ONE)
 
 	local camPosVy = world.MapHeight(cameraPos)
 	cameraPos.vy = carHeight - basePos.vy	
@@ -140,7 +142,7 @@ local function PlaceCameraFollowCar(dt)
 		local height = world.MapHeight(basePos);
 
 		if math.abs(height - camPosVy) < 900 then
-			camera_angle.vx = (cameraPos.vy - cammapht) / 2 + 25
+			camera_angle.vx = (cameraPos.vy - cammapht) // 2 + 25
 			cameraPos.vy = cammapht;
 		end
 	end
@@ -155,6 +157,8 @@ local function PlaceCameraFollowCar(dt)
 end
 
 -------------------------------------------------------
+
+TestGame = {}
 
 TestGame.UpdateCamera = function(dt)
 	PlaceCameraFollowCar(dt)
@@ -188,7 +192,7 @@ TestGame.Init = function()
 	-- load current city cars
 	local modelIdx = cars:LoadModel(residentModel)
 
-	car = cars:Create(CAR_COSMETICS(cityCosmetics[residentModel + 1]), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+	car = cars:Create(CarCosmetics(cityCosmetics[residentModel + 1]), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
 end
 
 TestGame.UpdateCarPads = function()
@@ -215,31 +219,28 @@ TestGame.UpdateCarPads = function()
 	
 	local carCos = car.cosmetics
 	
-	-- update steering
-	
-	if input.steering < 0 then
-		car.wheel_angle = car.wheel_angle - 32
+	-- update steering	
+	if input.steering ~= 0 then
 		car.autobrake = car.autobrake + 1
-	end
-	
-	if input.steering > 0 then
-		car.wheel_angle = car.wheel_angle + 32
-		car.autobrake = car.autobrake + 1
-	end
-
-	if car.wheel_angle < -352 then
-		car.wheel_angle = -352
-	end
-	
-	if car.wheel_angle > 352 then
-		car.wheel_angle = 352
-	end
-	
-	if car.autobrake > 90 then
-		car.autobrake = 90
-	end
-	
-	if input.steering == 0 then
+		
+		if input.steering < 0 then
+			car.wheel_angle = car.wheel_angle - 32
+		elseif input.steering > 0 then
+			car.wheel_angle = car.wheel_angle + 32
+		end
+		
+		if car.wheel_angle < -352 then
+			car.wheel_angle = -352
+		end
+		
+		if car.wheel_angle > 352 then
+			car.wheel_angle = 352
+		end
+		
+		if car.autobrake > 90 then
+			car.autobrake = 90
+		end
+	else
 		if car.wheel_angle < -64 then
 			car.wheel_angle = car.wheel_angle + 64
 		elseif car.wheel_angle < 65 then
@@ -263,29 +264,26 @@ TestGame.UpdateCarPads = function()
 		end
 		
 		-- continue without burnout
-		if car.wheelspin ~= 0 and car.wheel_speed > 452952 then
+		if car.wheelspin ~= 0 and car.wheel_speed > carCos.wheelspinMaxSpeed then
 			car.wheelspin = 0
 			input.accel = true
 		end
 	end
 	
-	if input.accel then
-		car.thrust = (4915 * carCos.powerRatio) + 2048 >> 12
-	end
-
+	car.thrust = 0
+	
 	if input.brake then
-		local rws = (car.wheel_speed * 1500 // 1024) + 2048 >> 12
+		local rws = fix.DivHalfRound(car.wheel_speed * 1500 // 1024, fix.ONE_BITS)
+
 		if -rws < 23 then
 			rws = -5000;
 		else
 			rws = ((rws + 278) * -4778) >> 8
 		end
 				
-		car.thrust = -4096
-	end
-	
-	if input.accel ~= true and input.brake ~= true then
-		car.thrust = 0
+		car.thrust = fix.DivHalfRound(rws * carCos.powerRatio, fix.ONE_BITS)
+	elseif input.accel then
+		car.thrust = fix.DivHalfRound(4915 * carCos.powerRatio, fix.ONE_BITS)
 	end
 	
 	if car.changingGear then

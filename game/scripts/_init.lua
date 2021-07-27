@@ -1,3 +1,11 @@
+-- TODO:
+--		Implement dynamic script loader based on Updates.lua
+--		Implement engine host sandboxing
+--		Implement quick Lua script reloading
+--		Implement menu and FPS meters hide (also need engine code)
+
+MsgInfo("OpenDriverEngine Lua host initialization")
+
 -- main OpenDriverEngine file
 dofile "scripts/common.lua"
 dofile "scripts/city.lua"
@@ -78,6 +86,7 @@ local truckModel
 --
 function GameLoop(dt)
 
+	-- delete old event objects
 	world.PurgeCellObjects()
 
 	FreeCamera.UpdateCameraMovement(dt)
@@ -97,13 +106,13 @@ function GameLoop(dt)
 	
 		-- push event cell object
 		-- any collision checks afterwards will have an effect with it
-		world.PushCellObject(CELL_OBJECT { position = fix.VECTOR(4749, -250, -11082), yang = 512 / 64, type = trainModel.index })
+		world.PushCellObject(CELL_OBJECT { position = fix.VECTOR(4749, -250, -11082), yang = 512 // 64, type = trainModel.index })
 	
 	end
 	
 	if truckModel then
-		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2579, -300, -14235), 1024 / 64, truckModel.index))
-		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2434, -300, -9641), 128 / 64, truckModel.index))
+		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2579, -300, -14235), 1024 // 64, truckModel.index))
+		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2434, -300, -9641), 128 // 64, truckModel.index))
 	end
 	
 	StepSim( dt )
@@ -157,6 +166,9 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		triggerLoading = true
 	end
 	
+	if newCityName ~= nil then
+		CurrentCityName = newCityName
+	end
 	CurrentCityInfo = newCity
 	CurrentCityType = newCityType
 	CurrentSkyType = if_then_else(newCity.forceNight, SkyType.Night, newWeather)
@@ -165,7 +177,7 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		return
 	end
 	
-	CurrentCityName = newCityName
+
 
 	levRenderProps.nightMode = newCity.forceNight or (CurrentCityType == CityType.Night)
 	

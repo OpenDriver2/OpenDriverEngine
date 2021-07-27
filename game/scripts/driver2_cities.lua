@@ -19,7 +19,8 @@ return {
 		
 		events 		= {},--dofile("driver2_chicago_events.lua"),
 		
-		cosmetics 	= "scripts/driver2_chicago_cosmetics.lua",
+		cosmetics 	= "scripts/driver2_cosmetics.lua",
+		lcf			= "DRIVER2/LEVELS/CHICAGO.LCF",
 
 		-- this is still not decided
 		frontendPath = {
@@ -54,7 +55,8 @@ return {
 		
 		events 		= {},--dofile("driver2_chicago_events.lua"),
 	
-		cosmetics 	= "scripts/driver2_chicago_cosmetics.lua",
+		cosmetics 	= "scripts/driver2_cosmetics.lua",
+		lcf			= "DRIVER2/LEVELS/HAVANA.LCF",
 
 		-- map settings
 		overlayMap = {
@@ -82,7 +84,8 @@ return {
 		
 		events 		= {},--dofile("driver2_chicago_events.lua"),
 	
-		cosmetics 	= "scripts/driver2_chicago_cosmetics.lua",
+		cosmetics 	= "scripts/driver2_cosmetics.lua",
+		lcf			= "DRIVER2/LEVELS/VEGAS.LCF",
 
 		-- map settings
 		overlayMap = {
@@ -110,7 +113,8 @@ return {
 		
 		events 		= {},--dofile("driver2_chicago_events.lua"),
 	
-		cosmetics 	= "scripts/driver2_chicago_cosmetics.lua",
+		cosmetics 	= "scripts/driver2_cosmetics.lua",
+		lcf			= "DRIVER2/LEVELS/RIO.LCF",
 
 		-- map settings
 		overlayMap = {

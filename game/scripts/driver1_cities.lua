@@ -64,7 +64,7 @@ return {
 
 		skyPath		= "DRIVER2/DATA/SKY2.RAW",
 		
-		brightnessScale = 1.25,
+		brightnessScale = 1.5,
 		forceNight	= true,
 
 		-- lev path for all city types
