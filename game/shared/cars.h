@@ -321,9 +321,9 @@ protected:
 
 	Matrix4x4			m_prevDrawCarMatrix{ identity4() };
 	Matrix4x4			m_drawCarMatrix{ identity4() };
-	VECTOR_NOPAD		m_prevPosition;
-	VECTOR_NOPAD		m_prevCogPosition;
-	int					m_prevDirection;
+	VECTOR_NOPAD		m_prevPosition{ 0 };
+	VECTOR_NOPAD		m_prevCogPosition{ 0 };
+	int					m_prevDirection{ 0 };
 
 	CManager_Cars*		m_owner{ nullptr };
 

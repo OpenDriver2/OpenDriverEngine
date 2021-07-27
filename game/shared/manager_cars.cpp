@@ -93,7 +93,7 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	ModelRef_t* ref = new ModelRef_t();
 	ref->model = carModel->cleanmodel;
 	ref->size = carModel->cleanSize;
-	ref->index = 4096;
+	ref->index = modelNumber;
 
 	CRenderModel* renderModel = new CRenderModel();
 
@@ -788,6 +788,13 @@ void CManager_Cars::GlobalTimeStep()
 		}
 	}
 
+	// update direction
+	for (usize i = 0; i < m_active_cars.size(); i++)
+	{
+		cp = m_active_cars[i];
+		cp->m_hd.direction = ratan2(cp->m_hd.where.m[0][2], cp->m_hd.where.m[2][2]);
+	}
+
 	DoScenaryCollisions();
 
 	// second sub frame passed, update matrices and physics direction
@@ -799,8 +806,6 @@ void CManager_Cars::GlobalTimeStep()
 		cp = m_active_cars[i];
 
 		cp->UpdateCarDrawMatrix();
-		
-
 #if 0
 		if (cp->m_ap.needsDenting != 0 && ((CameraCnt + i & 3U) == 0 || carsDentedThisFrame < 5))
 		{
@@ -810,8 +815,6 @@ void CManager_Cars::GlobalTimeStep()
 			carsDentedThisFrame++;
 		}
 #endif
-		cp->m_hd.direction = ratan2(cp->m_hd.where.m[0][2], cp->m_hd.where.m[2][2]);
-
 		cp->CheckCarEffects();
 	}
 }
@@ -839,14 +842,9 @@ void CManager_Cars::CheckCarToCarCollisions()
 
 void CManager_Cars::DoScenaryCollisions()
 {
-	CCar* cp;
-
-	auto i = m_active_cars.end();
-
-	while (i != m_active_cars.begin())
+	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
-		--i;
-		cp = *i;
+		CCar* cp = m_active_cars[i];
 		// civ AI and dead cop cars perform less collision detection frames
 		if (cp->m_controlType == CONTROL_TYPE_CIV_AI ||
 			cp->m_controlType == CONTROL_TYPE_PURSUER_AI && cp->m_ai.p.dying > 85)

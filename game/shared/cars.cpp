@@ -1,5 +1,6 @@
 #include <nstd/String.hpp>
 #include <nstd/Array.hpp>
+#include <nstd/Math.hpp>
 
 #include "core/ignore_vc_new.h"
 #include <sol/sol.hpp>
@@ -803,11 +804,11 @@ void CCar::ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl)
 	twistY = m_cosmetics.twistRateY;
 	twistZ = m_cosmetics.twistRateZ;
 
-	zd = FIXEDH(m_hd.where.m[0][2] * m_hd.aacc[0] + m_hd.where.m[1][2] * m_hd.aacc[1] + m_hd.where.m[2][2] * m_hd.aacc[2]);
+	zd = (twistZ - twistY) * FIXEDH(m_hd.where.m[0][2] * m_hd.aacc[0] + m_hd.where.m[1][2] * m_hd.aacc[1] + m_hd.where.m[2][2] * m_hd.aacc[2]);
 
 	for (i = 0; i < 3; i++)
 	{
-		m_hd.aacc[i] = m_hd.aacc[i] * twistY + FIXEDH(m_hd.where.m[i][2] * (twistZ - twistY) * zd - cl.avel[i] * 128);
+		m_hd.aacc[i] = m_hd.aacc[i] * twistY + FIXEDH(m_hd.where.m[i][2] * zd - cl.avel[i] * 128);
 
 		if (cl.extraangulardamping == 1)
 			m_hd.aacc[i] -= cl.avel[i] / 8;
@@ -1912,6 +1913,7 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 				pointVel[0] = FIXEDH(m_st.n.angularVelocity[1] * lever[2] - m_st.n.angularVelocity[2] * lever[1]) + m_st.n.linearVelocity[0];
 				pointVel[1] = FIXEDH(m_st.n.angularVelocity[2] * lever[0] - m_st.n.angularVelocity[0] * lever[2]) + m_st.n.linearVelocity[1];
 				pointVel[2] = FIXEDH(m_st.n.angularVelocity[0] * lever[1] - m_st.n.angularVelocity[1] * lever[0]) + m_st.n.linearVelocity[2];
+
 				/*
 				if (flags & CollisionCheckFlag_IsVegasMovingTrain) // [A] Vegas train velocity - added here
 				{
@@ -1919,8 +1921,8 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 				}*/
 
 				strikeVel = -((pointVel[0] / 256) * (collisionResult.surfNormal.vx / 16) +
-					(pointVel[1] / 256) * (collisionResult.surfNormal.vy / 16) +
-					(pointVel[2] / 256) * (collisionResult.surfNormal.vz / 16));
+							  (pointVel[1] / 256) * (collisionResult.surfNormal.vy / 16) +
+							  (pointVel[2] / 256) * (collisionResult.surfNormal.vz / 16));
 
 				if (strikeVel > 0)
 				{
@@ -2060,6 +2062,8 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 					reaction[2] = denom * (collisionResult.surfNormal.vz / 64);
 
 					m_hd.aacc[1] += FIXEDH(lever[2] * reaction[0]) - FIXEDH(lever[0] * reaction[2]);
+
+					//Msg("Collided! %d, %x, %d\n", m_hd.aacc[1], cop, building.xsize);
 
 					// angular impulse calculation and modifiers
 					if (m_controlType != CONTROL_TYPE_LEAD_AI)

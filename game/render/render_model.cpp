@@ -195,7 +195,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 		int forcePolyType = -1;
 
 		// [A] HACK: is sky? force POLYFT4. This fixes VEGAS skies
-		if (m_sourceModel->index < 4)
+		if (vertexModCb && m_sourceModel->index < 4)
 			forcePolyType = 21;
 
 		int poly_size = decode_poly(facedata, &dec_face, forcePolyType);
