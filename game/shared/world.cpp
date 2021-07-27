@@ -456,6 +456,8 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 	collisionObjects.reserve(32);
 	collisionObjects.clear();
 
+	CELL_ITERATOR_CACHE iteratorCache;
+
 	// collect objects
 	cell.x = initial.x;
 	for (int i = 0; i < 2; i++)
@@ -464,20 +466,21 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 		for (int j = 0; j < 2; j++)
 		{
 			CWorld::ForEachCellObjectAt(cell, [](int listType, CELL_OBJECT* co) {
-				//if (listType != -1 && !g_levRenderProps.displayAllCellLevels)
-				//	return false;
+				if (listType != -1)
+					return false;
 
 				ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
-				MODEL* model = ref->model;
 
-				if (ref->baseInstance)
+				if (ref && ref->baseInstance)
 					ref = ref->baseInstance;
 
-				if (ref->model->GetCollisionBoxCount())
+				if (ref->model && ref->model->GetCollisionBoxCount())
+				{
 					collisionObjects.append(co);
+				}
 
 				return true;
-				});
+			}, &iteratorCache);
 
 			cell.z++;
 		}
@@ -493,6 +496,7 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 	for (usize i = 0; i < collisionObjects.size(); i++)
 	{
 		CELL_OBJECT* co = collisionObjects[i];
+		co->pad = 255;
 		ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
 
 		if (ref && ref->baseInstance)
@@ -566,7 +570,7 @@ void CWorld::PurgeCellObjects()
 	m_CellObjects.clear();
 }
 
-void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func)
+void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func, CELL_ITERATOR_CACHE* iteratorCache /*= nullptr*/)
 {
 	CBaseLevelMap* levMap = g_levMap;
 	bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
@@ -577,6 +581,8 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func)
 
 		// Driver 2 map iteration
 		CELL_ITERATOR_D2 ci;
+		ci.cache = iteratorCache;
+
 		PACKED_CELL_OBJECT* ppco = levMapDriver2->GetFirstPackedCop(&ci, cell);
 
 		// walk each cell object in cell
@@ -584,6 +590,7 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func)
 		{
 			if (!func(ci.listType, ci.co))
 				break;
+
 			ppco = levMapDriver2->GetNextPackedCop(&ci);
 		}
 	}
@@ -593,6 +600,8 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func)
 
 		// Driver 1 map iteration
 		CELL_ITERATOR_D1 ci;
+		ci.cache = iteratorCache;
+
 		CELL_OBJECT* pco = levMapDriver1->GetFirstCop(&ci, cell);
 
 		// walk each cell object in cell

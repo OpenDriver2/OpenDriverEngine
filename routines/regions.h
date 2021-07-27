@@ -21,8 +21,12 @@ typedef void (*OnRegionFreed_t)(CBaseLevelRegion* region);
 struct SPOOL_CONTEXT
 {
 	IVirtualStream*			dataStream;
-
 	OUT_CITYLUMP_INFO*		lumpInfo;
+};
+
+struct CELL_ITERATOR_CACHE
+{
+	ubyte computedValues[2048] = { 0 };
 };
 
 class CBaseLevelRegion

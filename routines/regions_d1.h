@@ -12,6 +12,7 @@ class CDriver1LevelMap;
 
 struct CELL_ITERATOR_D1
 {
+	CELL_ITERATOR_CACHE*	cache{ nullptr };
 	CDriver1LevelRegion*	region;
 	CELL_DATA_D1*			pcd;
 	CELL_OBJECT*			pco;

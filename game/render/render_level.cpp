@@ -27,7 +27,7 @@ extern FILE* g_levFile;
 
 LevelRenderProps g_levRenderProps;
 
-int g_cellsDrawDistance = 441;
+int g_cellsDrawDistance = 441 * 10;
 
 //-----------------------------------------------------------------
 
@@ -169,6 +169,9 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 
 	XZPAIR icell;
 
+	CELL_ITERATOR_CACHE iteratorCache;
+	CBaseLevelRegion* currentRegion = nullptr;
+
 	// walk through all cells
 	while (i >= 0)
 	{
@@ -179,6 +182,11 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 			icell.z > -1 && icell.z < levMap->GetCellsDown())
 		{
 			g_drawnCells++;
+			CBaseLevelRegion* reg = g_levMap->GetRegion(icell);
+
+			if (currentRegion != reg)
+				memset(&iteratorCache, 0, sizeof(iteratorCache));
+			currentRegion = reg;
 
 			CWorld::ForEachCellObjectAt(icell, [](int listType, CELL_OBJECT* co) {
 				if (listType != -1 && !g_levRenderProps.displayAllCellLevels)
@@ -186,7 +194,7 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 
 				drawObjects.append(co);
 				return true;
-			});
+			}, &iteratorCache);
 		}
 
 		if (dir == 0)

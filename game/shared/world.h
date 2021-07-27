@@ -74,7 +74,7 @@ public:
 	static void				PurgeCellObjects();
 
 	// iterates through all cell objects at specific cell on map
-	static void				ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func);
+	static void				ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
 
 	//------------------------------------------
 

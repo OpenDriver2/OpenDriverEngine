@@ -430,7 +430,7 @@ bool CDriver1LevelMap::GetRoadInfo(ROUTE_DATA& outData, const VECTOR_NOPAD& posi
 
 		if (region && region->m_roadMap)
 		{
-			uint value = *(uint*)(loc_x + loc_z * double_region_size + region->m_roadMap);
+			uint value = region->m_roadMap[loc_x + loc_z * double_region_size];
 
 			outData.height = *(short*)&value;
 			outData.type = value >> 16 & 0x3ff;
@@ -615,17 +615,12 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, const XZPAIR& cell) const
 {
 	// lookup region
-	const int region_x = cell.x / m_mapInfo.region_size;
-	const int region_z = cell.z / m_mapInfo.region_size;
+	CDriver1LevelRegion* region = (CDriver1LevelRegion*)GetRegion(cell);
 
-	int regionIdx = region_x + region_z * m_regions_across;
-
-	CDriver1LevelRegion& region = m_regions[regionIdx];
-
-	iterator->region = &region;
+	iterator->region = region;
 
 	// don't do anything on empty or non-spooled regions
-	if (!region.m_cells)
+	if (!region->m_cells)
 		return nullptr;
 
 	// get cell index on the region
@@ -635,17 +630,35 @@ CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, const XZP
 	// FIXME: might be incorrect
 	int cell_index = region_cell_x + region_cell_z * m_mapInfo.region_size;
 
-	ushort cell_ptr = region.m_cellPointers[cell_index];
+	ushort cell_ptr = region->m_cellPointers[cell_index];
 
 	if (cell_ptr == 0xFFFF)
 		return nullptr;
 
 	// get the packed cell data start and near cell
-	CELL_DATA_D1& pcd = region.m_cells[cell_ptr];
+	CELL_DATA_D1* pcd = &region->m_cells[cell_ptr];
 	
-	CELL_OBJECT* pco = region.GetCellObject(pcd.num & 0x3fff);
+	iterator->pcd = pcd;
 
-	iterator->pcd = &pcd;
+	CELL_OBJECT* pco = region->GetCellObject(pcd->num & 0x3fff);
+
+	if (iterator->cache)
+	{
+		CELL_ITERATOR_CACHE* cache = iterator->cache;
+		ushort num = pcd->num;
+		uint value = 1 << (num & 7) & 0xffff;
+
+		if ((cache->computedValues[(num & 0x3fff) >> 3] & value))
+		{
+			pco = GetNextCop(iterator);
+			iterator->pco = pco;
+
+			return pco;
+		}
+
+		cache->computedValues[(num & 0x3fff) >> 3] |= value;
+	}
+
 	iterator->pco = pco;
 
 	return pco;
@@ -656,22 +669,47 @@ CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, const XZP
 //-------------------------------------------------------------
 CELL_OBJECT* CDriver1LevelMap::GetNextCop(CELL_ITERATOR_D1* iterator) const
 {
-	ushort cell_ptr = iterator->pcd->next_ptr;
+	CELL_OBJECT* pco = nullptr;
 
-	if(cell_ptr != 0xFFFF)
+	do
 	{
 		CDriver1LevelRegion* region = iterator->region;
-		cell_ptr -= m_cell_slots_add[region->m_regionBarrelNumber];
-		
-		// get the packed cell data start and near cell
-		CELL_DATA_D1& cell = region->m_cells[cell_ptr];
-		iterator->pcd = &cell;
-		
-		CELL_OBJECT* pco = region->GetCellObject(cell.num & 0x3fff);
-		iterator->pco = pco;
 
-		return pco;
-	}
+		CELL_DATA_D1* pcd = iterator->pcd;
 
-	return nullptr;
+		do
+		{
+			ushort cell_ptr = pcd->next_ptr;
+
+			if (cell_ptr == 0xffff)
+				return nullptr;
+
+			// get the packed cell data start and near cell
+			pcd = &region->m_cells[cell_ptr - m_cell_slots_add[region->m_regionBarrelNumber]];
+
+			iterator->pcd = pcd;
+
+			pco = region->GetCellObject(pcd->num & 0x3fff);
+			iterator->pco = pco;
+		} while (pco->pos.vx == -1 && pco->pos.vy == -1 && pco->pos.vz == -1 && pco->type == 0xffff);
+
+		if (!iterator->cache)
+			break;
+
+		ushort num = pcd->num;
+
+		CELL_ITERATOR_CACHE* cache = iterator->cache;
+
+		uint value = 1 << (num & 7) & 0xffff;
+
+		if ((cache->computedValues[(num & 0x3fff) >> 3] & value) == 0)
+		{
+			cache->computedValues[(num & 0x3fff) >> 3] |= value;
+			break;
+		}
+	} while (true);
+
+
+
+	return pco;
 }
