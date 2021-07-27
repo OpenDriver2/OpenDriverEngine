@@ -24,6 +24,8 @@ local sky = engine.Sky							-- Sky renderer
 local levRenderProps = engine.LevelRenderProps	-- Level render properties (mode, lighting, etc)
 local camera = engine.Camera
 
+
+local forceShowUI = false
 local testGameCamera = false					-- See: RenderUI
 
 local timeAccumulator = 0
@@ -87,8 +89,8 @@ function StepSim(dt)
 			-- peds.Update()
 
 			cars:GlobalTimeStep()
+
 			--players:Update()
-			cars:DoScenaryCollisions()
 			--players:CheckMiscFelonies()
 
 
@@ -268,6 +270,35 @@ end
 
 function RenderUI()
 
+	if forceShowUI == false and TestGame.IsRunning() and testGameCamera then
+		return
+	end
+	
+	if ImGui.Begin("HelpFrame", true, ImGuiWindowFlags.NoTitleBar + ImGuiWindowFlags.NoResize +
+		ImGuiWindowFlags.NoMove + ImGuiInputTextFlags.NoHorizontalScroll |
+		ImGuiWindowFlags.NoSavedSettings + ImGuiColorEditFlags.NoInputs + ImGuiWindowFlags.NoBringToFrontOnFocus) then
+
+		local stats = engine.Stats
+
+		ImGui.SetWindowPos(0, 24)
+
+		ImGui.TextColored(1.0, 1.0, 1.0, 0.5, string.format("FPS: %d", stats.systemFPS))
+
+		ImGui.SetWindowSize(400, 120)
+		
+		local viewPosition = camera.MainView.position
+
+		ImGui.TextColored(1.0, 1.0, 0.25, 1.0, string.format("Position: X: %d Y: %d Z: %d",
+			math.floor(viewPosition.x * fix.ONE), math.floor(viewPosition.y * fix.ONE), math.floor(viewPosition.z * fix.ONE)))
+
+		ImGui.TextColored(1.0, 1.0, 1.0, 0.5, string.format("Draw distance: %d", stats.cellsDrawDistance))
+		ImGui.TextColored(1.0, 1.0, 1.0, 0.5, string.format("Drawn cells: %d", stats.drawnCells))
+		ImGui.TextColored(1.0, 1.0, 1.0, 0.5, string.format("Drawn models: %d", stats.drawnModels))
+		ImGui.TextColored(1.0, 1.0, 1.0, 0.5, string.format("Drawn polygons: %d", stats.drawnPolygons))
+
+		ImGui.End()
+	end
+
 	if ImGui.BeginMainMenuBar() then
 		if ImGui.BeginMenu("Level") then
 			if ImGui.BeginMenu("Change level") then
@@ -352,6 +383,16 @@ function RenderUI()
 			if activated then
 				testGameCamera = not testGameCamera
 			end
+			
+			if ImGui.BeginMenu("Change car") then
+				for num = 0,12 do
+					if ImGui.MenuItem(tostring(num)) then
+						TestGame.Init(num)
+					end
+				end
+				ImGui.EndMenu()
+			end
+			
 			ImGui.EndMenu()
 		end
 
@@ -404,6 +445,10 @@ EngineHost = {
 	KeyPress = function( num, down )
 		xpcall(function() 
 			FreeCamera.KeyPress(num, down)
+			
+			if num == SDL.Scancode.Escape and down then
+				forceShowUI = not forceShowUI
+			end
 			
 			TestGame.UpdateCarControls(num, down)
 		end, errorHandler)

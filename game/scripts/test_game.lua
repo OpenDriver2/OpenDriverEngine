@@ -32,6 +32,20 @@ local PlayerStartInfo = {
 		}
 	},
 	----------- Driver 1 freeride startpos -------------
+	["Interview"] = {
+		-- D1 default
+		{
+			startPos = POSITION_INFO {x = -10415, z = -22025, direction = 0},
+			playerCarId = 5,
+		}
+	},
+	["Training"] = {
+		-- D1 default
+		{
+			startPos = POSITION_INFO {x = -6785, z = 75179, direction = 2048},
+			playerCarId = 5,
+		}
+	},
 	["Miami"] = {
 		-- D1 default
 		{
@@ -43,7 +57,7 @@ local PlayerStartInfo = {
 		-- D1 default
 		{
 			startPos = POSITION_INFO {x = -454890, z = 202343, direction = 1024},
-			playerCarId = 7,
+			playerCarId = 5,
 		}
 	},
 	["LosAngeles"] = {
@@ -172,27 +186,32 @@ TestGame.Terminate = function()
 	end
 end
 
-TestGame.Init = function()
+TestGame.Init = function(residentModel)
 
 	-- terminate old game
 	TestGame.Terminate()
 
-	local cityStart = PlayerStartInfo[CurrentCityName][1]
-
 	-- add test car
 	-- create car cosmetics from table
 	local cityCosmetics = dofile(CurrentCityInfo.cosmetics)
-
-	local positionInfo = cityStart.startPos
-	local residentModel = cityStart.playerCarId or 0
-	local palette = math.random(0, 5)
+	local cityStart = PlayerStartInfo[CurrentCityName][1]
 	
-	world.SpoolRegions(positionInfo.position, 1)
+	residentModel = residentModel or cityStart.playerCarId
+	local positionInfo = cityStart.startPos
 	
 	-- load current city cars
 	local modelIdx = cars:LoadModel(residentModel)
+	
+	if modelIdx ~= -1 then
+		local palette = math.random(0, 5)
+		
+		world.SpoolRegions(positionInfo.position, 1)
+		
+		local cosmetics = cityCosmetics[residentModel + 1]
+		FixCarCos(cosmetics)
 
-	car = cars:Create(CarCosmetics(cityCosmetics[residentModel + 1]), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+		car = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+	end
 end
 
 TestGame.UpdateCarPads = function()
@@ -289,6 +308,10 @@ TestGame.UpdateCarPads = function()
 	if car.changingGear then
 		car.thrust = 1;
 	end
+end
+
+TestGame.IsRunning = function()
+	return car ~= nil
 end
 
 TestGame.UpdateCarControls = function(num, down)

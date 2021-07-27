@@ -79,30 +79,19 @@ int UpdateFPSCounter(float deltaTime)
 //-------------------------------------------------------------
 // Displays Main menu bar, stats and child windows
 //-------------------------------------------------------------
-void DisplayUI(float deltaTime)
+void UpdateStats(float deltaTime)
 {
 	CameraViewParams& view = CCamera::MainView;
 
-	if (ImGui::Begin("HelpFrame", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-		ImGuiWindowFlags_NoMove | ImGuiInputTextFlags_NoHorizontalScroll |
-		ImGuiWindowFlags_NoSavedSettings | ImGuiColorEditFlags_NoInputs | ImGuiWindowFlags_NoBringToFrontOnFocus))
-	{
-		ImGui::SetWindowPos(ImVec2(0, 24));
+	auto engineTable = g_luaState["engine"].get_or_create<sol::table>();
 
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "FPS: %d", UpdateFPSCounter(deltaTime));
+	auto statsTable = engineTable["Stats"].get_or_create<sol::table>();
 
-		ImGui::SetWindowSize(ImVec2(400, 120));
-
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.25f, 1.0f), "Position: X: %d Y: %d Z: %d",
-			int(view.position.x * ONE_F), int(view.position.y * ONE_F), int(view.position.z * ONE_F));
-
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Draw distance: %d", g_cellsDrawDistance);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn cells: %d", g_drawnCells);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn models: %d", g_drawnModels);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), "Drawn polygons: %d", g_drawnPolygons);
-
-		ImGui::End();
-	}
+	statsTable["systemFPS"] = UpdateFPSCounter(deltaTime);
+	statsTable["cellsDrawDistance"] = g_cellsDrawDistance;
+	statsTable["drawnCells"] = g_drawnCells;
+	statsTable["drawnModels"] = g_drawnModels;
+	statsTable["drawnPolygons"] = g_drawnPolygons;
 }
 
 //-------------------------------------------------------------
@@ -251,6 +240,7 @@ void MainLoop()
 		}
 
 		CDebugOverlay::Draw();
+		UpdateStats(deltaTime);
 
 		try {
 			sol::function updateFunc = engineHostTable["PostFrame"];
@@ -259,9 +249,6 @@ void MainLoop()
 		catch (const sol::error& e)
 		{
 		}
-
-		// Do ImGUI interface
-		DisplayUI(deltaTime);
 
 		// draw stuff
 		ImGui::Render();
@@ -285,8 +272,9 @@ int main(int argc, char* argv[])
 	Msg("---------------\nOpenDriverEngine startup\n---------------\n\n");
 
 	LuaInit(g_luaState);
+	UpdateStats(0.0f);
 
-	if (!GR_Init("Open Driver Engine", 1280, 720, 0))
+	if (!GR_Init("Driver", 1280, 720, 0))
 	{
 		MsgError("Failed to init graphics!\n");
 		return -1;

@@ -19,9 +19,9 @@ local playerCar0Cosmetics = {
 		fix.SVECTOR(-120,-30,217),
 		fix.SVECTOR(-120,-30,-181),
 	},
-	wheelspinMaxSpeed = 452952,
+	wheelspinMaxSpeed = 663552,
 	extraInfo = -31720, -- FLAGS
-	powerRatio = 4096,
+	powerRatio = 6000,
 	cbYoffset = 0,
 	susCoeff = 4096,
 	susCompressionLimit = 60,	-- 42 in Driver 2
@@ -42,11 +42,11 @@ local playerCar0Cosmetics = {
 		fix.SVECTOR(-126, 91, 371),
 		fix.SVECTOR(125, 91, 371),
 	},
-	colBox = fix.SVECTOR(129,84,375),
-	cog = fix.SVECTOR(0,-65,-5),
-	twistRateX = 224,
-	twistRateY = 224,
-	twistRateZ = 1120,
+	colBox = fix.SVECTOR(120,82,395),
+	cog = fix.SVECTOR(0,-100,-5),
+	twistRateX = 200,	-- not used
+	twistRateY = 110,
+	twistRateZ = 550,
 	mass = 4096,
 }
 
@@ -68,17 +68,6 @@ local function ScaleUp(carCos)
 	carCos.colBox.vx = carCos.colBox.vx * 1.5
 	carCos.colBox.vy = carCos.colBox.vy * 1.5
 	carCos.colBox.vz = carCos.colBox.vz * 1.5
-	
-	carCos.cog.vx = carCos.cog.vx * 1.6
-	carCos.cog.vy = carCos.cog.vy * 1.6
-	carCos.cog.vz = carCos.cog.vz * 1.6
-	
-	carCos.twistRateX = carCos.twistRateX * 0.5
-	carCos.twistRateY = carCos.twistRateY * 0.5
-	carCos.twistRateZ = carCos.twistRateZ * 0.5
-	
-	carCos.powerRatio = carCos.powerRatio * 1.5
-	carCos.wheelspinMaxSpeed = carCos.wheelspinMaxSpeed * 1.5
 end
 
 ScaleUp(playerCar0Cosmetics)
