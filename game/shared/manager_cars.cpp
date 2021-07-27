@@ -368,7 +368,7 @@ void CManager_Cars::GlobalTimeStep()
 	short* felony;
 
 	// global timestep is a starting point for interpolation
-	m_lastUpdateTime = m_curUpdateTime;
+	m_lastUpdateTime = Time::microTicks();
 
 #if 0
 	if (player[0].playerCarId < 0)
@@ -472,9 +472,7 @@ void CManager_Cars::GlobalTimeStep()
 				// check collisions with buildings
 				if (RKstep != 0 && (subframe & 1) != 0 && cp->m_controlType == CONTROL_TYPE_PLAYER)
 				{
-#if 0
-					CWorld::CheckScenaryCollisions(cp);
-#endif
+					CheckScenaryCollisions(cp);
 				}
 
 				mayBeCollidingBits = cp->m_hd.mayBeColliding;
@@ -920,7 +918,10 @@ void CManager_Cars::CheckScenaryCollisions(CCar* cp)
 				bbox.model = model;
 
 				// TEMPORARY
-				cp->CarBuildingCollision(bbox, co, 0);
+				if (cp->CarBuildingCollision(bbox, co, 0))
+				{
+
+				}
 			}
 		}
 	}
@@ -1001,5 +1002,5 @@ void CManager_Cars::Draw(const CameraViewParams& view)
 
 void CManager_Cars::UpdateTime(int64 ticks)
 {
-	g_cars->m_curUpdateTime = ticks;
+	g_cars->m_curUpdateTime = Time::microTicks();
 }
