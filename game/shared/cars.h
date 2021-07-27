@@ -228,14 +228,6 @@ extern const double Car_Fixed_Timestep;
 
 //------------------------------------------------------------------
 
-struct BUILDING_BOX
-{
-	VECTOR_NOPAD pos;
-	int xsize, zsize;
-	int theta, height;
-	struct MODEL* model;
-};
-
 class CCar
 {
 	friend class CManager_Cars;

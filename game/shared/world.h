@@ -11,7 +11,16 @@
 class CTexturePage;
 struct ModelRef_t;
 
+struct BUILDING_BOX
+{
+	VECTOR_NOPAD pos;
+	int xsize, zsize;
+	int theta, height;
+	struct MODEL* model;
+};
+
 typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
+typedef void (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
 
 extern Matrix4x4 g_objectMatrix[64];
 extern MATRIX g_objectMatrixFixed[64];
@@ -55,6 +64,7 @@ public:
 
 	//------------------------------------------
 	// objects and collision
+	static void				QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxCollisionFn func, void* object);
 
 	// push event cell object
 	// any collision checks afterwards will have an effect with it

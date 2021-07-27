@@ -817,114 +817,13 @@ void CManager_Cars::GlobalTimeStep()
 
 void CManager_Cars::CheckScenaryCollisions(CCar* cp)
 {
-	auto& mapInfo = g_levMap->GetMapInfo();
-	const int squared_reg_size = mapInfo.region_size * mapInfo.region_size;
+	int queryDist = 580 + cp->m_hd.speed;
+	const VECTOR_NOPAD& position = cp->GetPosition();
 
-	VECTOR_NOPAD position;
-	XZPAIR initial, cell;
-
-	position.vx = cp->m_hd.where.t[0];// -squared_reg_size;
-	position.vy = cp->m_hd.where.t[1];
-	position.vz = cp->m_hd.where.t[2];// -squared_reg_size;
-
-	g_levMap->WorldPositionToCellXZ(initial, position, XZPAIR{ -squared_reg_size, -squared_reg_size });
-
-	static Array<CELL_OBJECT*> collisionObjects;
-	collisionObjects.reserve(32);
-	collisionObjects.clear();
-
-	// collect objects
-	cell.x = initial.x;
-	for (int i = 0; i < 2; i++)
-	{
-		cell.z = initial.z;
-		for (int j = 0; j < 2; j++)
-		{
-			CWorld::ForEachCellObjectAt(cell, [](int listType, CELL_OBJECT* co) {
-				//if (listType != -1 && !g_levRenderProps.displayAllCellLevels)
-				//	return false;
-
-				ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
-				MODEL* model = ref->model;
-
-				if (ref->baseInstance)
-					ref = ref->baseInstance;
-
-				if (ref->model->GetCollisionBoxCount())
-					collisionObjects.append(co);
-
-				return true;
-			});
-
-			cell.z++;
-		}
-
-		cell.x++;
-	}
-
-	int extraDist = 580;
-
-	// check collisions
-	for (usize i = 0; i < collisionObjects.size(); i++)
-	{
-		CELL_OBJECT* co = collisionObjects[i];
-		ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
-
-		if (ref->baseInstance)
-			ref = ref->baseInstance;
-
-		MODEL* model = ref->model;
-
-		int numCollisionBoxes = model->GetCollisionBoxCount();
-
-		int dx = co->pos.vx - position.vx;
-		int dz = co->pos.vz - position.vz;
-		int yang = -co->yang & 63;
-
-		int sphereSq = model->bounding_sphere + extraDist + cp->m_hd.speed;
-
-
-		if (dx * dx + dz * dz < sphereSq * sphereSq)
-		{
-			
-			for (int j = 0; j < numCollisionBoxes; j++)
-			{
-				BUILDING_BOX bbox;
-				COLLISION_PACKET* collide = model->pCollisionBox(j);
-
-				// box 'rotated' by matrix
-				// [A] FIXME: replace add+shift by division
-				bbox.pos.vx = co->pos.vx + FIXEDH(collide->xpos * g_objectMatrixFixed[yang].m[0][0] + collide->zpos * g_objectMatrixFixed[yang].m[2][0]);
-				bbox.pos.vy = co->pos.vy + collide->ypos;
-				bbox.pos.vz = co->pos.vz + FIXEDH(collide->xpos * g_objectMatrixFixed[yang].m[0][2] + collide->zpos * g_objectMatrixFixed[yang].m[2][2]);
-
-#if 0
-				// [A] purposely make chair box smaller for Tanner
-				if (cp->controlType == CONTROL_TYPE_TANNERCOLLIDER && (model->flags2 & MODEL_FLAG_CHAIR))
-				{
-					bbox.xsize = (collide->zsize >> 1) - 20;
-					bbox.zsize = (collide->xsize >> 1) - 20;
-				}
-				else
-#endif
-				{
-					bbox.xsize = collide->zsize >> 1;
-					bbox.zsize = collide->xsize >> 1;
-				}
-
-
-				bbox.height = collide->ysize;
-				bbox.theta = (co->yang + collide->yang) * 64 & 0xfff;
-				bbox.model = model;
-
-				// TEMPORARY
-				if (cp->CarBuildingCollision(bbox, co, 0))
-				{
-
-				}
-			}
-		}
-	}
+	CWorld::QueryCollision(position, queryDist, [](BUILDING_BOX& bbox, CELL_OBJECT* co, void* object) {
+		CCar* cp = (CCar*)object;
+		cp->CarBuildingCollision(bbox, co, 0);
+	}, cp);
 }
 
 void CManager_Cars::CheckCarToCarCollisions()
