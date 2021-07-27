@@ -211,6 +211,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 
 		int numPolyVerts = (dec_face.flags & FACE_IS_QUAD) ? 4 : 3;
 		bool bad_face = false;
+		bool bad_normals = false;
 
 		// perform vertex checks
 		for (int v = 0; v < numPolyVerts; v++)
@@ -226,7 +227,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 			{
 				if (dec_face.nindices[v] >= vertex_ref->num_point_normals)
 				{
-					bad_face = true;
+					bad_normals = true;
 					break;
 				}
 			}
@@ -280,7 +281,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 			//	index = -1;
 
 			// add new vertex
-			if(index == -1)
+			if (index == -1)
 			{
 				GrVertex newVert;
 				vertexTuple_t vertMap;
@@ -289,11 +290,11 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 				vertMap.normalIndex = -1;
 				vertMap.vertexIndex = dec_face.vindices[VERT_IDX];
 				vertMap.uvs = *(ushort*)dec_face.uv[VERT_IDX];
-				
+
 				// get the vertex
 				SVECTOR* vert = vertex_ref->pVertex(dec_face.vindices[VERT_IDX]);
 				Vector3D fVert = Vector3D(vert->vx * RENDER_SCALING, vert->vy * -RENDER_SCALING, vert->vz * RENDER_SCALING);
-				
+
 				(*(Vector3D*)&newVert.vx) = fVert;
 
 				// set color
@@ -302,14 +303,14 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 				// add bounding box stuff
 				AddExtentVertex(m_extMin, m_extMax, fVert);
 
-				if (smooth)
+				if (smooth && !bad_normals)
 				{
 					vertMap.normalIndex = dec_face.nindices[VERT_IDX];
-					
+
 					SVECTOR* norm = vertex_ref->pPointNormal(vertMap.normalIndex);
 					*(Vector3D*)&newVert.nx = -Vector3D(norm->vx * RENDER_SCALING, norm->vy * -RENDER_SCALING, norm->vz * RENDER_SCALING);
 				}
-				
+
 				if (dec_face.flags & FACE_TEXTURED)
 				{
 					UV_INFO uv = *(UV_INFO*)dec_face.uv[VERT_IDX];
@@ -317,6 +318,13 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 					// map to 0..1
 					newVert.tc_u = ((float)uv.u + 0.5f) / TEXPAGE_SIZE_Y;
 					newVert.tc_v = ((float)uv.v + 0.5f) / TEXPAGE_SIZE_Y;
+				}
+
+				if (dec_face.flags & FACE_RGB)
+				{
+					newVert.cr = dec_face.color.r / 255;
+					newVert.cg = dec_face.color.g / 255;
+					newVert.cb = dec_face.color.b / 255;
 				}
 
 				index = vertMap.grVertexIndex = vertices.size();
@@ -340,7 +348,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 
 		// if not gouraud shaded we just compute face normal
 		// FIXME: make it like game does?
-		if(!smooth)
+		if(!smooth || bad_normals)
 		{
 			// it takes only triangle
 			Vector3D v0 = *(Vector3D*)&vertices[faceIndices[0]].vx;

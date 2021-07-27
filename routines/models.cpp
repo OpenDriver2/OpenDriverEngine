@@ -312,7 +312,7 @@ void CDriverLevelModels::OnCarModelFreed(CarModelData_t* data)
 //--------------------------------------------------------------------------------
 
 // From Car Poly code of D2
-int PolySizes[56] = {
+const int PolySizes[56] = {
 	8,12,16,24,20,20,28,32,8,12,16,16,
 	0,0,0,0,12,12,12,16,20,20,24,24,
 	0,0,0,0,0,0,0,0,8,12,16,24,
@@ -360,6 +360,8 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 
 	*(uint*)&out->color = 0;
 
+	// TODO: D1 and D2 to have different decoding routines
+
 	switch (ptype)
 	{
 		case 1:
@@ -383,11 +385,12 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 		{
 			// F4
 			*(uint*)out->vindices = *(uint*)&polyList[1];
+			*(uint*)out->uv = *(uint*)&polyList[4];
 			*(uint*)&out->color = *(uint*)&polyList[8];
 			
 			// FIXME: read colours
 
-			out->flags = FACE_RGB; // RGB?
+			out->flags = FACE_RGB | FACE_IS_QUAD; // RGB?
 
 			break;
 		}
@@ -413,9 +416,9 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 			break;
 		}
 		case 5:
+		case 7:
 		case 9:
 		case 11:
-		case 17:
 		case 21:
 		{
 			POLYFT4* pft4 = (POLYFT4*)polyList;
@@ -438,6 +441,19 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 
 			break;
 		}
+		case 17:
+		{
+			// F4
+			out->page = polyList[1];
+			out->detail = polyList[2];
+
+			*(uint*)out->vindices = *(uint*)&polyList[4];
+			*(uint*)&out->color = *(uint*)&polyList[8];
+
+			out->flags = FACE_IS_QUAD | FACE_RGB; // RGB?
+
+			break;
+		}
 		case 22:
 		{
 			POLYGT3* pgt3 = (POLYGT3*)polyList;
@@ -456,7 +472,6 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 			out->flags = FACE_VERT_NORMAL | FACE_TEXTURED;
 			break;
 		}
-		case 7:
 		case 23:
 		{
 			POLYGT4* pgt4 = (POLYGT4*)polyList;
