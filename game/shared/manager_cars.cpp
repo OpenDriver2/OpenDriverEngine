@@ -66,8 +66,7 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"Remove", &CManager_Cars::Remove,
 		"RemoveAll", &CManager_Cars::RemoveAll,
 		"UpdateControl", &CManager_Cars::UpdateControl,
-		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
-		"DoScenaryCollisions", &CManager_Cars::DoScenaryCollisions
+		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep
 	);
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
@@ -788,6 +787,8 @@ void CManager_Cars::GlobalTimeStep()
 			}
 		}
 	}
+
+	DoScenaryCollisions();
 
 	// second sub frame passed, update matrices and physics direction
 	// dent cars - no more than 5 cars in per frame

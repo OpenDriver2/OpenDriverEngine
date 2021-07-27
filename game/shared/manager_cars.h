@@ -29,8 +29,6 @@ public:
 	void			UpdateControl();
 	void			GlobalTimeStep();
 
-	void			DoScenaryCollisions();
-
 	//------------------------------------------------------
 
 	double			GetInterpTime() const;
@@ -44,6 +42,8 @@ public:
 protected:
 
 	void			StepCars();
+
+	void			DoScenaryCollisions();
 	void			CheckCarToCarCollisions();
 
 	void			CheckScenaryCollisions(CCar* cp);
