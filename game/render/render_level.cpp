@@ -77,67 +77,63 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 	Vector3D absCellPosition = FromFixedVector(co.pos);
 	absCellPosition.y *= -1.0f;
 
-	float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
+	const float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
 
 	ModelRef_t* ref = GetModelCheckLods(co.type, distanceFromCamera);
 
-	bool isGround = false;
+	if (!ref->model)
+		return;
 
-	Matrix4x4 objectMatrix;
-
-	if (ref->model)
-	{
-		MODEL* model = ref->model;
-
-		if (model->shape_flags & SHAPE_FLAG_SPRITE)
-		{
-			objectMatrix = rotateY4(DEG2RAD(cameraAngleY));
-		}
-		else
-		{
-			objectMatrix = g_objectMatrix[co.yang];
-		}
-
-		if ((model->shape_flags & (SHAPE_FLAG_WATER | SHAPE_FLAG_TILE)) ||
-			(model->flags2 & (MODEL_FLAG_PATH | MODEL_FLAG_GRASS)))
-		{
-			isGround = true;
-		}
-	}
-	objectMatrix.setTranslationTransposed(absCellPosition);
-	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
-	GR_UpdateMatrixUniforms();
-
-	if (buildingLighting)
-	{
-		if (isGround && g_levRenderProps.nightMode)
-			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
-		else
-			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
-	}
-	else
-	{
-		if (g_levRenderProps.nightMode)
-			CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
-		else
-			CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
-	}
+	MODEL* model = ref->model;
 
 	CRenderModel* renderModel = (CRenderModel*)ref->userData;
 
-	if (renderModel)
-	{
-		const float boundSphere = ref->model->bounding_sphere * RENDER_SCALING * 2.0f;
-		if (frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
-		{
-			renderModel->Draw();
-			g_drawnModels++;
-			g_drawnPolygons += ref->model->num_polys;
+	if (!renderModel)
+		return;
 
-			if (g_levRenderProps.displayCollisionBoxes)
-				CRenderModel::DrawModelCollisionBox(ref, co.pos, co.yang);
-		}
+	// check if it is in view
+	const float boundSphere = model->bounding_sphere * RENDER_SCALING * 2.0f;
+
+	if (!frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
+		return;
+
+	bool isGround = false;
+
+	if ((model->shape_flags & (SHAPE_FLAG_WATER | SHAPE_FLAG_TILE)) ||
+		(model->flags2 & (MODEL_FLAG_PATH | MODEL_FLAG_GRASS)))
+	{
+		isGround = true;
 	}
+
+	// compute world matrix
+	{
+		Matrix4x4 objectMatrix;
+
+		if (model->shape_flags & SHAPE_FLAG_SPRITE)
+			objectMatrix = rotateY4(DEG2RAD(cameraAngleY));
+		else
+			objectMatrix = g_objectMatrix[co.yang];
+
+		objectMatrix.setTranslationTransposed(absCellPosition);
+
+		GR_SetMatrix(MATRIX_WORLD, objectMatrix);
+		GR_UpdateMatrixUniforms();
+	}
+
+	// apply lighting
+	if ((isGround || !buildingLighting) && g_levRenderProps.nightMode)
+		CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
+	else
+		CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
+
+	renderModel->Draw();
+
+	g_drawnModels++;
+	g_drawnPolygons += ref->model->num_polys;
+
+	// debug
+	if (g_levRenderProps.displayCollisionBoxes)
+		CRenderModel::DrawModelCollisionBox(ref, co.pos, co.yang);
 }
 
 //-------------------------------------------------------
