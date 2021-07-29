@@ -1,9 +1,14 @@
 #ifndef PSX_MATH_TYPES_H
 #define PSX_MATH_TYPES_H
 
-#define ONE			4096
-#define ONE_F		float(ONE)
-#define ONE_BITS	12
+#include "math_common.h"
+
+const int	ONE			= 4096;
+const float ONE_F		= float(ONE);
+const int	ONE_BITS	= 12;
+
+const float TO_RADIAN		= (1.0f / ONE_F * PI_F * 2.0f);
+const float TO_GTE_ANGLE	= (1.0f / (PI_F * 2.0f) * ONE_F);
 
 #define FixDivHalfRound(x, bits)		(((x) + (1 << (bits-1))) >> bits)
 #define	FIXEDH(a)					FixDivHalfRound(a, ONE_BITS)		// Fixed Half Round number

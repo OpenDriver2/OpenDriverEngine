@@ -463,7 +463,9 @@ void CRenderModel::DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& po
 	if (ref->baseInstance)
 		ref = ref->baseInstance;
 
-	float objRotationRad = -rotation / 64.0f * PI_F * 2.0f;
+	const float to_rad = 1.0 / 64.0f * PI_F * 2.0f;
+
+	const float objRotationRad = -rotation * to_rad;
 
 	Vector3D offset = FromFixedVector(position);
 	offset.y *= -1.0f;
@@ -477,7 +479,7 @@ void CRenderModel::DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& po
 
 	for (int i = 0; i < numcb; i++)
 	{
-		float boxRotationRad = -box->yang / 64.0f * PI_F * 2.0f;
+		float boxRotationRad = -box->yang * to_rad;
 
 		//if(box->type == 0)
 		{

@@ -216,8 +216,8 @@ void LuaInit(sol::state& lua)
 
 	fix["ONE"] = ONE;
 	fix["ONE_BITS"] = ONE_BITS;
-	fix["toRadian"] = (1.0f / ONE_F * PI_F * 2.0f);
-	fix["toGTEAngle"] = (1.0f / (PI_F * 2.0f) * ONE_F);
+	fix["toRadian"] = TO_RADIAN;
+	fix["toGTEAngle"] = TO_GTE_ANGLE;
 
 	fix["ToFixed"]		= [](const float& a)	{ return int(a * ONE_F); };
 	fix["FromFixed"]	= [](const int& a)		{ return float(a) / ONE_F; };

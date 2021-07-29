@@ -1756,15 +1756,15 @@ void CCar::DrawCar()
 			{
 				renderModel = (CRenderModel*)wheelModelBack->userData;
 				
-				wheelMat = wheelMat * rotateX4(-float(m_backWheelRotation) / 4096.0f * PI_F * 2.0f);
+				wheelMat = wheelMat * rotateX4(-float(m_backWheelRotation) * TO_RADIAN);
 			}
 			else
 			{
 				renderModel = (CRenderModel*)wheelModelFront->userData;
 				
-				wheelMat = wheelMat * rotateY4(-float(m_wheel_angle) / 4096.0f * PI_F * 2.0f);
+				wheelMat = wheelMat * rotateY4(-float(m_wheel_angle) * TO_RADIAN);
 
-				wheelMat = wheelMat * rotateX4(-float(m_frontWheelRotation) / 4096.0f * PI_F * 2.0f);
+				wheelMat = wheelMat * rotateX4(-float(m_frontWheelRotation) * TO_RADIAN);
 			}
 
 			if (renderModel)
