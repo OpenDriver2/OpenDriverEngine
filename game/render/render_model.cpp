@@ -16,6 +16,7 @@
 #define MODEL_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\
 	"	attribute vec4 a_normal_tv;\n"\
+	"	attribute vec4 a_color;\n"\
 	"	uniform mat4 u_View;\n"\
 	"	uniform mat4 u_Projection;\n"\
 	"	uniform mat4 u_World;\n"\
@@ -23,6 +24,7 @@
 	"	void main() {\n"\
 	"		v_texcoord = vec2(a_position_tu.w, 1.0-a_normal_tv.w);\n"\
 	"		v_normal = mat3(u_World) * a_normal_tv.xyz;\n"\
+	"		v_color = a_color;\n"\
 	"		gl_Position = u_WorldViewProj * vec4(a_position_tu.xyz, 1.0);\n"\
 	"	}\n"
 
@@ -35,6 +37,7 @@
 	"		vec4 lighting;\n"\
 	"		vec4 color = texture2D(s_texture, v_texcoord.xy);\n"\
 	"		if(color.a <= 0.5f) discard;\n"\
+	"		color.rgb *= v_color.rgb;\n"\
 	"		lighting = vec4(color.rgb * u_ambientColor.rgb * u_ambientColor.a, color.a);\n"\
 	"		lighting.rgb += u_lightColor.rgb * u_lightColor.a * color.rgb * max(1.0 - dot(v_normal, u_lightDir), 0);\n"\
 	"		fragColor = lighting;\n"\
