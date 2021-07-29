@@ -139,24 +139,24 @@ local function PlaceCameraFollowCar(dt)
 	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
 	cameraAngle = math.floor(cameraAngle + (angleDelta / 8) * dt * 30)
 	
-	local sn = gte.isin(cameraAngle)
-	local cs = gte.icos(cameraAngle)
+	local sn = math.sin(cameraAngle * fix.toRadian)
+	local cs = math.cos(cameraAngle * fix.toRadian)
 	
-	cameraPos.vx = math.floor(basePos.vx - (cameraDist * sn) // fix.ONE)
+	cameraPos.vx = math.floor(basePos.vx - (cameraDist * sn))
 	cameraPos.vy = math.floor(basePos.vy)
-	cameraPos.vz = math.floor(basePos.vz - (cameraDist * cs) // fix.ONE)
+	cameraPos.vz = math.floor(basePos.vz - (cameraDist * cs))
 
 	local camPosVy = world.MapHeight(cameraPos)
 	cameraPos.vy = carHeight - basePos.vy	
 	
 	local cammapht = (carHeight - camPosVy) - 100 -- + gCameraOffset.vy;
-	local camera_angle = fix.VECTOR(25, -cameraAngle, 0)
+	local camera_angle = vec.vec3(25, -cameraAngle, 0)
 
 	if cameraPos.vy > cammapht then
 		local height = world.MapHeight(basePos);
 
 		if math.abs(height - camPosVy) < 900 then
-			camera_angle.vx = (cameraPos.vy - cammapht) // 2 + 25
+			camera_angle.x = (cameraPos.vy - cammapht) / 2 + 25
 			cameraPos.vy = cammapht;
 		end
 	end
@@ -165,7 +165,7 @@ local function PlaceCameraFollowCar(dt)
 	
 	InitCamera({
 		position = fix.FromFixedVector(cameraPos),
-		angles = vec.vec3(camera_angle.vx / fix.ONE * 360.0,camera_angle.vy / fix.ONE * 360.0,0),
+		angles = vec.vec3(camera_angle.x / fix.ONE * 360.0,camera_angle.y / fix.ONE * 360.0,0),
 		fov = 50
 	})
 end
