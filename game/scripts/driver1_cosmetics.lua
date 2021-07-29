@@ -27,7 +27,7 @@ local playerCar0Cosmetics = {
 	susCompressionLimit = 60,	-- 42 in Driver 2
 	susTopLimit = 32767,		-- unlimited, 800 in Driver 2
 	traction = 4096,
-	wheelSize = 62,
+	wheelSize = 70,
 	cPoints = {
 		fix.SVECTOR(-126, 11, -370),
 		fix.SVECTOR(125, 11, -370),
@@ -42,8 +42,8 @@ local playerCar0Cosmetics = {
 		fix.SVECTOR(-126, 91, 371),
 		fix.SVECTOR(125, 91, 371),
 	},
-	colBox = fix.SVECTOR(120,82,395),
-	cog = fix.SVECTOR(0,-100,-5),
+	colBox = fix.SVECTOR(120,76,395),
+	cog = fix.SVECTOR(0,-120,-5),
 	twistRateX = 200,	-- not used
 	twistRateY = 110,
 	twistRateZ = 550,

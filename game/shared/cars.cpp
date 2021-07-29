@@ -1722,6 +1722,18 @@ void CCar::DrawCar()
 		else
 			wheelModelBack = m_wheelModels[1];
 
+		const float sizeScale = ((wheelSize * 14142) / 10000) / ONE_F;
+
+		float wheelSizeInvScale;
+		{
+			renderModel = (CRenderModel*)wheelModelFront->userData;
+
+			Vector3D wheelMins, wheelMaxs;
+			renderModel->GetExtents(wheelMins, wheelMaxs);
+
+			wheelSizeInvScale = sizeScale / length(wheelMaxs.yz());
+		}
+
 		for (int i = 0; i < 4; i++)
 		{
 			const WHEEL& wheel = m_hd.wheel[i];
@@ -1738,11 +1750,12 @@ void CCar::DrawCar()
 
 			Vector3D wheelPos = FromFixedVector(sWheelPos);
 
-			Matrix4x4 wheelMat = objectMatrix * translate(wheelPos);
+			Matrix4x4 wheelMat = objectMatrix * translate(wheelPos) * scale4(1.0f, wheelSizeInvScale, wheelSizeInvScale);
 
 			if ((i & 1) != 0)
 			{
 				renderModel = (CRenderModel*)wheelModelBack->userData;
+				
 				wheelMat = wheelMat * rotateX4(-float(m_backWheelRotation) / 4096.0f * PI_F * 2.0f);
 			}
 			else
