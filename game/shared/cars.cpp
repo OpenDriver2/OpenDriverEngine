@@ -1583,13 +1583,13 @@ const VECTOR_NOPAD& CCar::GetInterpolatedPosition() const
 	return ToFixedVector(lerp(FromFixedVector(m_prevPosition), FromFixedVector(GetPosition()), factor));
 }
 
-int CCar::GetInterpolatedDirection() const
+float CCar::GetInterpolatedDirection() const
 {
 	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
 
-	int shortest_angle = DIFF_ANGLES(m_hd.direction, m_prevDirection);
+	int shortest_angle = DIFF_ANGLES(m_prevDirection, m_hd.direction);
 
-	return m_prevDirection + float(shortest_angle) * factor;
+	return float(m_prevDirection) + float(shortest_angle) * factor;
 }
 
 VECTOR_NOPAD CCar::GetCogPosition() const
@@ -1787,17 +1787,12 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 	short scale;
 	int chan;
 	MODEL* model;
-	VECTOR_NOPAD tempwhere;
+	VECTOR_NOPAD tempwhere, velocity;
 	SVECTOR boxDisp;
-	VECTOR_NOPAD velocity;
-	LONGVECTOR4 pointVel;
-	LONGVECTOR4 reaction;
-	LONGVECTOR4 lever;
-	VECTOR_NOPAD LeafPosition;
-	VECTOR_NOPAD lamp_velocity;
+	LONGVECTOR4 pointVel, reaction, lever;
+	VECTOR_NOPAD LeafPosition, lamp_velocity;
 	int debris_colour;
-	int displacement;
-	int denom;
+	int displacement, denom;
 	int buildingHeightY;
 
 	CDATA2D cd[2] = { 0 }; // offset 0x0
