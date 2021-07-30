@@ -550,7 +550,8 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 			bbox.theta = (co->yang + collide->yang) * 64 & 0xfff;
 			bbox.model = model;
 
-			func(bbox, co, object);
+			if (!func(bbox, co, object))
+				return;
 		}
 	}
 }

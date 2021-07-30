@@ -827,6 +827,7 @@ void CManager_Cars::CheckScenaryCollisions(CCar* cp)
 	CWorld::QueryCollision(position, queryDist, [](BUILDING_BOX& bbox, CELL_OBJECT* co, void* object) {
 		CCar* cp = (CCar*)object;
 		cp->CarBuildingCollision(bbox, co, 0);
+		return true;
 	}, cp);
 }
 

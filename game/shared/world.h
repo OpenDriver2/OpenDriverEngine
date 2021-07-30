@@ -20,7 +20,7 @@ struct BUILDING_BOX
 };
 
 typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
-typedef void (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
+typedef bool (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
 
 extern Matrix4x4 g_objectMatrix[64];
 extern MATRIX g_objectMatrixFixed[64];
