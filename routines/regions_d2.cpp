@@ -206,10 +206,6 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 	cellPos.x = position.vx - 512;
 	cellPos.y = position.vz - 512;
 
-	sdPlane* planeData = (sdPlane*)((char*)buffer + buffer[1]);
-	short* bspData = (short*)((char*)buffer + buffer[2]);
-	sdNode* nodeData = (sdNode*)((char*)buffer + buffer[3]);
-
 	check = &buffer[(cellPos.x >> 10 & 63) +
 					(cellPos.y >> 10 & 63) * 64 + 4];
 
@@ -227,7 +223,7 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 				moreLevels = (*check & 0x8000) != 0;
 
 				if (moreLevels)
-					check = &bspData[(*check & 0x1fff) + 1];
+					check = &m_bspData[(*check & 0x1fff) + 1];
 
 				do
 				{
@@ -238,11 +234,11 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 					// basically it determines surface bounds
 					if (*check & 0x4000)
 					{
-						sdNode* search = &nodeData[*check & 0x1fff];		// 0x3fff in final
+						sdNode* search = &m_nodeData[*check & 0x1fff];		// 0x3fff in final
 
 						while (search->node < 0)
 						{
-							plane = FindRoadInBSP(search + 1, planeData);
+							plane = FindRoadInBSP(search + 1, m_planeData);
 
 							if (plane != nullptr)
 								break;
@@ -255,7 +251,7 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 					}
 					else
 					{
-						plane = &planeData[*check];
+						plane = &m_planeData[*check];
 
 						if (plane->surfaceType >= 32)
 							break;
@@ -271,7 +267,7 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 		}
 		else
 		{
-			plane = &planeData[*check];
+			plane = &m_planeData[*check];
 		}
 	}
 	else
@@ -281,7 +277,7 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 			moreLevels = (*check & 0x6000) == 0x2000;
 
 			if (moreLevels)
-				check = &bspData[(*check & 0x1fff) + 1];
+				check = &m_bspData[(*check & 0x1fff) + 1];
 
 			do
 			{
@@ -290,14 +286,14 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 
 				if (*check & 0x4000)
 				{
-					plane = FindRoadInBSP(&nodeData[*check & 0x3fff], planeData);
+					plane = FindRoadInBSP(&m_nodeData[*check & 0x3fff], m_planeData);
 
 					if (plane != nullptr)
 						break;
 				}
 				else
 				{
-					plane = &planeData[*check];
+					plane = &m_planeData[*check];
 
 					if (plane->surfaceType >= 32)
 						break;
@@ -308,7 +304,7 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 		}
 		else if (!(*check & 0xE000))
 		{
-			plane = &planeData[*check];
+			plane = &m_planeData[*check];
 		}
 		else
 			plane = nullptr;
