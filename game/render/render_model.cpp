@@ -12,6 +12,7 @@
 #include <assert.h>
 
 #include "math/convert.h"
+#include "render_cars.h"
 
 #define MODEL_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\
@@ -421,6 +422,38 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 
 extern TextureID g_whiteTexture;
 
+int CRenderModel::GetNumBatches() const
+{
+	return m_batches.size();
+}
+
+void CRenderModel::SetupRendering(bool setupShader, bool setupVAO)
+{
+	if(setupShader)
+		SetupModelShader();
+
+	if(setupVAO)
+		GR_SetVAO(m_vao);
+}
+
+void CRenderModel::DrawBatch(int batchNum, bool setupTexture /*= true*/, int paletteSet /*= 0*/)
+{
+	modelBatch_t& batch = m_batches[batchNum];
+
+	if (setupTexture)
+	{
+		// check if palette tex is not empty
+		TextureID desiredTex = CWorld::GetHWTexture(batch.tpage, paletteSet);
+
+		if (paletteSet > 0 && desiredTex == g_whiteTexture)
+			desiredTex = CWorld::GetHWTexture(batch.tpage, 0);
+
+		GR_SetTexture(desiredTex);
+	}
+
+	GR_DrawIndexed(PRIM_TRIANGLES, batch.startIndex, batch.numIndices);
+}
+
 void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 {
 	if(fullSetup)
@@ -560,6 +593,14 @@ void CRenderModel::OnModelLoaded(ModelRef_t* ref)
 {
 	if (!ref->model)
 		return;
+
+	// mangle wheel models
+	if (!strcmp(ref->name, "CLEANWHEEL") ||
+		!strcmp(ref->name, "FASTWHEEL") ||
+		!strcmp(ref->name, "DAMWHEEL"))
+	{
+		CRender_Cars::MangleWheelModel(ref->model);
+	}
 
 	CRenderModel* renderModel = new CRenderModel();
 

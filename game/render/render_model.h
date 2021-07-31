@@ -39,7 +39,11 @@ public:
 	bool				Initialize(ModelRef_t* model);
 	void				Destroy();
 
+	void				SetupRendering(bool setupShader, bool setupVAO);
 	void				Draw(bool fullSetup = true, int paletteSet = 0);
+	void				DrawBatch(int batchNum, bool setupTexture = true, int paletteSet = 0);
+
+	int					GetNumBatches() const;
 
 	void				GetExtents(Vector3D& outMin, Vector3D& outMax) const;
 
