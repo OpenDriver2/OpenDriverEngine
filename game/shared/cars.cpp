@@ -1683,6 +1683,7 @@ void CCar::DrawCar()
 
 	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 	GR_UpdateMatrixUniforms();
+	GR_SetCullMode(CULL_FRONT);
 
 	CRenderModel* renderModel = (CRenderModel*)m_model->userData;
 
@@ -1734,6 +1735,8 @@ void CCar::DrawCar()
 			wheelSizeInvScale = sizeScale / length(wheelMaxs.yz());
 		}
 
+		GR_SetCullMode(CULL_NONE);
+
 		for (int i = 0; i < 4; i++)
 		{
 			const WHEEL& wheel = m_hd.wheel[i];
@@ -1755,25 +1758,34 @@ void CCar::DrawCar()
 			if ((i & 1) != 0)
 			{
 				renderModel = (CRenderModel*)wheelModelBack->userData;
+				renderModel->SetupRendering(true, true);
+
+				GR_SetMatrix(MATRIX_WORLD, wheelMat);
+				GR_UpdateMatrixUniforms();
+
+				renderModel->DrawBatch(1);
 				
 				wheelMat = wheelMat * rotateX4(-float(m_backWheelRotation) * TO_RADIAN);
 			}
 			else
 			{
 				renderModel = (CRenderModel*)wheelModelFront->userData;
+				renderModel->SetupRendering(true, true);
 				
 				wheelMat = wheelMat * rotateY4(-float(m_wheel_angle) * TO_RADIAN);
+
+				GR_SetMatrix(MATRIX_WORLD, wheelMat);
+				GR_UpdateMatrixUniforms();
+
+				renderModel->DrawBatch(1);
 
 				wheelMat = wheelMat * rotateX4(-float(m_frontWheelRotation) * TO_RADIAN);
 			}
 
-			if (renderModel)
-			{
-				GR_SetMatrix(MATRIX_WORLD, wheelMat);
-				GR_UpdateMatrixUniforms();
+			GR_SetMatrix(MATRIX_WORLD, wheelMat);
+			GR_UpdateMatrixUniforms();
 
-				renderModel->Draw();
-			}
+			renderModel->DrawBatch(0);
 		}
 	}
 }

@@ -352,11 +352,13 @@ void SwapValues(T& a, T& b)
 // TODO: rework, few variants of faces still looks bad
 int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 {
+	memset(out, 0, sizeof(dpoly_t));
 	int ptype = forceType == -1 ? (*polyList & 0x1f) : forceType;
 
 	out->page = 0xFF;
 	out->detail = 0xFF;
 	out->flags = 0;
+	out->color = CVECTOR{ 255 };
 
 	*(uint*)&out->color = 0;
 
@@ -494,6 +496,12 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 		{
 			g_UnknownPolyTypes.append(ptype);
 		}
+	}
+
+	if (out->page == 255)
+	{
+		out->flags &= ~FACE_TEXTURED;
+		out->flags |= FACE_RGB;
 	}
 	
 	return PolySizes[*polyList & 0x1f];
