@@ -137,6 +137,8 @@ usage "SDL2"
 		
 include "dependencies/lua54/premake5.lua"
 include "dependencies/sol2/premake5.lua"
+include "dependencies/openal-soft/premake5.lua"
+include "dependencies/enet/premake5.lua"
 		
 group "Game"
 
@@ -166,7 +168,13 @@ project "OpenDriverGame"
 	
 	cppdialect "C++17"	-- required for sol2
 
-	uses { "ImGui", "libnstd", "frameworkLib", "lua", "sol2" }
+	uses { 
+		"ImGui", 
+		"libnstd", "frameworkLib", 
+		"lua", "sol2",
+		"enet",
+		"openal-soft"
+	}
 
 	includedirs {
 		"./",

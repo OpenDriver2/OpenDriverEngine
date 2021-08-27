@@ -55,3 +55,4 @@ Icon
 project_*/
 bin/*
 dependencies/SDL2
+dependencies/openal-soft
