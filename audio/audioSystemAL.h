@@ -2,7 +2,6 @@
 #define AUDIOSYSTEMAL_H
 
 #include "IAudioSystem.h"
-
 #include "source/snd_source.h"
 
 //-----------------------------------------------------------------
@@ -91,7 +90,7 @@ class CAudioSourceAL : public IEqAudioSource
 {
 	friend class CAudioSystemAL;
 public:
-	CAudioSourceAL();
+	CAudioSourceAL(CAudioSystemAL* owner);
 	CAudioSourceAL(int typeId, ISoundSource* sample, UpdateCallback fnCallback, void* callbackObject);
 	~CAudioSourceAL();
 
@@ -116,6 +115,8 @@ protected:
 
 	void					EmptyBuffers();
 	bool					DoUpdate();
+
+	CAudioSystemAL*			m_owner;
 
 	ALuint					m_buffers[STREAM_BUFFER_COUNT];
 	ISoundSource*			m_sample;

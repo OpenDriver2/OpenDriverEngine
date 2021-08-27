@@ -35,6 +35,9 @@
 
 #include "math/convert.h"
 
+#include "audio/IAudioSystem.h"
+
+
 //---------------------------------------------------------------------------------------------------------------------------------
 
 String					g_levname;
@@ -182,6 +185,7 @@ extern SDL_Window* g_window;
 void MainLoop()
 {
 	int64 oldTicks = Time::microTicks();
+	IAudioSystem* audioSystem = IAudioSystem::Instance;
 
 	// main loop
 	do
@@ -232,12 +236,18 @@ void MainLoop()
 		{
 			CameraViewParams& view = CCamera::MainView;
 
+			Matrix3x3 vectors = view.GetVectors();
+
+			audioSystem->SetListener(view.position, CCamera::MainViewVelocity, vectors.rows[2], vectors.rows[1]);
+
 			CSky::Draw(view);
 			CWorld::RenderLevelView(view);
 			CManager_Cars::Draw(view);
 
 			CManager_Cars::UpdateTime(curTicks);
 		}
+
+		audioSystem->Update();
 
 		CDebugOverlay::Draw();
 		UpdateStats(deltaTime);
@@ -292,6 +302,8 @@ int main(int argc, char* argv[])
 	ImGui_ImplSDL2_InitForOpenGL(g_window, nullptr);
 	ImGui_ImplOpenGL3_Init();
 
+	IAudioSystem::Create();
+
 	CDebugOverlay::Init();
 
 	CWorld::InitObjectMatrix();
@@ -321,6 +333,7 @@ int main(int argc, char* argv[])
 
 	// free all
 	CWorld::UnloadLevel();
+	IAudioSystem::Instance->Shutdown();
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();

@@ -5,6 +5,9 @@
 // Description: Equilibrium Engine Audio system
 //////////////////////////////////////////////////////////////////////////////////
 
+#include "core/ignore_vc_new.h"
+#include <sol/forward.hpp>
+
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
@@ -21,9 +24,6 @@
 #include "source/snd_al_source.h"
 
 static Mutex s_audioMutex;
-
-static CAudioSystemAL s_audioSystemAL;
-IAudioSystem* g_audioSystem = &s_audioSystemAL;
 
 //---------------------------------------------------------
 // AL COMMON
@@ -336,7 +336,7 @@ IEqAudioSource* CAudioSystemAL::CreateSource()
 
 	int index = m_sources.size();
 
-	m_sources.append(new CAudioSourceAL());
+	m_sources.append(new CAudioSourceAL(this));
 	return m_sources[index];
 }
 
@@ -535,7 +535,7 @@ void CAudioSystemAL::GetListener(Vector3D& position, Vector3D& velocity)
 // Sound source
 //----------------------------------------------------------------------------------------------
 
-CAudioSourceAL::CAudioSourceAL() :
+CAudioSourceAL::CAudioSourceAL(CAudioSystemAL* owner) :
 	m_sample(nullptr),
 	m_callback(nullptr),
 	m_callbackObject(nullptr),
@@ -545,7 +545,8 @@ CAudioSourceAL::CAudioSourceAL() :
 	m_chanType(-1),
 	m_releaseOnStop(true),
 	m_forceStop(false),
-	m_looping(false)
+	m_looping(false),
+	m_owner(owner)
 {
 	memset(m_buffers, 0, sizeof(m_buffers));
 }
@@ -607,7 +608,7 @@ void CAudioSourceAL::UpdateParams(Params params, int mask)
 		if(params.effectSlot == -1)
 			alSource3i(thisSource, AL_AUXILIARY_SEND_FILTER, AL_EFFECTSLOT_NULL, 0, AL_FILTER_NULL);
 		else
-			alSource3i(thisSource, AL_AUXILIARY_SEND_FILTER, s_audioSystemAL.m_effectSlots[params.effectSlot], 0, AL_FILTER_NULL);
+			alSource3i(thisSource, AL_AUXILIARY_SEND_FILTER, m_owner->m_effectSlots[params.effectSlot], 0, AL_FILTER_NULL);
 	}
 
 	if (mask & UPDATE_RELATIVE)

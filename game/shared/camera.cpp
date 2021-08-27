@@ -25,6 +25,7 @@ extern int g_windowWidth;
 extern int g_windowHeight;
 
 CameraViewParams CCamera::MainView;
+Vector3D CCamera::MainViewVelocity;
 
 void CCamera::Lua_Init(sol::state& lua)
 {
@@ -33,12 +34,17 @@ void CCamera::Lua_Init(sol::state& lua)
 	auto world = engine["Camera"].get_or_create<sol::table>();
 
 	world["MainView"] = &MainView;
+	world["MainViewVelocity"] = &MainViewVelocity;
 
 	// level properties
 	engine.new_usertype<CameraViewParams>("CameraViewParams",
 		"position", &CameraViewParams::position,
 		"angles", &CameraViewParams::angles,
-		"fov", &CameraViewParams::fov);
+		"fov", &CameraViewParams::fov, 
+		"right", sol::property(&CameraViewParams::GetRight),
+		"up", sol::property(&CameraViewParams::GetUp),
+		"forward", sol::property(&CameraViewParams::GetForward),
+		"vectors", sol::property(&CameraViewParams::GetVectors));
 }
 
 //-------------------------------------------------------

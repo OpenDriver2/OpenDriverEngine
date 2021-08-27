@@ -35,6 +35,7 @@
 #include "game/render/render_sky.h"
 
 #include "renderer/debug_overlay.h"
+#include "audio/IAudioSystem.h"
 
 #define VEC_OPERATORS(vec_type) \
 	/* vec - vec */\
@@ -240,6 +241,7 @@ void LuaInit(sol::state& lua)
 
 	//-----------------------------------
 	// MODULES
+	IAudioSystem::Lua_Init(lua);
 	CInput::Lua_Init(lua);
 	CManager_Cars::Lua_Init(lua);
 	CDebugOverlay::Lua_Init(lua);

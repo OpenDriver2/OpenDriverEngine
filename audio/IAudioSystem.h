@@ -82,6 +82,11 @@ public:
 class IAudioSystem
 {
 public:
+	static IAudioSystem*		Create();
+	static IAudioSystem*		Instance;
+
+	static void					Lua_Init(sol::state& lua);
+
 	virtual ~IAudioSystem() {}
 
 	virtual void				Init() = 0;
@@ -117,7 +122,5 @@ public:
 	// sets the new effect
 	virtual void				SetEffect(int slot, effectId_t effect) = 0;
 };
-
-extern IAudioSystem* g_audioSystem;
 
 #endif // IAUDIOSYSTEM_H
