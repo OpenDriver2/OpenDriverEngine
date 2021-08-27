@@ -56,3 +56,5 @@ project_*/
 bin/*
 dependencies/SDL2
 dependencies/openal-soft
+dependencies/libogg
+dependencies/libvorbis
