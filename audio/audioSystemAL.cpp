@@ -330,7 +330,7 @@ void CAudioSystemAL::Shutdown()
 	m_noSound = true;
 }
 
-IEqAudioSource* CAudioSystemAL::CreateSource()
+IAudioSource* CAudioSystemAL::CreateSource()
 {
 	Mutex::Guard g(s_audioMutex);
 
@@ -340,7 +340,7 @@ IEqAudioSource* CAudioSystemAL::CreateSource()
 	return m_sources[index];
 }
 
-void CAudioSystemAL::DestroySource(IEqAudioSource* source)
+void CAudioSystemAL::DestroySource(IAudioSource* source)
 {
 	if (!source)
 		return;
@@ -366,29 +366,29 @@ void CAudioSystemAL::StopAllSounds(int chanType /*= -1*/, void* callbackObject /
 
 void CAudioSystemAL::PauseAllSounds(int chanType /*= -1*/, void* callbackObject /*= nullptr*/)
 {
-	IEqAudioSource::Params param;
-	param.state = IEqAudioSource::PAUSED;
+	IAudioSource::Params param;
+	param.state = IAudioSource::PAUSED;
 
 	// suspend all sources
 	for (uint i = 0; i < m_sources.size(); i++)
 	{
 		CAudioSourceAL* source = m_sources[i].p();
 		if (chanType == -1 || source->m_chanType == chanType && source->m_callbackObject == callbackObject)
-			source->UpdateParams(param, IEqAudioSource::UPDATE_STATE);
+			source->UpdateParams(param, IAudioSource::UPDATE_STATE);
 	}
 }
 
 void CAudioSystemAL::ResumeAllSounds(int chanType /*= -1*/, void* callbackObject /*= nullptr*/)
 {
-	IEqAudioSource::Params param;
-	param.state = IEqAudioSource::PLAYING;
+	IAudioSource::Params param;
+	param.state = IAudioSource::PLAYING;
 
 	// suspend all sources
 	for (uint i = 0; i < m_sources.size(); i++)
 	{
 		CAudioSourceAL* source = m_sources[i].p();
 		if (chanType == -1 || source->m_chanType == chanType && source->m_callbackObject == callbackObject)
-			source->UpdateParams(param, IEqAudioSource::UPDATE_STATE);
+			source->UpdateParams(param, IAudioSource::UPDATE_STATE);
 	}
 }
 

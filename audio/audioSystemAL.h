@@ -22,8 +22,8 @@ public:
 	void						Init();
 	void						Shutdown();
 
-	IEqAudioSource*				CreateSource();
-	void						DestroySource(IEqAudioSource* source);
+	IAudioSource*				CreateSource();
+	void						DestroySource(IAudioSource* source);
 
 	void						Update();
 
@@ -86,7 +86,7 @@ private:
 //-----------------------------------------------------------------
 // Sound source
 
-class CAudioSourceAL : public IEqAudioSource
+class CAudioSourceAL : public IAudioSource
 {
 	friend class CAudioSystemAL;
 public:

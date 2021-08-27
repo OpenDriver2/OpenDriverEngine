@@ -23,6 +23,7 @@
 
 #include "core/cmdlib.h"
 
+
 #include <stdlib.h>
 
 #include "world.h"
@@ -193,7 +194,7 @@ void CCar::Lua_Init(sol::state& lua)
 				if (gearsTable.valid() && gearsTable.size())
 				{
 					newCosmetics.gears.clear();
-					for (int i = 0; i < gearsTable.size(); i++)
+					for (uint i = 0; i < gearsTable.size(); i++)
 					{
 						GEAR_DESC newGear = gearsTable[i + 1];
 						newCosmetics.gears.append(newGear);
@@ -1163,54 +1164,48 @@ void CCar::ControlCarRevs()
 
 	m_hd.revs = newRevs;
 
-#if 0
-	// TODO: CPlayerManager:GetPlayer()
-	if (player_id != -1)
+	if (acc == 0 && newRevs < 7001)
 	{
-		if (acc == 0 && newRevs < 7001)
-		{
-			acc = player[player_id].revsvol;
+		acc = m_revsvol;
 
-			player[player_id].idlevol += 200;
-			player[player_id].revsvol = acc - 200;
+		m_idlevol += 200;
+		m_revsvol = acc - 200;
 
-			if (player[player_id].idlevol > -6000)
-				player[player_id].idlevol = -6000;
+		if (m_idlevol > -6000)
+			m_idlevol = -6000;
 
-			if (player[player_id].revsvol < -10000)
-				player[player_id].revsvol = -10000;
-		}
-		else
-		{
-			int revsmax;
-
-			if (acc != 0)
-				revsmax = -5500;
-			else
-				revsmax = -6750;
-
-			if (spin == 0)
-				acc = -64;
-			else
-				acc = -256;
-
-			player[player_id].idlevol += acc;
-
-			if (spin == 0)
-				acc = 175;
-			else
-				acc = 700;
-
-			player[player_id].revsvol = player[player_id].revsvol + acc;
-
-			if (player[player_id].idlevol < -10000)
-				player[player_id].idlevol = -10000;
-
-			if (player[player_id].revsvol > revsmax)
-				player[player_id].revsvol = revsmax;
-		}
+		if (m_revsvol < -10000)
+			m_revsvol = -10000;
 	}
-#endif
+	else
+	{
+		int revsmax;
+
+		if (acc != 0)
+			revsmax = -5500;
+		else
+			revsmax = -6750;
+
+		if (spin == 0)
+			acc = -64;
+		else
+			acc = -256;
+
+		m_idlevol += acc;
+
+		if (spin == 0)
+			acc = 175;
+		else
+			acc = 700;
+
+		m_revsvol = m_revsvol + acc;
+
+		if (m_idlevol < -10000)
+			m_idlevol = -10000;
+
+		if (m_revsvol > revsmax)
+			m_revsvol = revsmax;
+	}
 }
 
 //---------------------------------------------------
@@ -1334,10 +1329,169 @@ void CCar::RebuildCarMatrix(RigidBodyState& st)
 	InitOrientedBox();
 }
 
+int CCar::EngineSoundUpdateCb(void* obj, IAudioSource::Params& params)
+{
+	CCar* thisCar = (CCar*)obj;
+
+	if (thisCar->m_controlType == CONTROL_TYPE_NONE)
+	{
+		params.state = IAudioSource::STOPPED;
+		return IAudioSource::UPDATE_STATE;
+	}
+
+	int pitch = thisCar->m_hd.revs / 4 + thisCar->m_revsvol / 64 + 1500;
+	params.volume = (10000 + thisCar->m_revsvol) / 10000.0f;
+	params.pitch = (pitch / ONE_F);
+	params.position = FromFixedVector(thisCar->GetPosition());
+
+	return 
+		IAudioSource::UPDATE_VOLUME |
+		IAudioSource::UPDATE_PITCH |
+		IAudioSource::UPDATE_POSITION;
+}
+
+int CCar::IdleSoundUpdateCb(void* obj, IAudioSource::Params& params)
+{
+	CCar* thisCar = (CCar*)obj;
+
+	if (thisCar->m_controlType == CONTROL_TYPE_NONE)
+	{
+		params.state = IAudioSource::STOPPED;
+		return IAudioSource::UPDATE_STATE;
+	}
+
+	int pitch = thisCar->m_hd.revs / 4 + 4096;
+	params.volume = (10000 + thisCar->m_idlevol) / 10000.0f;
+	params.pitch = (pitch / ONE_F);
+	params.position = FromFixedVector(thisCar->GetPosition());
+
+	return
+		IAudioSource::UPDATE_VOLUME |
+		IAudioSource::UPDATE_PITCH |
+		IAudioSource::UPDATE_POSITION;
+}
+
+int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
+{
+	CCar* thisCar = (CCar*)obj;
+
+	if (thisCar->m_controlType == CONTROL_TYPE_NONE)
+	{
+		params.state = IAudioSource::STOPPED;
+		return IAudioSource::UPDATE_STATE;
+	}
+
+	int skidsound = 0;
+	bool wheels_on_ground = false;
+	bool rear_only = false;
+	bool lay_down_tracks = false;
+	bool tracks_and_smoke = false;
+
+	for (int cnt = 0; cnt < 4; cnt++)
+	{
+		if (thisCar->m_hd.wheel[cnt].susCompression != 0)
+			wheels_on_ground = true;
+	}
+
+	skidsound = 0;
+
+	// make tyre tracks and skid sound if needed
+	if (wheels_on_ground)
+	{
+		int rear_vel, front_vel;
+		rear_vel = abs(thisCar->m_hd.rear_vel);
+		front_vel = abs(thisCar->m_hd.front_vel);
+
+		if (rear_vel > 22000 || thisCar->m_wheelspin)
+		{
+			rear_only = 1;
+			lay_down_tracks = true;
+
+			if (thisCar->m_wheelspin == 0)
+				skidsound = (rear_vel - 11100) / 2 + 1;
+			else
+				skidsound = 13000;
+
+			if (skidsound > 13000)
+				skidsound = 13000;
+		}
+		else if (front_vel > 50000)
+		{
+			rear_only = 0;
+			lay_down_tracks = true;
+		}
+
+		tracks_and_smoke = !(thisCar->m_hd.wheel[1].surface & 0x8) && !(thisCar->m_hd.wheel[3].surface & 0x8);
+	}
+
+	if (skidsound == 0)
+	{
+		params.state = IAudioSource::PAUSED;
+		return IAudioSource::UPDATE_STATE;
+	}
+
+	int updateFlags = IAudioSource::UPDATE_VOLUME |
+		IAudioSource::UPDATE_PITCH |
+		IAudioSource::UPDATE_POSITION;
+
+	if (params.state != IAudioSource::PLAYING)
+	{
+		params.state = IAudioSource::PLAYING;
+		updateFlags |= IAudioSource::UPDATE_STATE;
+	}
+
+
+
+	int volume = (skidsound - 10000) * 3 / 4 - 5000;
+	int pitch = skidsound * 1024 / 13000 + 3072;
+
+	params.volume = (10000 + volume) / 10000.0f;
+	params.pitch = (pitch / ONE_F);
+	params.position = FromFixedVector(thisCar->GetPosition());
+
+	return updateFlags;
+		
+}
 
 void CCar::CheckCarEffects()
 {
 	// Dummy for now...
+	if (!m_engineSound)
+	{
+		ISoundSource* skidSample = IAudioSystem::Instance->LoadSample("voices2/Bank_1/7.wav");
+		ISoundSource* engineSample = IAudioSystem::Instance->LoadSample("voices2/Bank_10/0.wav");
+		ISoundSource* idleSample = IAudioSystem::Instance->LoadSample("voices2/Bank_10/1.wav");
+		
+		m_engineSound = IAudioSystem::Instance->CreateSource();
+		m_engineSound->Setup(0, engineSample, &EngineSoundUpdateCb, this);
+
+		m_idleSound = IAudioSystem::Instance->CreateSource();
+		m_idleSound->Setup(0, idleSample, &IdleSoundUpdateCb, this);
+
+		m_skidSound = IAudioSystem::Instance->CreateSource();
+		m_skidSound->Setup(0, skidSample, &SkidSoundUpdateCb, this);
+
+		IAudioSource::Params params;
+		params.state = IAudioSource::PLAYING;
+		params.looping = true;
+		params.pitch = 1.0f;
+		params.relative = false;
+		params.referenceDistance = 5.0f;
+		params.releaseOnStop = true;
+
+		int flags = 
+			IAudioSource::UPDATE_STATE | 
+			IAudioSource::UPDATE_LOOPING | 
+			IAudioSource::UPDATE_PITCH | 
+			IAudioSource::UPDATE_RELATIVE |
+			IAudioSource::UPDATE_REF_DIST |
+			IAudioSource::UPDATE_RELEASE_ON_STOP;
+
+		m_engineSound->UpdateParams(params, flags);
+		m_idleSound->UpdateParams(params, flags);
+		m_skidSound->UpdateParams(params, flags);
+	}
+
 
 	JumpDebris();
 

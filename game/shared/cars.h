@@ -1,6 +1,8 @@
 #ifndef CARS_H
 #define CARS_H
 
+#include "audio/IAudioSystem.h"
+
 typedef short	SHORTVECTOR4[4];
 typedef int		LONGVECTOR3[3];
 typedef int		LONGVECTOR4[4];
@@ -313,6 +315,10 @@ protected:
 	int8				get_autobrake() const;
 	void				set_autobrake(const int8& value);
 
+	static int			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
+	static int			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
+	static int			SkidSoundUpdateCb(void* obj, IAudioSource::Params& params);
+
 	// --------------------
 	HANDLING_DATA		m_hd;
 	RigidBodyState		m_st;
@@ -333,6 +339,9 @@ protected:
 	uint8				m_controlFlags{ 0 };
 
 	int8				m_id{ -1 };
+
+	short				m_idlevol{ -10000 };
+	short				m_revsvol{ -10000 };
 
 	union {
 		char* padid{ 0 };		// CONTROL_TYPE_PLAYER or CONTROL_TYPE_CUTSCENE
@@ -361,6 +370,11 @@ protected:
 
 	ModelRef_t*		m_model{ nullptr };
 	ModelRef_t*		m_wheelModels[3]{ nullptr };
+
+	CRefPointer<IAudioSource*> m_engineSound;
+	CRefPointer<IAudioSource*> m_idleSound;
+	CRefPointer<IAudioSource*> m_skidSound;
+	CRefPointer<IAudioSource*> m_dirtSound;
 };
 
 #endif // CARS_H
