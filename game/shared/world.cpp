@@ -4,6 +4,7 @@
 
 #include "core/cmdlib.h"
 #include "core/VirtualStream.h"
+#include "core/FileStream.h"
 
 #include "renderer/debug_overlay.h"
 #include "renderer/gl_renderer.h"
@@ -32,6 +33,7 @@
 
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_sdl.h"
+
 
 
 OUT_CITYLUMP_INFO		g_levInfo;
@@ -264,7 +266,7 @@ bool CWorld::LoadLevel(const char* fileName)
 	// seek to begin
 	MsgWarning("-----------\nLoading LEV file '%s'\n", fileName);
 
-	CFileStream stream(g_levFile);
+	CFileStream stream(g_levFile, false);
 	ELevelFormat levFormat = CDriverLevelLoader::DetectLevelFormat(&stream);
 
 	stream.Seek(0, VS_SEEK_SET);
@@ -334,7 +336,7 @@ void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 	if (!IsLevelLoaded())
 		return;
 
-	CFileStream stream(g_levFile);
+	CFileStream stream(g_levFile, false);
 
 	SPOOL_CONTEXT spoolContext;
 	spoolContext.dataStream = &stream;
@@ -389,7 +391,7 @@ void CWorld::SpoolAllRegions()
 
 	Msg("Spooling ALL regions...\n");
 
-	CFileStream stream(g_levFile);
+	CFileStream stream(g_levFile, false);
 
 	SPOOL_CONTEXT spoolContext;
 	spoolContext.dataStream = &stream;

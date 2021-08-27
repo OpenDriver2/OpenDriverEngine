@@ -56,7 +56,9 @@ assert_sizeof( long long, 8);
 assert_sizeof( float, 4);
 assert_sizeof( double, 8);
 
-#define ERROR_BUFFER_LENGTH 2048
+// Define some useful macros
+#define MCHAR2(a, b) (a | (b << 8))
+#define MCHAR4(a, b, c, d) (a | (b << 8) | (c << 16) | (d << 24))
 
 // quick swap function
 template< class T >

@@ -3,36 +3,36 @@
 #include <stdarg.h> // va_*
 #include <malloc.h> // va_*
 
+#include <nstd/String.hpp>
+
 #define VSTREAM_GRANULARITY 1024	// 1kb
-
-// Opens memory stream, when creating new stream use nBufferSize parameter as base buffer
-IVirtualStream* OpenMemoryStream(int nOpenFlags, int nBufferSize, ubyte* pBufferData)
-{
-	CMemoryStream* pMemoryStream = new CMemoryStream;
-
-	if(pMemoryStream->Open(pBufferData, nOpenFlags, 0))
-	{
-		return pMemoryStream;
-	}
-	else
-	{
-		delete pMemoryStream;
-		return nullptr;
-	}
-}
 
 // prints string to stream
 void IVirtualStream::Print(const char* pFmt, ...)
 {
 	va_list		argptr;
 
-	static char	string[4096];
+	static char	string[512];
+	char* buf = string;
 
 	va_start (argptr,pFmt);
-	int wcount = vsprintf(string, pFmt, argptr);
+	int wcount = vsnprintf(string, sizeof(string), pFmt, argptr);
+
+	// print again into extended buffer
+	if (wcount >= sizeof(string))
+	{
+		buf = new char[wcount+1];
+		wcount = vsnprintf(buf, wcount + 1, pFmt, argptr);
+	}
+
 	va_end (argptr);
 
-	Write(string, 1, wcount);
+	Write(buf, 1, wcount);
+
+	if (buf != string)
+	{
+		delete[] buf;
+	}
 }
 
 //--------------------------
@@ -259,59 +259,3 @@ ubyte* CMemoryStream::GetBasePointer()
 
 //--------------------------------------------------------------------
 
-//------------------------------------------------------------------------------
-// File stream
-//------------------------------------------------------------------------------
-
-int	CFileStream::Seek( long pos, VirtStreamSeek_e seekType )
-{
-	return fseek( m_pFilePtr, pos, seekType );
-}
-
-long CFileStream::Tell()
-{
-	return ftell( m_pFilePtr );
-}
-
-size_t CFileStream::Read( void *dest, size_t count, size_t size)
-{
-	return fread( dest, size, count, m_pFilePtr );
-}
-
-size_t CFileStream::Write( const void *src, size_t count, size_t size)
-{
-	return fwrite( src, size, count, m_pFilePtr);
-}
-
-int	CFileStream::Error()
-{
-	return ferror( m_pFilePtr );
-}
-
-int	CFileStream::Flush()
-{
-	return fflush( m_pFilePtr );
-}
-
-// prints string to stream
-void CFileStream::Print(const char* pFmt, ...)
-{
-	va_list		argptr;
-
-	va_start(argptr, pFmt);
-	int wcount = vfprintf(m_pFilePtr, pFmt, argptr);
-	va_end(argptr);
-}
-
-long CFileStream::GetSize()
-{
-	long pos = Tell();
-
-	Seek(0, VS_SEEK_END);
-
-	long length = Tell();
-
-	Seek(pos, VS_SEEK_SET);
-
-	return length;
-}

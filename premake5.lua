@@ -138,6 +138,8 @@ usage "SDL2"
 include "dependencies/lua54/premake5.lua"
 include "dependencies/sol2/premake5.lua"
 include "dependencies/openal-soft/premake5.lua"
+include "dependencies/libogg/premake5.lua"
+include "dependencies/libvorbis/premake5.lua"
 include "dependencies/enet/premake5.lua"
 		
 group "Game"
@@ -173,7 +175,7 @@ project "OpenDriverGame"
 		"libnstd", "frameworkLib", 
 		"lua", "sol2",
 		"enet",
-		"openal-soft"
+		"openal-soft", "libvorbis", "libogg"
 	}
 
 	includedirs {
@@ -181,6 +183,8 @@ project "OpenDriverGame"
 	}
 
     files {
+		"audio/**.cpp",
+		"audio/**.h",
 		"renderer/**.cpp",
 		"renderer/**.h",
 		"game/**.cpp",
@@ -199,6 +203,11 @@ project "OpenDriverGame"
         }
         
         cppdialect "C++11"
+		
+	filter "system:windows"
+	    linkoptions {
+			"/SAFESEH:NO", -- Image Has Safe Exception Handers: No. Because of openal-soft
+        }
 
     filter "configurations:Debug"
 		targetsuffix "_dbg"
