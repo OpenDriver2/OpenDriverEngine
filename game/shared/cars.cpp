@@ -376,7 +376,7 @@ void CCar::Destroy()
 
 void CCar::StartSounds()
 {
-	ISoundSource* skidSample = IAudioSystem::Instance->LoadSample("voices2/Bank_1/7.wav");
+	ISoundSource* skidSample = m_owner->GetSoundSource(SkidLoop);
 
 	if (!m_engineSound)
 		m_engineSound = IAudioSystem::Instance->CreateSource();
@@ -422,6 +422,53 @@ void CCar::StopSounds()
 		m_dirtSound->Release();
 }
 
+void CCar::StartStaticSound(ECarSoundType type, float refDist, float volume, float pitch)
+{
+	ISoundSource* soundSample = m_owner->GetSoundSource(type);
+
+	IAudioSource* staticSound = IAudioSystem::Instance->CreateSource();
+
+	IAudioSource::Params params;
+	params.state = IAudioSource::PLAYING;
+	params.position = FromFixedVector(GetPosition());
+	params.releaseOnStop = true;
+	params.referenceDistance = refDist;
+	params.volume = volume;
+	params.pitch = pitch;
+
+	int flags =
+		IAudioSource::UPDATE_STATE |
+		IAudioSource::UPDATE_POSITION |
+		IAudioSource::UPDATE_REF_DIST |
+		IAudioSource::UPDATE_VOLUME |
+		IAudioSource::UPDATE_PITCH |
+		IAudioSource::UPDATE_RELEASE_ON_STOP;
+
+	staticSound->Setup(0, soundSample, nullptr, this);
+	staticSound->UpdateParams(params, flags);
+}
+
+void CCar::CollisionSound(int impact, bool car_vs_car)
+{
+	ECarSoundType soundType = Hit_Car_1;
+
+	if (car_vs_car)
+	{
+		if (impact > 900)
+			soundType = Hit_Car_3;
+		else if (impact > 380)
+			soundType = Hit_Car_2;
+	}
+	else
+	{
+		if (impact > 780)
+			soundType = Hit_Car_3;
+		else if (impact > 350)
+			soundType = Hit_Car_2;
+	}
+
+	StartStaticSound(soundType, 256 / ONE_F, 1.0f, 1.0f);
+}
 
 void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 {
@@ -531,32 +578,25 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 
 		if (newCompression > m_cosmetics.susTopLimit)
 			newCompression = 12;
-#if 0
-		// play wheel collision sound
-		// and apply vibration to player controller
-		if (controlType == CONTROL_TYPE_PLAYER)
-		{
-			if (ABS(newCompression - oldCompression) > 12 && (i & 1U) != 0)
-			{
-				chan = GetFreeChannel(0);
-				if (chan > -1)
-				{
-					if (NumPlayers > 1 && NoPlayerControl == 0)
-						SetPlayerOwnsChannel(chan, player_id);
 
-					Start3DSoundVolPitch(chan, SOUND_BANK_SFX, 1, hd.where.t[0], hd.where.t[1], hd.where.t[2], -2500, 400);
-					SetChannelPosition3(chan, (VECTOR*)hd.where.t, NULL, -2500, 400, 0);
-				}
+		// play wheel curb hit sound
+		// and apply vibration to player controller
+		if (m_controlType == CONTROL_TYPE_PLAYER)
+		{
+			if (abs(newCompression - oldCompression) > 12 && (i & 1U) != 0)
+			{
+				StartStaticSound(HitCurb, 128 / ONE_F, 0.7f, 400 / ONE_F);
 			}
 
+#if 0
 			if (newCompression >= 65)
 				SetPadVibration(*ai.padid, 1);
 			else if (newCompression >= 35)
 				SetPadVibration(*ai.padid, 2);
 			else if (newCompression > 25)
 				SetPadVibration(*ai.padid, 3);
-		}
 #endif
+		}
 
 		if (newCompression > m_cosmetics.susCompressionLimit)
 			newCompression = m_cosmetics.susCompressionLimit;
@@ -1042,9 +1082,10 @@ void CCar::StepOneCar()
 			componant--;
 		} while (componant >= 0);
 
-#if 0
+
 		if (impulse > 20000)
 		{
+#if 0
 			if (gNight == 1)
 			{
 				direction.vx = 0;
@@ -1061,13 +1102,13 @@ void CCar::StepOneCar()
 
 				Setup_Debris((VECTOR*)&deepestPoint, &direction, 10, 0);
 			}
-
-			if (SurfacePtr && (SurfacePtr->surface != 9) && (SurfacePtr->surface != 6))
+#endif
+			if ((Surface.surfaceType != 9) && (Surface.surfaceType != 6))
 			{
-				CollisionSound(GetPlayerId(cp), cp, (impulse / 6 + (impulse >> 0x1f) >> 3) - (impulse >> 0x1f), 0);
+				CollisionSound((impulse / 6 + (impulse >> 0x1f) >> 3) - (impulse >> 0x1f), false);
 			}
 		}
-#endif
+
 
 		m_hd.acc[0] += reaction[0];
 		m_hd.acc[1] += reaction[1];
@@ -1593,6 +1634,11 @@ void CCar::NoseDown()
 void CCar::DamageCar(CDATA2D* cd, CRET2D* collisionResult, int strikeVel)
 {
 	// UNIMPLEMENTED
+
+	if (strikeVel >= 20480 && m_hd.speed > 9)
+	{
+		CollisionSound(strikeVel / 600, false);
+	}
 }
 
 void CCar::InitCarPhysics(LONGVECTOR4* startpos, int direction)

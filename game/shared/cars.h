@@ -323,6 +323,10 @@ protected:
 	int8				get_autobrake() const;
 	void				set_autobrake(const int8& value);
 
+	void				StartStaticSound(ECarSoundType type, float refDist, float volume, float pitch);
+
+	void				CollisionSound(int impact, bool car_vs_car);
+
 	static int			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
 	static int			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
 	static int			SkidSoundUpdateCb(void* obj, IAudioSource::Params& params);
