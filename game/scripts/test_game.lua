@@ -1,5 +1,6 @@
 local cars = engine.Cars
 local world = engine.World
+local players = engine.Players
 
 local PlayerStartInfo = {
 	----------- Driver 2 freeride startpos -------------
@@ -83,8 +84,6 @@ local PlayerStartInfo = {
 	},
 }
 
-local car = nil
-
 -- car controls
 local buttonState = {
 	[SDL.Scancode.Up] = false,
@@ -126,6 +125,8 @@ local cameraAngle = 0
 local headAngle = 0
 
 local function PlaceCameraFollowCar(dt)
+	local car = players.localPlayer.currentCar
+
 	if car == nil then
 		return
 	end
@@ -218,9 +219,10 @@ end
 
 TestGame.Terminate = function()
 	-- destroy old car
+	local car = players.localPlayer.currentCar
 	if car ~= nil then
 		car:Destroy()
-		car = nil
+		players.localPlayer.currentCar = nil
 	end
 end
 
@@ -248,15 +250,13 @@ TestGame.Init = function(residentModel)
 		local cosmetics = cityCosmetics[residentModel + 1]
 		FixCarCos(cosmetics)
 
-		car = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+		local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+		
+		players.localPlayer.currentCar = plcar
 	end
 end
 
 TestGame.UpdateCarPads = function()
-	if car == nil then
-		return
-	end
-	
 	local input = {
 		accel = buttonState[SDL.Scancode.Up],
 		brake = buttonState[SDL.Scancode.Down],
@@ -265,7 +265,6 @@ TestGame.UpdateCarPads = function()
 		steering = 0,
 	}
 	
-
 	if buttonState[SDL.Scancode.Left] then
 		input.steering = -1
 	end
@@ -274,82 +273,12 @@ TestGame.UpdateCarPads = function()
 		input.steering = 1
 	end
 	
-	local carCos = car.cosmetics
-	
-	-- update steering	
-	if input.steering ~= 0 then
-		car.autobrake = car.autobrake + 1
-		
-		if input.steering < 0 then
-			car.wheel_angle = car.wheel_angle - 32
-		elseif input.steering > 0 then
-			car.wheel_angle = car.wheel_angle + 32
-		end
-		
-		if car.wheel_angle < -352 then
-			car.wheel_angle = -352
-		end
-		
-		if car.wheel_angle > 352 then
-			car.wheel_angle = 352
-		end
-		
-		if car.autobrake > 90 then
-			car.autobrake = 90
-		end
-	else
-		if car.wheel_angle < -64 then
-			car.wheel_angle = car.wheel_angle + 64
-		elseif car.wheel_angle < 65 then
-			car.wheel_angle = 0
-		else
-			car.wheel_angle = car.wheel_angle - 64
-		end
-		car.autobrake = 0
-	end
-	
-	-- update acceleration
-	if input.handbrake == true then
-		car.handbrake = 1
-	else
-		car.handbrake = 0
-		
-		if input.wheelspin == true then
-			car.wheelspin = 1
-		else
-			car.wheelspin = 0
-		end
-		
-		-- continue without burnout
-		if car.wheelspin ~= 0 and car.wheel_speed > carCos.wheelspinMaxSpeed then
-			car.wheelspin = 0
-			input.accel = true
-		end
-	end
-	
-	car.thrust = 0
-	
-	if input.brake then
-		local rws = fix.DivHalfRound(car.wheel_speed * 1500 // 1024, fix.ONE_BITS)
-
-		if -rws < 23 then
-			rws = -5000;
-		else
-			rws = ((rws + 278) * -4778) >> 8
-		end
-				
-		car.thrust = fix.DivHalfRound(rws * carCos.powerRatio, fix.ONE_BITS)
-	elseif input.accel then
-		car.thrust = fix.DivHalfRound(4915 * carCos.powerRatio, fix.ONE_BITS)
-	end
-	
-	if car.changingGear then
-		car.thrust = 1;
-	end
+	-- update local player inputs
+	players.localPlayer.input = PlayerInputData(input)
 end
 
 TestGame.IsRunning = function()
-	return car ~= nil
+	return (players.localPlayer.currentCar ~= nil)
 end
 
 TestGame.UpdateCarControls = function(num, down)

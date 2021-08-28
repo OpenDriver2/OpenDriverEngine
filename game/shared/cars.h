@@ -238,6 +238,7 @@ extern const double Car_Fixed_Timestep;
 class CCar
 {
 	friend class CManager_Cars;
+	friend class CPlayer;
 public:
 							CCar();
 							~CCar();

@@ -32,6 +32,7 @@
 #include "math/convert.h"
 
 #include "game/shared/manager_cars.h"
+#include "game/shared/players.h"
 #include "game/render/render_sky.h"
 
 #include "renderer/debug_overlay.h"
@@ -243,6 +244,7 @@ void LuaInit(sol::state& lua)
 	// MODULES
 	IAudioSystem::Lua_Init(lua);
 	CInput::Lua_Init(lua);
+	CManager_Players::Lua_Init(lua);
 	CManager_Cars::Lua_Init(lua);
 	CDebugOverlay::Lua_Init(lua);
 	CWorld::Lua_Init(lua);

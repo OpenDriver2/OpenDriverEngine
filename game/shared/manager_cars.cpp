@@ -19,6 +19,7 @@
 #include "world.h"
 #include "manager_cars.h"
 #include "cars.h"
+#include "players.h"
 
 // TODO: move it
 int	CameraCnt = 0;
@@ -269,9 +270,13 @@ void CManager_Cars::UpdateControl()
 			continue;
 		}
 
-		//cp->m_thrust = 4096;
-		//cp->m_wheel_angle = -280;
-		//cp->m_hd.autoBrake = 90;
+		if (cp->m_controlType == CONTROL_TYPE_PLAYER)
+		{
+			CPlayer* player = CManager_Players::GetPlayerByCar(cp);
+
+			if (player)
+				player->ProcessCarPad();
+		}
 
 #if 0
 		// Update player inputs

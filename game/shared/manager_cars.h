@@ -7,7 +7,7 @@
 class CCar;
 class CDriverLevelModels;
 struct CarCosmetics;
-
+struct ModelRef_t;
 
 struct POSITION_INFO
 {
