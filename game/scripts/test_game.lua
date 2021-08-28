@@ -202,12 +202,18 @@ local function PlaceCameraFollowCar(dt)
 	})
 end
 
+local CameraFuncs = {
+	PlaceCameraFollowCar,
+}
+
 -------------------------------------------------------
 
-TestGame = {}
+TestGame = {
+	CameraNumber = 1,
+}
 
 TestGame.UpdateCamera = function(dt)
-	PlaceCameraFollowCar(dt)
+	CameraFuncs[TestGame.CameraNumber](dt)
 end
 
 TestGame.Terminate = function()

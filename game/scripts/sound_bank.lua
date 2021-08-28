@@ -46,7 +46,7 @@ SBK_Permanent = {
 	
 	Hit_Car_1 	= "voices2/Bank_1/4.wav",
 	Hit_Car_2 	= "voices2/Bank_1/5.wav",
-	Hit_Car_3 	= "voices2/Bank_1/6.wav",
+	Hit_Car_3 	= "voices/Bank_0/0.wav", --"voices2/Bank_1/6.wav",
 	
 	SkidLoop	= "voices2/Bank_1/7.wav",
 	Thunder 	= "voices2/Bank_1/8.wav",

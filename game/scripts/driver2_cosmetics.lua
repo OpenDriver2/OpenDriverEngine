@@ -26,11 +26,12 @@ for i=0,12 do
 		local tabl = cosmetic:ToTable()
 		
 		local bank_index = MapCarIndexToBank(i)
+		local bank_path = "voices2/Bank_"..bank_index.."/"
 		
 		local bank = LoadSoundbank("CarBankD2_"..bank_index, {
-			revSample = "voices2/Bank_"..bank_index.."/0.wav",
-			idleSample = "voices2/Bank_"..bank_index.."/1.wav",
-			hornSample = "voices2/Bank_"..bank_index.."/2.wav",
+			revSample 	= bank_path.."0.wav",
+			idleSample 	= bank_path.."1.wav",
+			hornSample 	= bank_path.."2.wav",
 		})
 		
 		tabl.revSample = bank.revSample

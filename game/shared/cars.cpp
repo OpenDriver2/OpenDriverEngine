@@ -452,22 +452,30 @@ void CCar::CollisionSound(int impact, bool car_vs_car)
 {
 	ECarSoundType soundType = Hit_Car_1;
 
+	int refDist = 256;
+
 	if (car_vs_car)
 	{
 		if (impact > 900)
+		{
 			soundType = Hit_Car_3;
+			refDist = 512;
+		}
 		else if (impact > 380)
 			soundType = Hit_Car_2;
 	}
 	else
 	{
 		if (impact > 780)
+		{
 			soundType = Hit_Car_3;
+			refDist = 512;
+		}
 		else if (impact > 350)
 			soundType = Hit_Car_2;
 	}
 
-	StartStaticSound(soundType, 256 / ONE_F, 1.0f, 1.0f);
+	StartStaticSound(soundType, refDist / ONE_F, 1.0f, 1.0f);
 }
 
 void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)

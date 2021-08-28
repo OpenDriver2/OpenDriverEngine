@@ -1,3 +1,5 @@
+local cars = engine.Cars
+
 -- Driver 1 cars
 local GearDesc_D1 = {
 	GEAR_DESC( { lowidl_ws = 0, 	low_ws = 0, 	hi_ws = 245, 	ratio_ac = 96, ratio_id = 90 }),
@@ -28,6 +30,42 @@ local defaultHandling = HANDLING_TYPE {
 	fourWheelDrive = false, 
 	autoBrakeOn = 1
 }
+
+local ESoundTypes = {
+	HitCurb = 0,
+	Hit_Car_1 = 1,
+	Hit_Car_2 = 2,
+	Hit_Car_3 = 3,
+	SkidLoop = 4,
+	WetLoop = 5,
+	GravelLoop = 6,
+	AlleyLoop = 7,
+}
+
+-- setup car sound handler
+cars.SoundSourceGetCallback = function(soundType)
+	local sbk_perm = SoundBanks["permanent"]
+	
+	if soundType == ESoundTypes.HitCurb then
+		return sbk_perm.Hit_Cone
+	elseif soundType == ESoundTypes.Hit_Car_1 then
+		return sbk_perm.Hit_Car_1
+	elseif soundType == ESoundTypes.Hit_Car_2 then
+		return sbk_perm.Hit_Car_2
+	elseif soundType == ESoundTypes.Hit_Car_3 then
+		return sbk_perm.Hit_Car_3
+	elseif soundType == ESoundTypes.SkidLoop then
+		return sbk_perm.SkidLoop
+	elseif soundType == ESoundTypes.WetLoop then
+		return sbk_perm.WetLoop
+	elseif soundType == ESoundTypes.GravelLoop then
+		return sbk_perm.GravelLoop
+	elseif soundType == ESoundTypes.AlleyLoop then
+		return sbk_perm.AlleyLoop
+	end
+	
+	return sbk_perm.Hit_Box
+end
 
 return {
 	HandlingType = {
