@@ -66,7 +66,18 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"Remove", &CManager_Cars::Remove,
 		"RemoveAll", &CManager_Cars::RemoveAll,
 		"UpdateControl", &CManager_Cars::UpdateControl,
-		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep
+		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
+		"SoundSourceGetCallback", sol::property(
+			[](CManager_Cars& self) {
+				return self.m_soundSourceGetCbLua;
+			}, 
+			[](CManager_Cars& self, sol::function cb) {
+				self.m_soundSourceGetCbLua = cb;
+				self.m_soundSourceGetCb = [](const CManager_Cars* self, ECarSoundType type) {
+					ISoundSource* cbResult = self->m_soundSourceGetCbLua(type);
+					return cbResult;
+				};
+			})
 	);
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
@@ -817,6 +828,14 @@ void CManager_Cars::GlobalTimeStep()
 #endif
 		cp->CheckCarEffects();
 	}
+}
+
+ISoundSource* CManager_Cars::GetSoundSource(ECarSoundType type) const
+{
+	if (!m_soundSourceGetCb)
+		return nullptr;
+
+	return m_soundSourceGetCb(this, type);
 }
 
 void CManager_Cars::CheckScenaryCollisions(CCar* cp)

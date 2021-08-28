@@ -15,45 +15,67 @@ struct POSITION_INFO
 	int direction;
 };
 
+enum ECarSoundType
+{
+	HitCurb,
+	Hit_Car_1,
+	Hit_Car_2,
+	Hit_Car_3,
+	SkidLoop,
+	WetLoop,
+	GravelLoop,
+	AlleyLoop,
+};
+
+class ISoundSource;
+
 class CManager_Cars
 {
+	friend class CCar;
 public:
-	int				LoadModel(int modelNumber, CDriverLevelModels* levelModels = nullptr);
-	bool			LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel);
+	typedef ISoundSource*	(*SoundSourceGetCallback)(const CManager_Cars* self, ECarSoundType type);
 
-	CCar*			Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo);
+	int						LoadModel(int modelNumber, CDriverLevelModels* levelModels = nullptr);
+	bool					LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel);
 
-	void			RemoveAll();
-	void			Remove(CCar* car);
+	CCar*					Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo);
 
-	void			UpdateControl();
-	void			GlobalTimeStep();
+	void					RemoveAll();
+	void					Remove(CCar* car);
+
+	void					UpdateControl();
+	void					GlobalTimeStep();
 
 	//------------------------------------------------------
 
-	double			GetInterpTime() const;
+	double					GetInterpTime() const;
 
-	void			DrawAllCars();
+	void					DrawAllCars();
 
-	static void		Draw(const struct CameraViewParams& view);
-	static void		UpdateTime(int64 ticks);
+	static void				Draw(const struct CameraViewParams& view);
+	static void				UpdateTime(int64 ticks);
 
-	static void		Lua_Init(sol::state& lua);
+	static void				Lua_Init(sol::state& lua);
 protected:
 
-	void			StepCars();
+	void					StepCars();
 
-	void			DoScenaryCollisions();
-	void			CheckCarToCarCollisions();
+	void					DoScenaryCollisions();
+	void					CheckCarToCarCollisions();
 
-	void			CheckScenaryCollisions(CCar* cp);
+	void					CheckScenaryCollisions(CCar* cp);
 
-	Array<CCar*>		m_active_cars;		// [A] to be renamed as m_carList
-	int					m_carIdCnt{ 0 };
+	ISoundSource*			GetSoundSource(ECarSoundType type) const;
 
-	Array<ModelRef_t*>	m_carModels;	// TEMPORARY; Will use different container!
-	int64				m_lastUpdateTime{ 0 };
-	int64				m_curUpdateTime{ 0 };
+	Array<CCar*>			m_active_cars;		// [A] to be renamed as m_carList
+	int						m_carIdCnt{ 0 };
+
+	Array<ModelRef_t*>		m_carModels;	// TEMPORARY; Will use different container!
+	int64					m_lastUpdateTime{ 0 };
+	int64					m_curUpdateTime{ 0 };
+
+	SoundSourceGetCallback	m_soundSourceGetCb{ nullptr };
+	sol::function			m_soundSourceGetCbLua;
 };
 
 #endif // MANAGER_CARS_H
