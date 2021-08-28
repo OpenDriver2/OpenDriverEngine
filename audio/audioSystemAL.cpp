@@ -148,6 +148,7 @@ bool CAudioSystemAL::InitContext()
 		0
 	};
 
+
 	m_ctx = alcCreateContext(m_dev, al_context_params);
 	alErr = alcGetError(m_dev);
 
@@ -185,12 +186,16 @@ void CAudioSystemAL::Init()
 	if (!InitContext())
 		return;
 
+
 	InitEffects();
 
 	m_noSound = false;
 
 	// set other properties
 	alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+
+	alDopplerFactor(0.25f);
+
 }
 
 void CAudioSystemAL::InitEffects()

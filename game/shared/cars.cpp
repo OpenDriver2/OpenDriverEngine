@@ -350,6 +350,7 @@ void CCar::Lua_Init(sol::state& lua)
 		"i_cog_position", sol::property(&CCar::GetInterpolatedCogPosition),
 		"i_position", sol::property(&CCar::GetInterpolatedPosition),
 		"i_direction", sol::property(&CCar::GetInterpolatedDirection),
+		"linearVelocity", sol::property(&CCar::GetLinearVelocity),
 		"cosmetics", &CCar::m_cosmetics);
 }
 
@@ -1455,11 +1456,13 @@ int CCar::EngineSoundUpdateCb(void* obj, IAudioSource::Params& params)
 	params.volume = (10000 + thisCar->m_revsvol) / 10000.0f;
 	params.pitch = (pitch / ONE_F);
 	params.position = FromFixedVector(thisCar->GetPosition());
+	params.velocity = FromFixedVector(thisCar->GetLinearVelocity());
 
 	return 
 		IAudioSource::UPDATE_VOLUME |
 		IAudioSource::UPDATE_PITCH |
-		IAudioSource::UPDATE_POSITION;
+		IAudioSource::UPDATE_POSITION | 
+		IAudioSource::UPDATE_VELOCITY;
 }
 
 int CCar::IdleSoundUpdateCb(void* obj, IAudioSource::Params& params)
@@ -1476,11 +1479,13 @@ int CCar::IdleSoundUpdateCb(void* obj, IAudioSource::Params& params)
 	params.volume = (10000 + thisCar->m_idlevol) / 10000.0f;
 	params.pitch = (pitch / ONE_F);
 	params.position = FromFixedVector(thisCar->GetPosition());
+	params.velocity = FromFixedVector(thisCar->GetLinearVelocity());
 
 	return
 		IAudioSource::UPDATE_VOLUME |
 		IAudioSource::UPDATE_PITCH |
-		IAudioSource::UPDATE_POSITION;
+		IAudioSource::UPDATE_POSITION |
+		IAudioSource::UPDATE_VELOCITY;
 }
 
 int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
@@ -1549,7 +1554,8 @@ int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 
 	int updateFlags = IAudioSource::UPDATE_VOLUME |
 		IAudioSource::UPDATE_PITCH |
-		IAudioSource::UPDATE_POSITION;
+		IAudioSource::UPDATE_POSITION |
+		IAudioSource::UPDATE_VELOCITY;
 
 	if (params.state != IAudioSource::PLAYING)
 	{
@@ -1565,6 +1571,7 @@ int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 	params.volume = (10000 + volume) / 10000.0f;
 	params.pitch = (pitch / ONE_F);
 	params.position = FromFixedVector(thisCar->GetPosition());
+	params.velocity = FromFixedVector(thisCar->GetLinearVelocity());
 
 	return updateFlags;
 		
@@ -1875,6 +1882,11 @@ void CCar::SetDirection(const int& newDir)
 {
 	m_hd.direction = newDir;
 	TempBuildHandlingMatrix(0);
+}
+
+const VECTOR_NOPAD& CCar::GetLinearVelocity() const
+{
+	return *(VECTOR_NOPAD*)&m_st.n.linearVelocity;
 }
 
 bool CCar::get_changingGear() const

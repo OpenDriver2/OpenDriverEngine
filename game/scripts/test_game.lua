@@ -145,7 +145,9 @@ local function PlaceCameraFollowCar(dt)
 	
 	local cameraPos = fix.VECTOR(0,0,0)
 	
-	local maxCameraDist = carCos.colBox.vz * 2 + carCos.colBox.vy + 248
+	local addDist = math.max(248, carCos.colBox.vy * 3)
+	
+	local maxCameraDist = carCos.colBox.vz * 2 + carCos.colBox.vy + addDist
 	local carHeight = carCos.colBox.vy * -3 + 85
 	
 	local cameraDist = maxCameraDist
@@ -159,7 +161,7 @@ local function PlaceCameraFollowCar(dt)
 	end
 	
 	-- turn head
-	headAngle = headAngle + (headTarget - headAngle) * dt * 12
+	headAngle = headAngle + (headTarget - headAngle) * dt * 15
 	
 	-- smooth follow
 	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
@@ -199,7 +201,8 @@ local function PlaceCameraFollowCar(dt)
 	InitCamera({
 		position = fix.FromFixedVector(cameraPos),
 		angles = vec.vec3(camera_angle.x / fix.ONE * 360.0,camera_angle.y / fix.ONE * 360.0,0),
-		fov = 50
+		fov = 50,
+		velocity = fix.FromFixedVector(car.linearVelocity)
 	})
 end
 

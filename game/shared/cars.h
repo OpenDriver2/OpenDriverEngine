@@ -281,6 +281,8 @@ public:
 	int						GetDirection() const;
 	void					SetDirection(const int& newDir);
 
+	const VECTOR_NOPAD&		GetLinearVelocity() const;
+
 	//--------------
 	static void				Lua_Init(sol::state& lua);
 

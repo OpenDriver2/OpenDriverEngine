@@ -114,6 +114,16 @@ function InitCamera( params )
 	camera.MainView.position = params.position
 	camera.MainView.angles = params.angles
 	camera.MainView.fov = params.fov
+
+	if params.velocity ~= nil then
+		camera.MainViewVelocity.x = params.velocity.x
+		camera.MainViewVelocity.y = params.velocity.y
+		camera.MainViewVelocity.z = params.velocity.z
+	else
+		camera.MainViewVelocity.x = 0
+		camera.MainViewVelocity.y = 0
+		camera.MainViewVelocity.z = 0
+	end
 end
 
 --
