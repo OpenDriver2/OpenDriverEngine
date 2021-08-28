@@ -12,6 +12,7 @@ dofile "scripts/city.lua"
 dofile "scripts/updates.lua"
 dofile "scripts/free_camera.lua"
 dofile "scripts/test_game.lua"
+dofile "scripts/sound_bank.lua"
 
 -- "engine" namespace has everything dynamically updated
 -- "driver" & "driver2" namespace has every class to be used with "engine"
@@ -225,6 +226,9 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		end
 		
 		if world.LoadLevel(levPath) then
+		
+			LoadSoundbank("permanent", SBK_Permanent)
+		
 			InitEventModels()
 		
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
@@ -429,7 +433,9 @@ EngineHost = {
 	
 	MouseMove = function( x, y, xrel, yrel)
 		xpcall(function() 
-			FreeCamera.MouseMove(xrel, yrel)
+			if testGameCamera == false then
+				FreeCamera.MouseMove(xrel, yrel)
+			end
 		end, errorHandler)
 	end,
 	
@@ -444,7 +450,9 @@ EngineHost = {
 	
 	KeyPress = function( num, down )
 		xpcall(function() 
-			FreeCamera.KeyPress(num, down)
+			if testGameCamera == false then
+				FreeCamera.KeyPress(num, down)
+			end
 			
 			if num == SDL.Scancode.Escape and down then
 				forceShowUI = not forceShowUI

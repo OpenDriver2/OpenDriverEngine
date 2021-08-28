@@ -46,6 +46,13 @@ local PlayerStartInfo = {
 			playerCarId = 5,
 		}
 	},
+	["NewCastle"] = {
+		-- D1 default
+		{
+			startPos = POSITION_INFO {x = 19687, z = -15361, direction = 0},
+			playerCarId = 5,
+		}
+	},
 	["Miami"] = {
 		-- D1 default
 		{
@@ -115,12 +122,19 @@ local function FixCarCos(carCos)
 end
 
 -- TODO: move to Camera.lua
-local cameraAngle = 1024
+local cameraAngle = 0
+local headAngle = 0
 
 local function PlaceCameraFollowCar(dt)
 	if car == nil then
 		return
 	end
+	
+	local input = {
+		lookLeft = buttonState[SDL.Scancode.A],
+		lookRight = buttonState[SDL.Scancode.D],
+		lookBack = buttonState[SDL.Scancode.S],
+	}
 	
 	local carCos = car.cosmetics
 
@@ -135,12 +149,30 @@ local function PlaceCameraFollowCar(dt)
 	
 	local cameraDist = maxCameraDist
 	
+	local headTarget = 0
+	
+	if input.lookLeft then
+		headTarget = -1024
+	elseif input.lookRight then
+		headTarget = 1024
+	end
+	
+	-- turn head
+	headAngle = headAngle + (headTarget - headAngle) * dt * 12
+	
 	-- smooth follow
 	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
-	cameraAngle = math.floor(cameraAngle + (angleDelta / 8) * dt * 30)
+	cameraAngle = math.floor(cameraAngle + (angleDelta / 8) * dt * 25)
 	
-	local sn = math.sin(cameraAngle * fix.toRadian)
-	local cs = math.cos(cameraAngle * fix.toRadian)
+	local cameraAngleCurrent = cameraAngle + headAngle
+	
+	if input.lookBack then
+		cameraAngle = baseDir
+		cameraAngleCurrent = cameraAngle + 2048
+	end
+	
+	local sn = math.sin(cameraAngleCurrent * fix.toRadian)
+	local cs = math.cos(cameraAngleCurrent * fix.toRadian)
 	
 	cameraPos.vx = math.floor(basePos.vx - (cameraDist * sn))
 	cameraPos.vy = math.floor(basePos.vy)
@@ -150,7 +182,7 @@ local function PlaceCameraFollowCar(dt)
 	cameraPos.vy = carHeight - basePos.vy	
 	
 	local cammapht = (carHeight - camPosVy) - 100 -- + gCameraOffset.vy;
-	local camera_angle = vec.vec3(25, -cameraAngle, 0)
+	local camera_angle = vec.vec3(25, -cameraAngleCurrent, 0)
 
 	if cameraPos.vy > cammapht then
 		local height = world.MapHeight(basePos);

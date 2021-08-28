@@ -98,7 +98,7 @@ return {
 		}
 	},
 	["RioDeJaneiro"] = {
-		number 		= 2,		-- city index; For necessary hardcoded stuff
+		number 		= 3,		-- city index; For necessary hardcoded stuff
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
 		skyPath		= "DRIVER2/DATA/SKY3.RAW",

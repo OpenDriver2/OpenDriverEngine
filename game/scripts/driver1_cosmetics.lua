@@ -1,5 +1,13 @@
 local carsCommon = dofile("scripts/cars_common.lua")
 
+local bank_index = 0
+
+local bank = LoadSoundbank("CarBankD1_"..bank_index, {
+	revSample = "voices/Bank_"..bank_index.."/1.wav",
+	idleSample = "voices/Bank_"..bank_index.."/2.wav",
+	hornSample = "voices/Bank_"..bank_index.."/8.wav",
+})
+
 local playerCar0Cosmetics = {
 	gears = carsCommon.GearDesc[1],
 	handlingType = carsCommon.HandlingType[1],
@@ -42,12 +50,15 @@ local playerCar0Cosmetics = {
 		fix.SVECTOR(-126, 91, 371),
 		fix.SVECTOR(125, 91, 371),
 	},
-	colBox = fix.SVECTOR(120,76,395),
+	colBox = fix.SVECTOR(120,76,355),
 	cog = fix.SVECTOR(0,-120,-5),
 	twistRateX = 200,	-- not used
 	twistRateY = 110,
 	twistRateZ = 550,
 	mass = 4096,
+	revSample = bank.revSample,
+	idleSample = bank.idleSample,
+	hornSample = bank.hornSample
 }
 
 -- temporary

@@ -5,7 +5,7 @@
 
 return {
 	["Interview"] = {
-		number 		= 0,		-- city index; For necessary hardcoded stuff
+		number 		= 4,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
 		skyPath		= "DRIVER2/DATA/SKY2.RAW",
@@ -33,7 +33,7 @@ return {
 		}
 	},
 	["Training"] = {
-		number 		= 0,		-- city index; For necessary hardcoded stuff
+		number 		= 5,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
 		skyPath		= "DRIVER2/DATA/SKY2.RAW",
@@ -42,6 +42,33 @@ return {
 
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/TRAIN.LEV",
+		
+		events 		= {},
+		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		
+		-- this is still not decided
+		frontendPath = {},
+
+		-- map settings
+		overlayMap = {
+			x_offset = 197, y_offset = 318,
+			width = 384, height = 672,
+			
+			toptile = 252, dummyImage = 0x99,
+			
+			scale = 2145,	-- / 4096
+		}
+	},
+	["NewCastle"] = {
+		number 		= 5,		-- city index; For necessary hardcoded stuff
+		gameId 		= 1,		-- Game Index.
+
+		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		
+		brightnessScale = 0.8,
+
+		-- lev path for all city types
+		levPath		= "DRIVER/LEVELS/CREDITS.LEV",
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
