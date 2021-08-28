@@ -20,10 +20,10 @@
 
 #include "game/render/render_model.h"
 #include "manager_cars.h"
+#include "audio/source/snd_source.h"
+
 
 #include "core/cmdlib.h"
-
-
 #include <stdlib.h>
 
 #include "world.h"
@@ -237,6 +237,10 @@ void CCar::Lua_Init(sol::state& lua)
 				newCosmetics.twistRateZ = table["twistRateZ"];
 				newCosmetics.mass = table["mass"];
 
+				newCosmetics.revSample = table["revSample"];
+				newCosmetics.idleSample = table["idleSample"];
+				newCosmetics.hornSample = table["hornSample"];
+
 				return newCosmetics;
 			}),
 		"ToTable", [](CarCosmetics& self, sol::this_state s) {
@@ -281,6 +285,10 @@ void CCar::Lua_Init(sol::state& lua)
 			table["twistRateZ"] = self.twistRateZ;
 			table["mass"] = self.mass;
 
+			table["revSample"] = self.revSample;
+			table["idleSample"] = self.idleSample;
+			table["hornSample"] = self.hornSample;
+
 			return table;
 		},
 		"headLight", &CarCosmetics::headLight,
@@ -319,7 +327,11 @@ void CCar::Lua_Init(sol::state& lua)
 		"twistRateX", &CarCosmetics::twistRateX,
 		"twistRateY", &CarCosmetics::twistRateY,
 		"twistRateZ", &CarCosmetics::twistRateZ,
-		"mass", &CarCosmetics::mass);
+		"mass", &CarCosmetics::mass,
+		"revSample", &CarCosmetics::revSample,
+		"idleSample", &CarCosmetics::idleSample,
+		"hornSample", &CarCosmetics::hornSample
+		);
 
 	lua.new_usertype<CCar>(
 		"CCar",
@@ -358,7 +370,58 @@ void CCar::Destroy()
 {
 	// too simple
 	m_controlType = CONTROL_TYPE_NONE;
+
+	StopSounds();
 }
+
+void CCar::StartSounds()
+{
+	ISoundSource* skidSample = IAudioSystem::Instance->LoadSample("voices2/Bank_1/7.wav");
+
+	if (!m_engineSound)
+		m_engineSound = IAudioSystem::Instance->CreateSource();
+	m_engineSound->Setup(0, m_cosmetics.revSample, &EngineSoundUpdateCb, this);
+
+	if (!m_idleSound)
+		m_idleSound = IAudioSystem::Instance->CreateSource();
+	m_idleSound->Setup(0, m_cosmetics.idleSample, &IdleSoundUpdateCb, this);
+
+	if (!m_skidSound)
+		m_skidSound = IAudioSystem::Instance->CreateSource();
+	m_skidSound->Setup(0, /*m_owner->skidSample*/skidSample, &SkidSoundUpdateCb, this);
+
+	IAudioSource::Params params;
+	params.state = IAudioSource::PLAYING;
+	params.looping = true;
+	params.referenceDistance = 512 / ONE_F;
+	params.releaseOnStop = true;
+
+	int flags =
+		IAudioSource::UPDATE_STATE |
+		IAudioSource::UPDATE_LOOPING |
+		IAudioSource::UPDATE_REF_DIST |
+		IAudioSource::UPDATE_RELEASE_ON_STOP;
+
+	m_engineSound->UpdateParams(params, flags);
+	m_idleSound->UpdateParams(params, flags);
+	m_skidSound->UpdateParams(params, flags);
+}
+
+void CCar::StopSounds()
+{
+	if (m_engineSound)
+		m_engineSound->Release();
+
+	if (m_idleSound)
+		m_idleSound->Release();
+
+	if (m_skidSound)
+		m_skidSound->Release();
+
+	if (m_dirtSound)
+		m_dirtSound->Release();
+}
+
 
 void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 {
@@ -1424,6 +1487,11 @@ int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 		tracks_and_smoke = !(thisCar->m_hd.wheel[1].surface & 0x8) && !(thisCar->m_hd.wheel[3].surface & 0x8);
 	}
 
+	if (skidsound != 0 && !((thisCar->m_hd.wheel[1].surface & 0x80) == 0 || (thisCar->m_hd.wheel[3].surface & 0x80) == 0))
+	{
+		skidsound = 0;
+	}
+
 	if (skidsound == 0)
 	{
 		params.state = IAudioSource::PAUSED;
@@ -1456,43 +1524,6 @@ int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 void CCar::CheckCarEffects()
 {
 	// Dummy for now...
-	if (!m_engineSound)
-	{
-		ISoundSource* skidSample = IAudioSystem::Instance->LoadSample("voices2/Bank_1/7.wav");
-		ISoundSource* engineSample = IAudioSystem::Instance->LoadSample("voices2/Bank_10/0.wav");
-		ISoundSource* idleSample = IAudioSystem::Instance->LoadSample("voices2/Bank_10/1.wav");
-		
-		m_engineSound = IAudioSystem::Instance->CreateSource();
-		m_engineSound->Setup(0, engineSample, &EngineSoundUpdateCb, this);
-
-		m_idleSound = IAudioSystem::Instance->CreateSource();
-		m_idleSound->Setup(0, idleSample, &IdleSoundUpdateCb, this);
-
-		m_skidSound = IAudioSystem::Instance->CreateSource();
-		m_skidSound->Setup(0, skidSample, &SkidSoundUpdateCb, this);
-
-		IAudioSource::Params params;
-		params.state = IAudioSource::PLAYING;
-		params.looping = true;
-		params.pitch = 1.0f;
-		params.relative = false;
-		params.referenceDistance = 5.0f;
-		params.releaseOnStop = true;
-
-		int flags = 
-			IAudioSource::UPDATE_STATE | 
-			IAudioSource::UPDATE_LOOPING | 
-			IAudioSource::UPDATE_PITCH | 
-			IAudioSource::UPDATE_RELATIVE |
-			IAudioSource::UPDATE_REF_DIST |
-			IAudioSource::UPDATE_RELEASE_ON_STOP;
-
-		m_engineSound->UpdateParams(params, flags);
-		m_idleSound->UpdateParams(params, flags);
-		m_skidSound->UpdateParams(params, flags);
-	}
-
-
 	JumpDebris();
 
 	// update skidding sound
@@ -1617,6 +1648,9 @@ void CCar::InitCarPhysics(LONGVECTOR4* startpos, int direction)
 	m_thrust = 0;
 	m_wheel_angle = 0;
 	m_hd.wheel_speed = 0;
+
+	// TEMPORARY
+	StartSounds();
 }
 
 void CCar::TempBuildHandlingMatrix(int init)

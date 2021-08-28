@@ -50,6 +50,10 @@ struct CarCosmetics
 	short twistRateX, twistRateY, twistRateZ;
 	short mass;
 
+	ISoundSource* revSample{ nullptr };
+	ISoundSource* idleSample{ nullptr };
+	ISoundSource* hornSample{ nullptr };
+
 	SVECTOR& get_wheelDisp(int i)
 	{
 		return wheelDisp[i];
@@ -239,6 +243,10 @@ public:
 							~CCar();
 
 	void					Destroy();
+
+	// sounds
+	void					StartSounds();
+	void					StopSounds();
 
 	// handling
 	void					InitCarPhysics(LONGVECTOR4* startpos, int direction);
