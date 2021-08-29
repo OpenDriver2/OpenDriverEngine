@@ -263,93 +263,88 @@ void CPlayer::ProcessCarPad()
 
 	cp->m_thrust = 0;
 
-	//if (gTimeInWater != 0)
+	if (m_currentInputs.brake)
 	{
-		if (m_currentInputs.brake)
-		{
-			int rws;
+		int rws;
 
-			// brakes
-			rws = FIXEDH(cp->m_hd.wheel_speed * 1500 / 1024);
+		// brakes
+		rws = FIXEDH(cp->m_hd.wheel_speed * 1500 / 1024);
 
-			if (-rws < 23)
-				rws = -5000;
-			else
-				rws = ((rws + 278) * -4778) >> 8;
+		if (-rws < 23)
+			rws = -5000;
+		else
+			rws = ((rws + 278) * -4778) >> 8;
 
-			cp->m_thrust = FIXEDH(cp->m_cosmetics.powerRatio * rws);
-		}
-		else if (m_currentInputs.accel)
-		{
+		cp->m_thrust = FIXEDH(cp->m_cosmetics.powerRatio * rws);
+	}
+	else if (m_currentInputs.accel)
+	{
 #if 0 // TODO: player handler for rubberbanding
-			if (cp->m_hndType == 5)
-			{
-				// rubber band freeroamer.
-				// accelerate faster if closer to player
-				int dx, dz, dist;
+		if (cp->m_hndType == 5)
+		{
+			// rubber band freeroamer.
+			// accelerate faster if closer to player
+			int dx, dz, dist;
 
-				dx = car_data[player[0].playerCarId].hd.where.t[0] - cp->hd.where.t[0] >> 10;
-				dz = car_data[player[0].playerCarId].hd.where.t[2] - cp->hd.where.t[2] >> 10;
+			dx = car_data[player[0].playerCarId].hd.where.t[0] - cp->hd.where.t[0] >> 10;
+			dz = car_data[player[0].playerCarId].hd.where.t[2] - cp->hd.where.t[2] >> 10;
 
-				dist = dx * dx + dz * dz;
+			dist = dx * dx + dz * dz;
 
-				if (dist > 40)
-					cp->thrust = 3000;
-				else if (dist > 20)
-					cp->thrust = 4000;
-				else if (dist > 9)
-					cp->thrust = 4900;
-				else
-					cp->thrust = 6000;
-			}
+			if (dist > 40)
+				cp->thrust = 3000;
+			else if (dist > 20)
+				cp->thrust = 4000;
+			else if (dist > 9)
+				cp->thrust = 4900;
 			else
+				cp->thrust = 6000;
+		}
+		else
 #endif
-			{
-				cp->m_thrust = FIXEDH(cp->m_cosmetics.powerRatio * 4915);
-			}
+		{
+			cp->m_thrust = FIXEDH(cp->m_cosmetics.powerRatio * 4915);
+		}
 
 #if 0
-			if (cp->m_controlType == CONTROL_TYPE_PLAYER)
+		if (cp->m_controlType == CONTROL_TYPE_PLAYER)
+		{
+			CAR_DATA* tp;
+			int targetCarId, cx, cz, chase_square_dist;
+
+			if (player[0].playerCarId == cp->id)
+				targetCarId = player[0].targetCarId;
+			else if (player[1].playerCarId == cp->id)
+				targetCarId = player[1].targetCarId;
+			else
+				targetCarId = -1;
+
+			// apply rubber banding to player car depending on distance from target car
+			if (targetCarId != -1)
 			{
-				CAR_DATA* tp;
-				int targetCarId, cx, cz, chase_square_dist;
+				tp = &car_data[targetCarId];
 
-				if (player[0].playerCarId == cp->id)
-					targetCarId = player[0].targetCarId;
-				else if (player[1].playerCarId == cp->id)
-					targetCarId = player[1].targetCarId;
+				if (3050 < cp->ap.carCos->powerRatio)
+					cp->thrust = FIXEDH(tp->ap.carCos->powerRatio * 4915);
+
+				cx = cp->hd.where.t[0] - tp->hd.where.t[0] >> 10;
+				cz = cp->hd.where.t[2] - tp->hd.where.t[2] >> 10;
+
+				chase_square_dist = cx * cx + cz * cz;
+
+				if (chase_square_dist > 20)
+					cp->thrust = (cp->thrust * 8000) / 7000;
+				else if (chase_square_dist > 6)
+					cp->thrust = (cp->thrust * 7400) / 7000;
 				else
-					targetCarId = -1;
-
-				// apply rubber banding to player car depending on distance from target car
-				if (targetCarId != -1)
-				{
-					tp = &car_data[targetCarId];
-
-					if (3050 < cp->ap.carCos->powerRatio)
-						cp->thrust = FIXEDH(tp->ap.carCos->powerRatio * 4915);
-
-					cx = cp->hd.where.t[0] - tp->hd.where.t[0] >> 10;
-					cz = cp->hd.where.t[2] - tp->hd.where.t[2] >> 10;
-
-					chase_square_dist = cx * cx + cz * cz;
-
-					if (chase_square_dist > 20)
-						cp->thrust = (cp->thrust * 8000) / 7000;
-					else if (chase_square_dist > 6)
-						cp->thrust = (cp->thrust * 7400) / 7000;
-					else
-						cp->thrust = (cp->thrust * 6700) / 7000;
-				}
+					cp->thrust = (cp->thrust * 6700) / 7000;
 			}
+		}
 #endif
 
-			if (cp->m_hndType == 0 && cp->m_hd.changingGear != 0)
-				cp->m_thrust = 1;
-		}
+		if (/*cp->m_hndType == 0 && */cp->m_hd.changingGear != 0)
+			cp->m_thrust = 1;
 	}
-
-	//cp->m_lastPad = pad;
 }
 
 //-------------------------------------------------------------

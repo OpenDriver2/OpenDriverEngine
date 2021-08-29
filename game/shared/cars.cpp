@@ -1359,10 +1359,10 @@ void CCar::InitOrientedBox()
 	VECTOR_NOPAD svy = { 0, m_cosmetics.colBox.vy ,0 };
 	VECTOR_NOPAD svz = { 0, 0, m_cosmetics.colBox.vz };
 
-	gte_ldlvl(&svx);
 	VECTOR_NOPAD _zero{ 0 };
 	gte_SetTransVector(&_zero);
 
+	gte_ldlvl(&svx);
 	gte_rtir();
 	gte_stsv(&m_hd.oBox.radii[0]);
 
@@ -1660,6 +1660,8 @@ void CCar::DamageCar(CDATA2D* cd, CRET2D* collisionResult, int strikeVel)
 
 bool CCar::DamageCar3D(LONGVECTOR4* delta, int strikeVel, CCar* pOtherCar)
 {
+	// UNIMPLEMENTED
+
 	strikeVel = strikeVel * 375 >> 8;
 
 	if (strikeVel < 40960)

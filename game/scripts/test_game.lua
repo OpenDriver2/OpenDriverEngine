@@ -232,7 +232,7 @@ end
 TestGame.Init = function(residentModel)
 
 	-- terminate old game
-	TestGame.Terminate()
+	--TestGame.Terminate()
 
 	-- add test car
 	-- create car cosmetics from table
@@ -266,6 +266,8 @@ TestGame.UpdateCarPads = function()
 		wheelspin = buttonState[SDL.Scancode.LeftShift],
 		handbrake = buttonState[SDL.Scancode.Space],
 		steering = 0,
+		fastSteer = false,
+		horn = 0
 	}
 	
 	if buttonState[SDL.Scancode.Left] then

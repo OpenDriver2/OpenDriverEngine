@@ -387,7 +387,7 @@ function RenderUI()
 			ImGui.EndMenu();
 		end
 		
-		if ImGui.BeginMenu("Test") then
+		if world.IsLevelLoaded() and ImGui.BeginMenu("Game") then
 			local selected,activated;
 			if ImGui.MenuItem("Begin game") then
 				TestGame.Init()
