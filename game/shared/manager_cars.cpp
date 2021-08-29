@@ -64,11 +64,12 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 				return sol::make_object(lua, cosmetic);
 			return sol::make_object(lua, sol::nil);
 		},
-		"Create", &CManager_Cars::Create,
-		"Remove", &CManager_Cars::Remove,
-		"RemoveAll", &CManager_Cars::RemoveAll,
-		"UpdateControl", &CManager_Cars::UpdateControl,
-		"GlobalTimeStep", &CManager_Cars::GlobalTimeStep,
+		"UnloadAllModels", &UnloadAllModels,
+		"Create", &Create,
+		"Remove", &Remove,
+		"RemoveAll", &RemoveAll,
+		"UpdateControl", &UpdateControl,
+		"GlobalTimeStep", &GlobalTimeStep,
 		"SoundSourceGetCallback", sol::property(
 			[](CManager_Cars& self) {
 				return self.m_soundSourceGetCbLua;
@@ -94,6 +95,13 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	// game can load specific car models from other cities
 	if (!levelModels)
 		levelModels = &g_levModels;
+
+	for (usize i = 0; i < m_carModels.size(); i++)
+	{
+		// TODO: levelModels check
+		if (m_carModels[i]->index == modelNumber)
+			return i;
+	}
 
 	CarModelData_t* carModel = levelModels->GetCarModel(modelNumber);
 
@@ -151,6 +159,21 @@ bool CManager_Cars::LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const c
 	fclose(fp);
 
 	return true;
+}
+
+void CManager_Cars::UnloadAllModels()
+{
+	RemoveAll();
+
+	for (usize i = 0; i < m_carModels.size(); i++)
+	{
+		ModelRef_t* ref = m_carModels[i];
+
+		CRenderModel* renderModel = (CRenderModel*)ref->userData;
+
+		delete renderModel;
+		delete ref;
+	}
 }
 
 CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
@@ -239,6 +262,8 @@ CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int model
 
 void CManager_Cars::RemoveAll()
 {
+	CManager_Players::GetLocalPlayer()->SetCurrentCar(nullptr);
+
 	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
 		CCar* cp = m_active_cars[i];
@@ -535,7 +560,7 @@ void CManager_Cars::GlobalTimeStep()
 
 						// [A] optimized run to not use the box checking
 						// as it has already composed bitfield / pairs
-						if ((mayBeCollidingBits & (1 << c1->m_id)) != 0 && (c1->m_hd.speed != 0 || cp->m_hd.speed != 0))
+						if ((mayBeCollidingBits & (1 << j)) != 0 && (c1->m_hd.speed != 0 || cp->m_hd.speed != 0))
 						{
 							if (CarCarCollision3(cp, c1, depth, (VECTOR_NOPAD&)collisionpoint, (VECTOR_NOPAD&)normal))
 							{

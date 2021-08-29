@@ -38,6 +38,8 @@ public:
 	int						LoadModel(int modelNumber, CDriverLevelModels* levelModels = nullptr);
 	bool					LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel);
 
+	void					UnloadAllModels();
+
 	CCar*					Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo);
 
 	void					RemoveAll();
