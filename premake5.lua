@@ -7,56 +7,64 @@ SDL2_DIR = os.getenv("SDL2_DIR") or "dependencies/SDL2"
 
 workspace "OpenDriverEngine"
 	location "project_%{_ACTION}_%{os.target()}"
-    language "C++"
-    configurations { "Debug", "Release" }
+	targetdir "bin/%{cfg.buildcfg}"
+	
+	language "C++"
+	cppdialect "C++17"	-- required for sol2
+	
+	configurations { "Debug", "Release" }
 	linkgroups 'On'
 	characterset "ASCII"
 	
-	includedirs {
-		"./"
-	}
-	
 	startproject "OpenDriverGame"
 	
-    filter "system:linux"
-        buildoptions {
-            "-Wno-narrowing",
-            "-fpermissive",
-        }
+	includedirs {
+		"./"
+	}	
+	
+	filter "system:linux"
+		buildoptions {
+			"-Wno-narrowing",
+			"-fpermissive",
+		}
+		links "dl"
 
 	filter "system:Windows"
 		disablewarnings { "4996", "4554", "4244", "4101", "4838", "4309" }
+		linkoptions {
+			"/SAFESEH:NO", -- Image Has Safe Exception Handers: No. Because of openal-soft
+		}
 
-    filter "configurations:Debug"
-        defines { 
-            "DEBUG", 
-        }
-        symbols "On"
+	filter "configurations:Debug"
+		defines { 
+			"DEBUG", 
+		}
+		targetsuffix "_dbg"
+		symbols "On"
 
-    filter "configurations:Release"
-        defines {
-            "NDEBUG",
-        }
-		characterset "ASCII"
+	filter "configurations:Release"
+		defines {
+			"NDEBUG",
+		}
+		optimize "Full"
 
 group "Dependencies"
 
 -- NoSTD
 project "libnstd"
-    kind "StaticLib"
-	targetdir "bin/%{cfg.buildcfg}"
+	kind "StaticLib"
 	
 	filter "system:Windows"
 		defines { "_CRT_SECURE_NO_WARNINGS", "__PLACEMENT_NEW_INLINE" }
-    
+	
 	includedirs {
 		"dependencies/libnstd/include"
 	}
 	
-    files {
-        "dependencies/libnstd/src/**.cpp",
-        "dependencies/libnstd/src/**.h",
-    }
+	files {
+		"dependencies/libnstd/src/**.cpp",
+		"dependencies/libnstd/src/**.h",
+	}
 	
 usage "libnstd"
 	includedirs {
@@ -66,21 +74,21 @@ usage "libnstd"
 	
 -- GLAD
 project "glad"
-    kind "StaticLib"
+	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
 	
 	filter "system:Windows"
 		defines { "_CRT_SECURE_NO_WARNINGS" }
 	
-    files {
-        "dependencies/glad/*.c",
-        "dependencies/glad/*.h",
-    }
+	files {
+		"dependencies/glad/*.c",
+		"dependencies/glad/*.h",
+	}
 	
 usage "glad"
 	includedirs {
-        "dependencies",
-    }
+		"dependencies",
+	}
 
 	filter "system:linux"
 		links {
@@ -89,26 +97,26 @@ usage "glad"
 	
 -- ImGui
 project "ImGui"
-    kind "StaticLib"
+	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
 
 	uses {"SDL2", "glad"}
 	
 	filter "system:Windows"
 		defines { "_CRT_SECURE_NO_WARNINGS", "IMGUI_IMPL_OPENGL_LOADER_GLAD" }
-    
+	
 	includedirs {
 		"dependencies/imgui",
 	}
 	
-    files {
-        "dependencies/imgui/*.cpp",
-        "dependencies/imgui/*.h",
+	files {
+		"dependencies/imgui/*.cpp",
+		"dependencies/imgui/*.h",
 		"dependencies/imgui/backends/imgui_impl_opengl3.cpp",
 		"dependencies/imgui/backends/imgui_impl_opengl3.h",
 		"dependencies/imgui/backends/imgui_impl_sdl.cpp",
-        "dependencies/imgui/backends/imgui_impl_sdl.h",
-    }
+		"dependencies/imgui/backends/imgui_impl_sdl.h",
+	}
 	
 usage "ImGui"
 	includedirs {
@@ -124,8 +132,8 @@ usage "SDL2"
 	
 	filter "system:linux"
 		includedirs {
-            "/usr/include/SDL2"
-        }
+			"/usr/include/SDL2"
+		}
 
 	filter "system:windows"
 		includedirs {
@@ -146,7 +154,7 @@ group "Game"
 
 -- little framework
 project "frameworkLib"
-    kind "StaticLib"
+	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
 	
 	uses "libnstd"
@@ -161,14 +169,10 @@ project "frameworkLib"
 		"core/**.h",
 		"util/**.cpp",
 		"util/**.h",
-    }
+	}
 
 project "OpenDriverGame"
-    kind "ConsoleApp"
-    language "C++"
-    targetdir "bin/%{cfg.buildcfg}"
-	
-	cppdialect "C++17"	-- required for sol2
+	kind "ConsoleApp"
 
 	uses { 
 		"ImGui", 
@@ -182,7 +186,7 @@ project "OpenDriverGame"
 		"./",
 	}
 
-    files {
+	files {
 		"audio/**.cpp",
 		"audio/**.h",
 		"renderer/**.cpp",
@@ -191,28 +195,5 @@ project "OpenDriverGame"
 		"game/**.h",
 		"routines/**.cpp",
 		"routines/**.h",
-    }
-        
-    filter "system:linux"
-        buildoptions {
-            "-Wno-narrowing",
-            "-fpermissive",
-        }
-		links {
-			"dl"
-        }
-        
-        cppdialect "C++11"
-		
-	filter "system:windows"
-	    linkoptions {
-			"/SAFESEH:NO", -- Image Has Safe Exception Handers: No. Because of openal-soft
-        }
-
-    filter "configurations:Debug"
-		targetsuffix "_dbg"
-		 symbols "On"
-
-    filter "configurations:Release"
-        optimize "Full"
+	}
 	
