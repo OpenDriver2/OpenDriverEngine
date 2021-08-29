@@ -239,6 +239,13 @@ void gte_SetTransMatrix(const MATRIX* m)
 	_globmat.t[2] = m->t[2];
 }
 
+void gte_SetTransVector(const VECTOR_NOPAD* v)
+{
+	_globmat.t[0] = v->vx;
+	_globmat.t[1] = v->vy;
+	_globmat.t[2] = v->vz;
+}
+
 // rotate vector by matrix
 void GTE_RTV()
 {

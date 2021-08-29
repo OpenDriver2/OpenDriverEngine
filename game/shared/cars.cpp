@@ -1360,6 +1360,8 @@ void CCar::InitOrientedBox()
 	VECTOR_NOPAD svz = { 0, 0, m_cosmetics.colBox.vz };
 
 	gte_ldlvl(&svx);
+	VECTOR_NOPAD _zero{ 0 };
+	gte_SetTransVector(&_zero);
 
 	gte_rtir();
 	gte_stsv(&m_hd.oBox.radii[0]);
@@ -1656,6 +1658,24 @@ void CCar::DamageCar(CDATA2D* cd, CRET2D* collisionResult, int strikeVel)
 	}
 }
 
+bool CCar::DamageCar3D(LONGVECTOR4* delta, int strikeVel, CCar* pOtherCar)
+{
+	strikeVel = strikeVel * 375 >> 8;
+
+	if (strikeVel < 40960)
+	{
+		if (m_totalDamage == 0)
+			m_totalDamage = 1;
+
+		return false;
+	}
+
+	if(m_id >= pOtherCar->m_id)
+		CollisionSound(strikeVel / 128, true);
+
+	return true;
+}
+
 void CCar::InitCarPhysics(LONGVECTOR4* startpos, int direction)
 {
 	int ty;
@@ -1887,6 +1907,16 @@ void CCar::SetDirection(const int& newDir)
 const VECTOR_NOPAD& CCar::GetLinearVelocity() const
 {
 	return *(VECTOR_NOPAD*)&m_st.n.linearVelocity;
+}
+
+const MATRIX& CCar::GetMatrix() const
+{
+	return m_hd.where;
+}
+
+const OrientedBox& CCar::GetOrientedBox() const
+{
+	return m_hd.oBox;
 }
 
 bool CCar::get_changingGear() const

@@ -56,6 +56,7 @@ extern SVECTOR_NOPAD _ir;
 
 void gte_SetRotMatrix(const MATRIX* m);
 void gte_SetTransMatrix(const MATRIX* m);
+void gte_SetTransVector(const VECTOR_NOPAD* v);
 void GTE_RTV();
 
 // load short vector

@@ -20,6 +20,7 @@
 #include "manager_cars.h"
 #include "cars.h"
 #include "players.h"
+#include "bcoll3d.h"
 
 // TODO: move it
 int	CameraCnt = 0;
@@ -527,16 +528,16 @@ void CManager_Cars::GlobalTimeStep()
 					thisDelta[i].n.angularVelocity[0] = 0;
 					thisDelta[i].n.angularVelocity[1] = 0;
 					thisDelta[i].n.angularVelocity[2] = 0;
-#if 0 // car vs car collisions - disabled for now
-					for (j = 0; j < i; j++)
+
+					for (int j = 0; j < i; j++)
 					{
 						c1 = m_active_cars[j];
 
 						// [A] optimized run to not use the box checking
 						// as it has already composed bitfield / pairs
-						if ((mayBeCollidingBits & (1 << CAR_INDEX(c1))) != 0 && (c1->m_hd.speed != 0 || cp->m_hd.speed != 0))
+						if ((mayBeCollidingBits & (1 << c1->m_id)) != 0 && (c1->m_hd.speed != 0 || cp->m_hd.speed != 0))
 						{
-							if (CarCarCollision3(cp, c1, &depth, (VECTOR*)collisionpoint, (VECTOR*)normal))
+							if (CarCarCollision3(cp, c1, depth, (VECTOR_NOPAD&)collisionpoint, (VECTOR_NOPAD&)normal))
 							{
 								if (RKstep > 0)
 									thisState_j = &_tp[j];
@@ -578,10 +579,10 @@ void CManager_Cars::GlobalTimeStep()
 
 								if (howHard > 0 && RKstep > -1)
 								{
-									if (DamageCar3D(c1, &lever1, howHard >> 1, cp))
+									if (c1->DamageCar3D(&lever1, howHard >> 1, cp))
 										c1->m_ap.needsDenting = 1;
 
-									if (DamageCar3D(cp, &lever0, howHard >> 1, c1))
+									if (cp->DamageCar3D(&lever0, howHard >> 1, c1))
 										cp->m_ap.needsDenting = 1;
 
 									if (howHard > 0x32000)
@@ -593,6 +594,7 @@ void CManager_Cars::GlobalTimeStep()
 											c1->m_ai.c.carMustDie = 1;
 									}
 
+#if 0
 									// wake up cops if they've ben touched
 									// [A] check player felony.
 									// If player touch them without felony player will be charged with felony (hit cop car)
@@ -610,6 +612,7 @@ void CManager_Cars::GlobalTimeStep()
 											cp->m_ai.p.justPinged = 0;
 										}
 									}
+#endif
 
 #if 0
 									if (howHard > 0x1b00)
@@ -653,7 +656,7 @@ void CManager_Cars::GlobalTimeStep()
 									strikeVel = 0x69000;
 
 								m1 = cp->m_cosmetics.mass;
-								m2 = c1->m_ap.carCos->mass;
+								m2 = c1->m_cosmetics.mass;
 
 								if (m2 < m1)
 								{
@@ -678,12 +681,13 @@ void CManager_Cars::GlobalTimeStep()
 								if (!c1InfiniteMass)
 								{
 									int twistY, strength1;
-
+#if 0
 									if (cp->m_controlType == CONTROL_TYPE_PURSUER_AI && c1->m_controlType != CONTROL_TYPE_LEAD_AI && c1->m_hndType != 0)
 										strength1 = (strikeVel * (7 - gCopDifficultyLevel)) / 8;
 									else if (cp->m_controlType == CONTROL_TYPE_LEAD_AI && c1->m_hndType != 0)
 										strength1 = (strikeVel * 5) / 8;
 									else
+#endif
 										strength1 = strikeVel;
 
 									strength1 = FIXEDH(strength1) * do1 >> 3;
@@ -718,11 +722,13 @@ void CManager_Cars::GlobalTimeStep()
 								{
 									int twistY, strength2;
 
+#if 0
 									if (cp->m_controlType == CONTROL_TYPE_PURSUER_AI && c1->m_controlType != CONTROL_TYPE_LEAD_AI && c1->m_hndType != 0)
 										strength2 = (strikeVel * (7 - gCopDifficultyLevel)) / 8;
 									else if (c1->m_controlType == CONTROL_TYPE_LEAD_AI && cp->m_hndType != 0)
 										strength2 = (strikeVel * 5) / 8;
 									else
+#endif
 										strength2 = strikeVel;
 
 									strength2 = FIXEDH(strength2) * do2 >> 3;
@@ -752,6 +758,7 @@ void CManager_Cars::GlobalTimeStep()
 									thisDelta[j].n.angularVelocity[2] += torque[2];
 								}
 
+#if 0
 								if (cp->m_id == player[0].playerCarId || c1->m_id == player[0].playerCarId)
 									RegisterChaseHit(cp->m_id, c1->m_id);
 
@@ -760,11 +767,12 @@ void CManager_Cars::GlobalTimeStep()
 
 								if (c1->m_id == player[0].playerCarId)
 									CarHitByPlayer(cp, howHard);
+#endif
 							}
 						} // maybe colliding
 					} // j loop
 
-#endif
+
 				}
 			}
 
@@ -857,11 +865,77 @@ void CManager_Cars::CheckScenaryCollisions(CCar* cp)
 
 void CManager_Cars::CheckCarToCarCollisions()
 {
-	// UNIMPLEMENTED!!!
+	// recalculate bounding boxes
 	for (usize i = 0; i < m_active_cars.size(); i++)
 	{
 		CCar* cp = m_active_cars[i];
-		cp->m_hd.mayBeColliding = 0x80000000;
+		BOUND_BOX& bb = cp->m_bbox;
+
+		if (cp->m_controlType == CONTROL_TYPE_NONE 
+			/*|| cp->m_controlType == CONTROL_TYPE_PLAYER && playerghost && !playerhitcopsanyway*/) // [A] required as game crashing
+		{
+			bb.y1 = INT_MAX;
+			continue;
+		}
+
+		const SVECTOR& colBox = cp->m_cosmetics.colBox;
+
+		int hbod = colBox.vy;
+		int lbod = colBox.vz * 9;
+		int wbod = colBox.vx * 9;
+
+		int sx = cp->m_hd.where.m[0][0] * wbod / 8;
+		int sz = cp->m_hd.where.m[0][2] * lbod / 8;
+
+		int fx = cp->m_hd.where.m[2][0] * wbod / 8;
+		int fz = cp->m_hd.where.m[2][2] * lbod / 8;
+
+		int xx = FIXEDH(abs(sz) + abs(sx)) + hbod;
+		int zz = FIXEDH(abs(fz) + abs(fx)) + hbod;
+
+		bb.x0 = (cp->m_hd.where.t[0] - xx) / 16;
+		bb.z0 = (cp->m_hd.where.t[2] - zz) / 16;
+		bb.x1 = (cp->m_hd.where.t[0] + xx) / 16;
+		bb.z1 = (cp->m_hd.where.t[2] + zz) / 16;
+
+		if (cp->m_st.n.linearVelocity[0] < 0)
+			bb.x0 = (cp->m_hd.where.t[0] - xx) / 16 + FIXEDH(cp->m_st.n.linearVelocity[0]) / 8;
+		else
+			bb.x1 = (cp->m_hd.where.t[0] + xx) / 16 + FIXEDH(cp->m_st.n.linearVelocity[0]) / 8;
+
+		if (cp->m_st.n.linearVelocity[2] < 0)
+			bb.z0 = bb.z0 + (FIXEDH(cp->m_st.n.linearVelocity[2]) / 8);
+		else
+			bb.z1 = bb.z1 + (FIXEDH(cp->m_st.n.linearVelocity[2]) / 8);
+
+		// [A] 2400 for box size - bye bye collision check performance under bridges
+		bb.y0 = (cp->m_hd.where.t[1] - colBox.vy * 2) / 16;
+		bb.y1 = (cp->m_hd.where.t[1] + colBox.vy * 4) / 16;
+
+		// make player handled cars always processed with precision
+		if (cp->m_hndType == 0)
+		{
+			cp->m_hd.mayBeColliding = (1 << 31);
+		}
+	}
+
+	// check boxes intersection with each other
+	for (usize i = 0; i < m_active_cars.size(); i++)
+	{
+		BOUND_BOX& bb1 = m_active_cars[i]->m_bbox;
+
+		for (usize j = i+1; j < m_active_cars.size(); j++)
+		{
+			BOUND_BOX& bb2 = m_active_cars[j]->m_bbox;
+
+			if (bb1.y1 != INT_MAX && bb2.y1 != INT_MAX &&
+				bb2.x0 < bb1.x1 && bb2.z0 < bb1.z1 && bb1.x0 < bb2.x1 &&
+				bb1.z0 < bb2.z1 && bb2.y0 < bb1.y1 && bb1.y0 < bb2.y1)
+			{
+				m_active_cars[i]->m_hd.mayBeColliding |= (1 << j);
+				m_active_cars[j]->m_hd.mayBeColliding |= (1 << i);
+			}
+		}
 	}
 }
 

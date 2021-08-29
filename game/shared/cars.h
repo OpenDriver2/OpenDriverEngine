@@ -8,6 +8,14 @@ typedef int		LONGVECTOR3[3];
 typedef int		LONGVECTOR4[4];
 typedef int		LONGQUATERNION[4];
 
+struct ModelRef_t;
+
+struct BOUND_BOX
+{
+	int x0, y0, z0;
+	int x1, y1, z1;
+};
+
 struct GEAR_DESC
 {
 	int lowidl_ws, low_ws, hi_ws;
@@ -24,7 +32,7 @@ struct HANDLING_TYPE
 struct CarCosmetics
 {
 	CarCosmetics();
-	void InitFrom(const CAR_COSMETICS_D2& srcCos);
+	void InitFrom(const struct CAR_COSMETICS_D2& srcCos);
 
 	HANDLING_TYPE handlingType;
 	Array<GEAR_DESC> gears;
@@ -266,7 +274,7 @@ public:
 	void					StepOneCar();
 
 	// collision
-	int						CarBuildingCollision(struct BUILDING_BOX& building, CELL_OBJECT* cop, int flags);
+	int						CarBuildingCollision(struct BUILDING_BOX& building, struct CELL_OBJECT* cop, int flags);
 
 	// utility functions (mostly for Lua)
 	VECTOR_NOPAD			GetInterpolatedCogPosition() const;
@@ -282,6 +290,9 @@ public:
 	void					SetDirection(const int& newDir);
 
 	const VECTOR_NOPAD&		GetLinearVelocity() const;
+
+	const MATRIX&			GetMatrix() const;
+	const OrientedBox&		GetOrientedBox() const;
 
 	//--------------
 	static void				Lua_Init(sol::state& lua);
@@ -308,6 +319,7 @@ protected:
 
 	// collision
 	void				DamageCar(struct CDATA2D* cd, struct CRET2D* collisionResult, int strikeVel);
+	bool				DamageCar3D(LONGVECTOR4* delta, int strikeVel, CCar* pOtherCar);
 
 	// game sound
 	uint16				GetEngineRevs();
@@ -326,7 +338,7 @@ protected:
 	int8				get_autobrake() const;
 	void				set_autobrake(const int8& value);
 
-	void				StartStaticSound(ECarSoundType type, float refDist, float volume, float pitch);
+	void				StartStaticSound(enum ECarSoundType type, float refDist, float volume, float pitch);
 
 	void				CollisionSound(int impact, bool car_vs_car);
 
@@ -339,6 +351,7 @@ protected:
 	RigidBodyState		m_st;
 	APPEARANCE_DATA		m_ap;
 	CarCosmetics		m_cosmetics;
+	BOUND_BOX			m_bbox;
 
 	Matrix4x4			m_prevDrawCarMatrix{ identity4() };
 	Matrix4x4			m_drawCarMatrix{ identity4() };
