@@ -7,6 +7,7 @@
 #include "players.h"
 #include "manager_cars.h"
 #include "cars.h"
+#include "core/cmdlib.h"
 
 void CPlayer::Lua_Init(sol::state& lua)
 {
@@ -42,6 +43,37 @@ void CPlayer::Lua_Init(sol::state& lua)
 		"controlType", &CPlayer::m_controlType,
 		"input", sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls)
 	);
+}
+
+void CPlayer::Net_Init()
+{
+	const int MAX_PORT_USAGE = 32;
+	ENetAddress address;
+
+	for (int i = 0; i < MAX_PORT_USAGE; i++)
+	{
+		address.host = ENET_HOST_ANY;
+		address.port = 3401 + i;
+
+		m_netHost = enet_host_create(&address, 32, 2, 0, 0);
+
+		if (m_netHost != nullptr)
+			break;
+	}
+
+	if (m_netHost)
+	{
+		MsgInfo("Host created - port %d\n", address.port);
+		m_stationAddresses.append(address);
+	}
+	else
+		MsgError("An error occurred while trying to create an ENet client host.\n");
+}
+
+void CPlayer::Net_Finalize()
+{
+	enet_host_destroy(m_netHost);
+	m_netHost = nullptr;
 }
 
 EPlayerControlType CPlayer::GetControlType() const
@@ -322,7 +354,7 @@ void CPlayer::ProcessCarPad()
 
 //-------------------------------------------------------------
 
-CPlayer	CManager_Players::m_localPlayer;
+CPlayer	CManager_Players::LocalPlayer;
 
 void CManager_Players::Lua_Init(sol::state& lua)
 {
@@ -332,7 +364,7 @@ void CManager_Players::Lua_Init(sol::state& lua)
 
 	auto world = engine["Players"].get_or_create<sol::table>();
 
-	world["localPlayer"] = &CManager_Players::m_localPlayer;
+	world["localPlayer"] = &LocalPlayer;
 }
 
 void CManager_Players::Update()
@@ -342,13 +374,56 @@ void CManager_Players::Update()
 
 CPlayer* CManager_Players::GetLocalPlayer()
 {
-	return &CManager_Players::m_localPlayer;
+	return &LocalPlayer;
 }
 
 CPlayer* CManager_Players::GetPlayerByCar(CCar* car)
 {
-	if (CManager_Players::m_localPlayer.GetCurrentCar() == car)
+	if (LocalPlayer.GetCurrentCar() == car)
 		return GetLocalPlayer();
 
 	return nullptr;
+}
+
+void CManager_Players::Net_Init()
+{
+	LocalPlayer.Net_Init();
+}
+
+void CManager_Players::Net_Finalize()
+{
+	LocalPlayer.Net_Finalize();
+
+	// TODO: disconnect all other peers
+}
+
+void CManager_Players::Net_Update()
+{
+	ENetEvent event;
+	int rv = 0;
+	while (enet_host_service(LocalPlayer.m_netHost, &event, 0) > 0)
+	{
+		switch (event.type) 
+		{
+			case ENET_EVENT_TYPE_CONNECT:
+				//rv = on_peer_connect(n, &event);
+				break;
+
+			case ENET_EVENT_TYPE_RECEIVE:
+				//rv = on_peer_receive(n, &event);
+				enet_packet_destroy(event.packet);
+				break;
+
+			case ENET_EVENT_TYPE_DISCONNECT:
+				//rv = on_peer_disconnect(n, &event);
+				break;
+
+			default:
+				break;
+		}
+
+		if (rv < 0) {
+			break;
+		}
+	}
 }

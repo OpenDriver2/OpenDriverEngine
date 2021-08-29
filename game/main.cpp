@@ -11,6 +11,8 @@
 #include <nstd/String.hpp>
 #include <nstd/Time.hpp>
 
+#include <enet/enet.h>
+
 #include "routines/level.h"
 #include "routines/textures.h"
 #include "routines/regions.h"
@@ -24,7 +26,7 @@
 #include "shared/world.h"
 #include "shared/camera.h"
 #include "shared/manager_cars.h"
-
+#include "shared/players.h"
 #include "shared/lua_init.h"
 #include "shared/input.h"
 
@@ -220,6 +222,8 @@ void MainLoop()
 			GR_ClearColor(128 / 255.0f, 158 / 255.0f, 182 / 255.0f);
 			*/
 
+		CManager_Players::Net_Update();
+
 		if (engineHostTable.valid())
 		{
 			try {
@@ -315,6 +319,15 @@ int main(int argc, char* argv[])
 
 	bool canRunLoop = true;
 
+	if (enet_initialize() != 0)
+	{
+		MsgError("An error occurred while initializing ENet.\n");
+		canRunLoop = false;
+	}
+
+	// FIXME: force here?
+	CManager_Players::Net_Init();
+
 	// load lua script
 	try {
 		auto result = g_luaState.unsafe_script_file("scripts/_init.lua");
@@ -332,6 +345,7 @@ int main(int argc, char* argv[])
 	}
 
 	// free all
+	CManager_Players::Net_Finalize();
 	CWorld::UnloadLevel();
 	IAudioSystem::Instance->Shutdown();
 

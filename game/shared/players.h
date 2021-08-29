@@ -2,6 +2,7 @@
 #define PLAYERS_H
 
 #include <sol/forward.hpp>
+#include <enet/enet.h>
 
 class CCar;
 
@@ -13,6 +14,7 @@ enum EPlayerControlType
 
 class CPlayer
 {
+	friend class CManager_Players;
 public:
 	struct InputData
 	{
@@ -24,6 +26,9 @@ public:
 		int steering { 0 };
 		int horn { 0 };
 	};
+
+	void					Net_Init();
+	void					Net_Finalize();
 
 	EPlayerControlType		GetControlType() const;
 
@@ -41,6 +46,9 @@ protected:
 	InputData				m_currentInputs;
 	CCar*					m_currentCar{ nullptr };
 	EPlayerControlType		m_controlType{ PlayerControl_Local };
+
+	Array<ENetAddress>		m_stationAddresses;
+	ENetHost*				m_netHost{ nullptr };
 };
 
 //---------------------------------------------------------------------------------
@@ -50,16 +58,25 @@ protected:
 class CManager_Players
 {
 public:
-	static void				Lua_Init(sol::state& lua);
-
 	static void				Update();
 
 	static CPlayer*			GetLocalPlayer();
 
 	static CPlayer*			GetPlayerByCar(CCar* car);
 
+	static void				Net_Init();
+	static void				Net_Finalize();
+
+	static void				Net_Update();
+
+	static void				AddNetworkPlayer(const char* peerAddress);
+
+	//----------------------------------------------------
+
+	static void				Lua_Init(sol::state& lua);
+
 protected:
-	static CPlayer			m_localPlayer;
+	static CPlayer			LocalPlayer;
 };
 
 #endif // PLAYERS_H
