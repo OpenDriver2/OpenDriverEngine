@@ -171,7 +171,7 @@ void CPlayer::ProcessCarPad()
 			cp->m_wheelspin = 0;
 
 		// continue without burnout
-		if (cp->m_wheelspin != 0 && cp->m_hd.wheel_speed > 452952)
+		if (cp->m_wheelspin != 0 && cp->m_hd.wheel_speed > cp->m_cosmetics.wheelspinMaxSpeed)
 		{
 			cp->m_wheelspin = 0;
 			m_currentInputs.accel = true;
