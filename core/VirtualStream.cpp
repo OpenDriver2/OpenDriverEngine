@@ -1,7 +1,6 @@
 #include "VirtualStream.h"
 #include <string.h> // va_*
 #include <stdarg.h> // va_*
-#include <malloc.h> // va_*
 
 #include <nstd/String.hpp>
 
@@ -54,7 +53,7 @@ CMemoryStream::~CMemoryStream()
 	// destroy memory
 	m_pCurrent = nullptr;
 
-	free( m_pStart );
+	Memory::free( m_pStart );
 	m_pStart = nullptr;
 	m_nAllocatedSize = 0;
 	m_nUsageFlags = 0;
@@ -151,7 +150,7 @@ bool CMemoryStream::Open(ubyte* data, int nOpenFlags, int nDataSize)
 	{
 		// data will be written reset it
 		if(m_pStart)
-			free(m_pStart);
+			Memory::free(m_pStart);
 
 		m_nAllocatedSize = 0;
 
@@ -193,13 +192,13 @@ void CMemoryStream::ReAllocate(long nNewSize)
 
 	long curPos = Tell();
 
-	ubyte* pTemp = (ubyte*)malloc( nNewSize );
+	ubyte* pTemp = (ubyte*)Memory::alloc( nNewSize );
 
 	if(m_pStart && m_nAllocatedSize > 0)
 	{
 		memcpy( pTemp, m_pStart, m_nAllocatedSize );
 
-		free(m_pStart);
+		Memory::free(m_pStart);
 	}
 
 	m_nAllocatedSize = nNewSize;

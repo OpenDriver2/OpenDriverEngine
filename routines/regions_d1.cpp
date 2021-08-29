@@ -6,9 +6,6 @@
 #include "core/IVirtualStream.h"
 #include "math/isin.h"
 
-
-#include <malloc.h>
-
 void CDriver1LevelRegion::FreeAll()
 {
 	if (!m_loaded)
@@ -17,7 +14,7 @@ void CDriver1LevelRegion::FreeAll()
 	CBaseLevelRegion::FreeAll();
 
 	if (m_cells)
-		free(m_cells);
+		Memory::free(m_cells);
 	m_cells = nullptr;
 
 	delete[] m_roadMap;
@@ -78,12 +75,12 @@ void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	if (UnpackCellPointers(m_cellPointers, packed_cell_pointers, 0, 0) != -1)
 	{
 		// read cell data
-		m_cells = (CELL_DATA_D1*)malloc(m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE);
+		m_cells = (CELL_DATA_D1*)Memory::alloc(m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE);
 		pFile->Seek(ctx.lumpInfo->spooled_offset + cellDataOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
 		pFile->Read(m_cells, m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 
 		// read cell objects
-		m_cellObjects = (CELL_OBJECT*)malloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE * 2);
+		m_cellObjects = (CELL_OBJECT*)Memory::alloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE * 2);
 		pFile->Seek(ctx.lumpInfo->spooled_offset + cellObjectsOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
 		pFile->Read(m_cellObjects, m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 	}
@@ -172,7 +169,7 @@ void CDriver1LevelMap::FreeAll()
 	delete[] m_regions;
 	m_regions = nullptr;
 
-	free(m_surfaceData);
+	Memory::free(m_surfaceData);
 	m_surfaceData = nullptr;
 
 	CBaseLevelMap::FreeAll();
@@ -225,7 +222,7 @@ void CDriver1LevelMap::LoadRoadSurfaceLump(IVirtualStream* pFile, int size)
 {
 	int numSurfaces;
 
-	m_surfaceData = (char*)malloc(size);
+	m_surfaceData = (char*)Memory::alloc(size);
 	pFile->Read(m_surfaceData, 1, size);
 
 	// get the surface count

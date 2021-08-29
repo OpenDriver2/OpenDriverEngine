@@ -1,7 +1,6 @@
 #include "regions.h"
 
 #include <string.h>
-#include <malloc.h>
 
 #include "models.h"
 #include "textures.h"
@@ -51,7 +50,7 @@ void CBaseLevelRegion::FreeAll()
 	m_cellPointers = nullptr;
 
 	if (m_cellObjects)
-		free(m_cellObjects);
+		Memory::free(m_cellObjects);
 	m_cellObjects = nullptr;
 	
 	m_loaded = false;

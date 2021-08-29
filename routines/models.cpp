@@ -1,7 +1,6 @@
 #include "core/cmdlib.h"
 #include "core/IVirtualStream.h"
 
-#include <malloc.h>
 #include <nstd/HashSet.hpp>
 
 #include "models.h"
@@ -28,7 +27,7 @@ void CDriverLevelModels::FreeAll()
 		OnModelFreed(&ref);
 		
 		if (ref.model)
-			free(ref.model);
+			Memory::free(ref.model);
 	}
 
 	for (int i = 0; i < MAX_CAR_MODELS; i++)
@@ -38,13 +37,13 @@ void CDriverLevelModels::FreeAll()
 		OnCarModelFreed(&carModelData);
 		
 		if (carModelData.cleanmodel)
-			free(carModelData.cleanmodel);
+			Memory::free(carModelData.cleanmodel);
 
 		if (carModelData.dammodel)
-			free(carModelData.dammodel);
+			Memory::free(carModelData.dammodel);
 
 		if (carModelData.lowmodel)
-			free(carModelData.lowmodel);
+			Memory::free(carModelData.lowmodel);
 	}
 
 	m_model_names.clear();
@@ -115,7 +114,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 
 			pFile->Read(&carModelData.cleanSize, 1, sizeof(int));
 
-			carModelData.cleanmodel = (MODEL*)malloc(carModelData.cleanSize);
+			carModelData.cleanmodel = (MODEL*)Memory::alloc(carModelData.cleanSize);
 			pFile->Read(carModelData.cleanmodel, 1, carModelData.cleanSize);
 		}
 		else
@@ -127,7 +126,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 
 			pFile->Read(&carModelData.damSize, 1, sizeof(int));
 
-			carModelData.dammodel = (MODEL*)malloc(carModelData.damSize);
+			carModelData.dammodel = (MODEL*)Memory::alloc(carModelData.damSize);
 			pFile->Read(carModelData.dammodel, 1, carModelData.damSize);
 		}
 		else
@@ -139,7 +138,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 
 			pFile->Read(&carModelData.lowSize, 1, sizeof(int));
 
-			carModelData.lowmodel = (MODEL*)malloc(carModelData.lowSize);
+			carModelData.lowmodel = (MODEL*)Memory::alloc(carModelData.lowSize);
 			pFile->Read(carModelData.lowmodel, 1, carModelData.lowSize);
 		}
 		else
@@ -233,7 +232,7 @@ void CDriverLevelModels::LoadLevelModelsLump(IVirtualStream* pFile)
 		{
 			ModelRef_t& ref = m_levelModels[i];
 			ref.index = i;
-			ref.model = (MODEL*)malloc(modelSize);
+			ref.model = (MODEL*)Memory::alloc(modelSize);
 			ref.size = modelSize;
 
 			pFile->Read(ref.model, modelSize, 1);

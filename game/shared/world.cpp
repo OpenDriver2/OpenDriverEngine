@@ -1,5 +1,3 @@
-#include <malloc.h>
-
 #include <nstd/String.hpp>
 
 #include "core/cmdlib.h"
@@ -133,7 +131,7 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 		return;
 
 	int imgSize = TEXPAGE_SIZE * 4;
-	uint* color_data = (uint*)malloc(imgSize);
+	uint* color_data = (uint*)Memory::alloc(imgSize);
 
 	memset(color_data, 0, imgSize);
 
@@ -191,7 +189,7 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	
 	
 	// no longer need in RGBA data
-	free(color_data);
+	Memory::free(color_data);
 }
 
 void CWorld::FreeHWTexturePage(CTexturePage* tpage)

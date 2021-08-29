@@ -7,7 +7,6 @@
 
 #include <nstd/String.hpp>
 #include "snd_wav_cache.h"
-#include <malloc.h>
 #include <string.h>
 #include "core/cmdlib.h"
 
@@ -29,7 +28,7 @@ bool CSoundSource_WaveCache::Load(const char* szFilename)
 
 void CSoundSource_WaveCache::Unload()
 {
-	free(m_dataCache);
+	Memory::free(m_dataCache);
 	m_dataCache = nullptr;
 	m_cacheSize = 0;
 	m_numSamples = 0;
@@ -39,7 +38,7 @@ void CSoundSource_WaveCache::ParseData(CRIFF_Parser &chunk)
 {
 	int sample;
 
-	m_dataCache = (ubyte *)malloc( chunk.GetSize( ) );
+	m_dataCache = (ubyte *)Memory::alloc( chunk.GetSize( ) );
 	m_cacheSize = chunk.GetSize( );
 
 	m_numSamples = m_cacheSize / (m_format.channels * m_format.bitwidth / 8);

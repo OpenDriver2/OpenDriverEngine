@@ -7,7 +7,6 @@
 
 #include <nstd/String.hpp>
 #include "snd_ogg_cache.h"
-#include <malloc.h>
 #include <string.h>
 #include "core/cmdlib.h"
 #include "core/FileStream.h"
@@ -51,7 +50,7 @@ bool CSoundSource_OggCache::Load(const char* filename)
 
 void CSoundSource_OggCache::Unload()
 {
-	free(m_dataCache);
+	Memory::free(m_dataCache);
 	m_dataCache = nullptr;
 	m_cacheSize = 0;
 	m_numSamples = 0;
@@ -62,7 +61,7 @@ void CSoundSource_OggCache::ParseData(OggVorbis_File* file)
 	m_numSamples = (uint)ov_pcm_total(file, -1);
 
 	m_cacheSize = m_numSamples * m_format.channels * sizeof(short); // Ogg Vorbis is always 16 bit
-	m_dataCache = (ubyte*)malloc(m_cacheSize);
+	m_dataCache = (ubyte*)Memory::alloc(m_cacheSize);
 
 	int samplePos = 0;
 	while (samplePos < m_cacheSize)
