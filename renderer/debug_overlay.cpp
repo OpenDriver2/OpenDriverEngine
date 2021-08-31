@@ -28,9 +28,6 @@ LINE_VERTEX_SHADER
 LINE_FRAGMENT_SHADER
 "#endif\n";
 
-#include "core/ignore_vc_new.h"
-#include <sol/sol.hpp>
-
 #include "debug_overlay.h"
 
 GrVertex	g_lineBuffer[MAX_LINE_BUFFER_SIZE];
@@ -40,19 +37,6 @@ GrVAO*		g_linesVAO { nullptr };
 ShaderID	g_linesShader { 0 };
 Matrix4x4	g_lineTransform { identity3() };
 bool		g_enableDebugOverlay{ false };
-
-void CDebugOverlay::Lua_Init(sol::state& lua)
-{
-	auto engine = lua["engine"].get_or_create<sol::table>();
-
-	auto debugOverlay = engine["DebugOverlay"].get_or_create<sol::table>();
-
-	debugOverlay["SetTransform"] = &SetTransform;
-	debugOverlay["Line"] = &Line;
-	debugOverlay["Box"] = &Box;
-	debugOverlay["Enable"] = &Enable;
-	debugOverlay["Enable"] = &IsEnabled;
-}
 
 void CDebugOverlay::Init()
 {

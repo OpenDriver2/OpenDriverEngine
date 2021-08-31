@@ -31,6 +31,7 @@ workspace "OpenDriverEngine"
 
 	filter "system:Windows"
 		disablewarnings { "4996", "4554", "4244", "4101", "4838", "4309" }
+		defines { "_CRT_SECURE_NO_WARNINGS" }
 		linkoptions {
 			"/SAFESEH:NO", -- Image Has Safe Exception Handers: No. Because of openal-soft
 		}
@@ -55,7 +56,7 @@ project "libnstd"
 	kind "StaticLib"
 	
 	filter "system:Windows"
-		defines { "_CRT_SECURE_NO_WARNINGS", "__PLACEMENT_NEW_INLINE" }
+		defines { "__PLACEMENT_NEW_INLINE" }
 	
 	includedirs {
 		"dependencies/libnstd/include"
@@ -76,9 +77,6 @@ usage "libnstd"
 project "glad"
 	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
-	
-	filter "system:Windows"
-		defines { "_CRT_SECURE_NO_WARNINGS" }
 	
 	files {
 		"dependencies/glad/*.c",
@@ -103,7 +101,7 @@ project "ImGui"
 	uses {"SDL2", "glad"}
 	
 	filter "system:Windows"
-		defines { "_CRT_SECURE_NO_WARNINGS", "IMGUI_IMPL_OPENGL_LOADER_GLAD" }
+		defines { "IMGUI_IMPL_OPENGL_LOADER_GLAD" }
 	
 	includedirs {
 		"dependencies/imgui",
@@ -157,10 +155,11 @@ project "frameworkLib"
 	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
 	
-	uses "libnstd"
-
-	filter "system:Windows"
-		defines { "_CRT_SECURE_NO_WARNINGS" }
+	uses { 
+		"libnstd",
+		"glad", "SDL2",
+		"openal-soft", "libvorbis", "libogg"
+	}
 	
 	files {
 		"math/**.cpp",
@@ -169,6 +168,24 @@ project "frameworkLib"
 		"core/**.h",
 		"util/**.cpp",
 		"util/**.h",
+		"audio/**.cpp",
+		"audio/**.h",
+		"renderer/**.cpp",
+		"renderer/**.h",
+	}
+	
+-- driver routines lib
+project "driverLib"
+	kind "StaticLib"
+	targetdir "bin/%{cfg.buildcfg}"
+	
+	uses { 
+		"libnstd", 
+	}
+	
+	files {
+		"routines/**.cpp",
+		"routines/**.h",
 	}
 
 project "OpenDriverGame"
@@ -176,10 +193,10 @@ project "OpenDriverGame"
 
 	uses { 
 		"ImGui", 
-		"libnstd", "frameworkLib", 
+		"frameworkLib",
+		"driverLib",
 		"lua", "sol2",
-		"enet",
-		"openal-soft", "libvorbis", "libogg"
+		"enet"
 	}
 
 	includedirs {
@@ -187,13 +204,9 @@ project "OpenDriverGame"
 	}
 
 	files {
-		"audio/**.cpp",
-		"audio/**.h",
-		"renderer/**.cpp",
-		"renderer/**.h",
 		"game/**.cpp",
 		"game/**.h",
-		"routines/**.cpp",
-		"routines/**.h",
 	}
 	
+	pchheader "game/pch.h"
+	pchsource "game/pch.cpp"

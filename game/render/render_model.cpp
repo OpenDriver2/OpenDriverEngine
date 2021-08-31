@@ -1,17 +1,5 @@
-#include "routines/models.h"
-#include "routines/regions.h"
-
-#include "renderer/gl_renderer.h"
-#include "renderer/debug_overlay.h"
-
+#include "game/pch.h"
 #include "render_model.h"
-#include "game/shared/world.h"
-
-#include "core/cmdlib.h"
-
-#include <assert.h>
-
-#include "math/convert.h"
 #include "render_cars.h"
 
 #define MODEL_VERTEX_SHADER \

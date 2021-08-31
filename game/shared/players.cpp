@@ -1,13 +1,5 @@
-#include "core/ignore_vc_new.h"
-#include "routines/d2_types.h"
-#include <nstd/Array.hpp>
-#include <math/Matrix.h>
-#include <sol/sol.hpp>
-
+#include "game/pch.h"
 #include "players.h"
-#include "manager_cars.h"
-#include "cars.h"
-#include "core/cmdlib.h"
 
 void CPlayer::Lua_Init(sol::state& lua)
 {

@@ -1,38 +1,8 @@
-#include <nstd/String.hpp>
+#include "game/pch.h"
+#include "world.h"
 
-#include "core/cmdlib.h"
-#include "core/VirtualStream.h"
-#include "core/FileStream.h"
-
-#include "renderer/debug_overlay.h"
-#include "renderer/gl_renderer.h"
-
-#include "routines/d2_types.h"
-#include "routines/level.h"
-#include "routines/models.h"
 #include "routines/regions_d1.h"
 #include "routines/regions_d2.h"
-#include "routines/textures.h"
-
-#include "core/ignore_vc_new.h"
-#include <sol/sol.hpp>
-
-#include "world.h"
-#include "camera.h"
-
-#include "game/render/render_level.h"
-#include "game/render/render_model.h"
-#include "game/render/render_sky.h"
-
-#include "math/convert.h"
-#include "math/Volume.h"
-#include "math/isin.h"
-#include "math/psx_matrix.h"
-
-#include "backends/imgui_impl_opengl3.h"
-#include "backends/imgui_impl_sdl.h"
-
-
 
 OUT_CITYLUMP_INFO		g_levInfo;
 CDriverLevelTextures	g_levTextures;

@@ -83,9 +83,8 @@ class IAudioSystem
 {
 public:
 	static IAudioSystem*		Create();
-	static IAudioSystem*		Instance;
 
-	static void					Lua_Init(sol::state& lua);
+	static IAudioSystem*		Instance;
 
 	virtual ~IAudioSystem() {}
 

@@ -1,3 +1,4 @@
+#include "game/pch.h"
 #include <SDL.h>
 #include <sol/sol.hpp>
 

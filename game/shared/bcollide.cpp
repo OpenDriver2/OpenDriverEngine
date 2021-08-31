@@ -1,7 +1,5 @@
-#include <nstd/Base.hpp>
+#include "game/pch.h"
 #include "bcollide.h"
-#include "math/isin.h"
-#include <stdlib.h>
 
 // Checks of two bodies collides (basic check) with Separating Axis Theorem
 // also initializes axes

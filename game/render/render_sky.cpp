@@ -1,28 +1,5 @@
-#include <nstd/String.hpp>
-#include <nstd/File.hpp>
-
-#include "math/Vector.h"
-#include "math/Volume.h"
-
-#include "core/dktypes.h"
-#include "core/cmdlib.h"
-#include "core/ignore_vc_new.h"
-
-#include <sol/sol.hpp>
-
-#include "renderer/gl_renderer.h"
-
-#include "routines/models.h"
-#include "routines/textures.h"
-
-#include "render_model.h"
+#include "game/pch.h"
 #include "render_sky.h"
-
-#include "game/shared/world.h"
-#include "game/shared/camera.h"
-
-#include <string.h>
-
 
 #define SKY_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\

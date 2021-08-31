@@ -1,19 +1,5 @@
-#include "renderer/debug_overlay.h"
-#include "renderer/gl_renderer.h"
-
-#include "core/VirtualStream.h"
-#include "routines/models.h"
-#include "routines/regions_d1.h"
-#include "routines/regions_d2.h"
-#include "routines/textures.h"
-
-#include "render_model.h"
+#include "game/pch.h"
 #include "render_level.h"
-
-#include "math/Volume.h"
-#include "math/convert.h"
-#include "game/shared/world.h"
-
 
 // extern some vars
 extern String					g_levname;

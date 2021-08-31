@@ -1,43 +1,13 @@
+#include "game/pch.h"
 
-#include <string.h>
-#include <SDL_events.h>
-
-#include "core/cmdlib.h"
-#include "core/VirtualStream.h"
-
-#include <nstd/Array.hpp>
-#include <nstd/File.hpp>
-#include <nstd/Directory.hpp>
-#include <nstd/String.hpp>
-#include <nstd/Time.hpp>
+#include "shared/input.h"
+#include "shared/lua_init.h"
 
 #include <enet/enet.h>
-
-#include "routines/level.h"
-#include "routines/textures.h"
-#include "routines/regions.h"
-
-#include "core/ignore_vc_new.h"
-#include <sol/sol.hpp>
-
-#include "renderer/debug_overlay.h"
-#include "renderer/gl_renderer.h"
-
-#include "shared/world.h"
-#include "shared/camera.h"
-#include "shared/manager_cars.h"
-#include "shared/players.h"
-#include "shared/lua_init.h"
-#include "shared/input.h"
-
-#include "game/render/render_sky.h"
+#include <SDL_events.h>
 
 #include <backends/imgui_impl_opengl3.h>
 #include <backends/imgui_impl_sdl.h>
-
-#include "math/convert.h"
-
-#include "audio/IAudioSystem.h"
 
 
 //---------------------------------------------------------------------------------------------------------------------------------

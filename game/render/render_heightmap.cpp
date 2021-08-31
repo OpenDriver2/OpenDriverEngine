@@ -1,7 +1,7 @@
-#include "renderer/debug_overlay.h"
+#include "game/pch.h"
+#include "render_heightmap.h"
+
 #include "routines/regions_d2.h"
-#include "math/isin.h"
-#include "math/Vector.h"
 
 extern CBaseLevelMap* g_levMap;
 

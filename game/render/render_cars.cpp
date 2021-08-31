@@ -1,6 +1,5 @@
-#include "routines/d2_types.h"
+#include "game/pch.h"
 #include "render_cars.h"
-#include "core/cmdlib.h"
 
 /* TODO:
 	- Add car model rendering and denting stuff

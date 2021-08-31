@@ -1,22 +1,5 @@
-#include "renderer/gl_renderer.h"
-
-#include "routines/models.h"
-#include "routines/textures.h"
-#include "routines/regions.h"
-
-#include "game/render/render_heightmap.h"
-#include "game/render/render_model.h"
-#include "game/render/render_level.h"
-
-#include "core/ignore_vc_new.h"
-#include <sol/sol.hpp>
-
-#include "world.h"
+#include "game/pch.h"
 #include "camera.h"
-
-#include "math/Volume.h"
-#include "math/convert.h"
-
 
 const float Z_NEAR = 0.01f;
 const float Z_FAR = 100.0f;

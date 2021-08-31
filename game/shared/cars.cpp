@@ -1,34 +1,5 @@
-#include <nstd/String.hpp>
-#include <nstd/Array.hpp>
-#include <nstd/Math.hpp>
-
-#include "core/ignore_vc_new.h"
-#include <sol/sol.hpp>
-
-#include "math/psx_math_types.h"
-#include "math/psx_matrix.h"
-#include "math/isin.h"
-#include "math/ratan2.h"
-#include "math/convert.h"
-#include "math/Matrix.h"
-
-#include "routines/d2_types.h"
-#include "routines/models.h"
-
-#include "renderer/gl_renderer.h"
-#include "renderer/debug_overlay.h"
-
-#include "game/render/render_model.h"
-#include "manager_cars.h"
-#include "audio/source/snd_source.h"
-
-
-#include "core/cmdlib.h"
-#include <stdlib.h>
-
-#include "world.h"
+#include "game/pch.h"
 #include "cars.h"
-#include "bcollide.h"
 
 extern CDriverLevelModels g_levModels;
 
@@ -365,6 +336,7 @@ CCar::CCar()
 
 CCar::~CCar()
 {
+	Destroy();
 }
 
 void CCar::Destroy()
@@ -782,6 +754,13 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		i--;
 	} while (i >= 0);
 
+	int wheelSpeed = cdz / 64 * (cl.vel[2] / 64) + cdx / 64 * (cl.vel[0] / 64);;
+
+	if (m_hd.wheel[0].susCompression != 0 || m_hd.wheel[2].susCompression != 0)
+	{
+		m_hd.front_wheel_speed = wheelSpeed;
+	}
+
 	if (m_hd.wheel[1].susCompression == 0 && m_hd.wheel[3].susCompression == 0)
 	{
 		if (m_thrust >= 1)
@@ -793,7 +772,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	}
 	else
 	{
-		m_hd.wheel_speed = cdz / 64 * (cl.vel[2] / 64) + cdx / 64 * (cl.vel[0] / 64);
+		m_hd.wheel_speed = wheelSpeed;
 	}
 }
 
@@ -1770,18 +1749,16 @@ void CCar::StepCarPhysics()
 
 	HANDLING_TYPE& hp = m_cosmetics.handlingType;
 
-	// [A] update wheel rotation - fix for multiplayer outside cameras
-	frontWheelSpeed = m_hd.wheel_speed / 256;
-
 	if (m_hd.wheel[0].locked == 0)
 	{
+		frontWheelSpeed = m_hd.front_wheel_speed / (m_cosmetics.wheelSize*5);
 		m_frontWheelRotation += frontWheelSpeed;
 		m_frontWheelRotation &= 0xfff;
 	}
 
 	if (m_hd.wheel[3].locked == 0)
 	{
-		backWheelSpeed = frontWheelSpeed;
+		backWheelSpeed = m_hd.wheel_speed / (m_cosmetics.wheelSize * 5);
 
 		if (m_wheelspin != 0)
 			backWheelSpeed = 700;
@@ -1985,7 +1962,8 @@ void CCar::DrawCar()
 		const int wheelSize = m_cosmetics.wheelSize;
 		int BackWheelIncrement, FrontWheelIncrement;
 
-		BackWheelIncrement = FrontWheelIncrement = m_hd.wheel_speed >> 8;
+		FrontWheelIncrement = m_hd.front_wheel_speed >> 8;
+		BackWheelIncrement = m_hd.wheel_speed >> 8;
 
 		if (m_wheelspin != 0)
 			BackWheelIncrement = 700;
@@ -2039,12 +2017,15 @@ void CCar::DrawCar()
 
 			Vector3D wheelPos = FromFixedVector(sWheelPos);
 
-			Matrix4x4 wheelMat = objectMatrix * translate(wheelPos) * scale4(1.0f, wheelSizeInvScale, wheelSizeInvScale);
+			Matrix4x4 wheelScaleMat = scale4(1.0f, wheelSizeInvScale, wheelSizeInvScale);
+			Matrix4x4 wheelMat = objectMatrix * translate(wheelPos);
 
 			if ((i & 1) != 0)
 			{
 				renderModel = (CRenderModel*)wheelModelBack->userData;
 				renderModel->SetupRendering(true, true);
+
+				wheelMat = wheelMat * wheelScaleMat;
 
 				GR_SetMatrix(MATRIX_WORLD, wheelMat);
 				GR_UpdateMatrixUniforms();
@@ -2058,7 +2039,7 @@ void CCar::DrawCar()
 				renderModel = (CRenderModel*)wheelModelFront->userData;
 				renderModel->SetupRendering(true, true);
 				
-				wheelMat = wheelMat * rotateY4(-float(m_wheel_angle) * TO_RADIAN);
+				wheelMat = wheelMat * rotateY4(-float(m_wheel_angle) * TO_RADIAN) * wheelScaleMat;
 
 				GR_SetMatrix(MATRIX_WORLD, wheelMat);
 				GR_UpdateMatrixUniforms();

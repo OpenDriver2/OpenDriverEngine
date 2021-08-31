@@ -1,42 +1,10 @@
-
-#include "core/cmdlib.h"
-
-#include "core/ignore_vc_new.h"
-#include <sol/sol.hpp>
-
-#include <nstd/Array.hpp>
-#include <nstd/File.hpp>
-#include <nstd/Directory.hpp>
-#include <nstd/String.hpp>
-#include <nstd/Time.hpp>
-#include <nstd/Math.hpp>
-
+#include "game/pch.h"
 #include "lua_init.h"
-
-#include "renderer/gl_renderer.h"
+#include "input.h"
 
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <sol_ImGui/sol_imgui.h>
-
-#include "camera.h"
-#include "world.h"
-#include "input.h"
-
-#include "math/Vector.h"
-#include "math/Matrix.h"
-#include "math/psx_math_types.h"
-#include "math/isin.h"
-#include "math/squareroot0.h"
-#include "math/ratan2.h"
-#include "math/convert.h"
-
-#include "game/shared/manager_cars.h"
-#include "game/shared/players.h"
-#include "game/render/render_sky.h"
-
-#include "renderer/debug_overlay.h"
-#include "audio/IAudioSystem.h"
 
 #define VEC_OPERATORS(vec_type) \
 	/* vec - vec */\
@@ -64,6 +32,44 @@
 	sol::meta_function::subtraction, sol::resolve<vec_type(const vec_type&, const float&)>(&operator-),\
 	sol::meta_function::multiplication, sol::resolve<vec_type(const vec_type&, const float&)>(&operator*),\
 	sol::meta_function::division, sol::resolve<vec_type(const vec_type&, const float&)>(&operator/),\
+
+void CDebugOverlay_Lua_Init(sol::state& lua)
+{
+	auto engine = lua["engine"].get_or_create<sol::table>();
+
+	auto debugOverlay = engine["DebugOverlay"].get_or_create<sol::table>();
+
+	debugOverlay["SetTransform"] = &CDebugOverlay::SetTransform;
+	debugOverlay["Line"] = &CDebugOverlay::Line;
+	debugOverlay["Box"] = &CDebugOverlay::Box;
+	debugOverlay["Enable"] = &CDebugOverlay::Enable;
+	debugOverlay["Enable"] = &CDebugOverlay::IsEnabled;
+}
+
+void IAudioSystem_Lua_Init(sol::state& lua)
+{
+	// wave source data
+	lua.new_usertype<ISoundSource>(
+		"ISoundSource",
+		"GetFilename", &ISoundSource::GetFilename,
+		"IsStreaming", &ISoundSource::IsStreaming
+		);
+
+	// audio system itself
+	lua.new_usertype<IAudioSystem>(
+		"IAudioSystem",
+
+		"CreateSource", &IAudioSystem::CreateSource,
+		"DestroySource", &IAudioSystem::DestroySource,
+
+		"LoadSample", &IAudioSystem::LoadSample,
+		"FreeSample", &IAudioSystem::FreeSample
+		);
+
+	auto engine = lua["engine"].get_or_create<sol::table>();
+
+	engine["Audio"] = IAudioSystem::Instance;
+}
 
 void LuaInit(sol::state& lua)
 {
@@ -242,11 +248,12 @@ void LuaInit(sol::state& lua)
 
 	//-----------------------------------
 	// MODULES
-	IAudioSystem::Lua_Init(lua);
+	IAudioSystem_Lua_Init(lua);
+	CDebugOverlay_Lua_Init(lua);
+
 	CInput::Lua_Init(lua);
 	CManager_Players::Lua_Init(lua);
 	CManager_Cars::Lua_Init(lua);
-	CDebugOverlay::Lua_Init(lua);
 	CWorld::Lua_Init(lua);
 	CSky::Lua_Init(lua);
 	CCamera::Lua_Init(lua);

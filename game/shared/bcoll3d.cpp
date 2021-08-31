@@ -1,12 +1,5 @@
-
-#include "core/ignore_vc_new.h"
-#include <nstd/Base.hpp>
-#include <nstd/Array.hpp>
-#include <sol/forward.hpp>
+#include "game/pch.h"
 #include "bcoll3d.h"
-#include "math/Matrix.h"
-#include "math/psx_math_types.h"
-#include "cars.h"
 
 struct TestResult
 {

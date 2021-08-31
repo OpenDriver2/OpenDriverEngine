@@ -1,26 +1,5 @@
-#include "core/ignore_vc_new.h"
-
-#include <sol/sol.hpp>
-#include <nstd/Array.hpp>
-#include <nstd/Time.hpp>
-
-#include "core/cmdlib.h"
-
-#include "routines/models.h"
-#include "routines/regions.h"
-#include "renderer/gl_renderer.h"
-
-#include "game/render/render_model.h"
-#include "game/render/render_level.h"
-
-#include "math/psx_math_types.h"
-#include "math/ratan2.h"
-
-#include "world.h"
+#include "game/pch.h"
 #include "manager_cars.h"
-#include "cars.h"
-#include "players.h"
-#include "bcoll3d.h"
 
 // TODO: move it
 int	CameraCnt = 0;
@@ -174,6 +153,7 @@ void CManager_Cars::UnloadAllModels()
 		delete renderModel;
 		delete ref;
 	}
+	m_carModels.clear();
 }
 
 CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
@@ -409,7 +389,7 @@ void CManager_Cars::GlobalTimeStep()
 	short* felony;
 
 	// global timestep is a starting point for interpolation
-	m_lastUpdateTime = Time::microTicks();
+	m_lastUpdateTime = m_curUpdateTime;// Time::microTicks();
 
 #if 0
 	if (player[0].playerCarId < 0)
@@ -1002,8 +982,6 @@ void CManager_Cars::DrawAllCars()
 		CCar* cp = m_active_cars[i];
 		cp->DrawCar();
 	}
-
-	//m_curUpdateTime = Time::microTicks();
 }
 
 double CManager_Cars::GetInterpTime() const
@@ -1024,5 +1002,5 @@ void CManager_Cars::Draw(const CameraViewParams& view)
 
 void CManager_Cars::UpdateTime(int64 ticks)
 {
-	g_cars->m_curUpdateTime = Time::microTicks();
+	g_cars->m_curUpdateTime = ticks;// Time::microTicks();
 }

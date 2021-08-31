@@ -464,7 +464,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 				continue;
 			}
 
-			ref->model = (MODEL*)malloc(modelSize);
+			ref->model = (MODEL*)Memory::alloc(modelSize);
 			ref->size = modelSize;
 
 			ctx.dataStream->Read(ref->model, modelSize, 1);

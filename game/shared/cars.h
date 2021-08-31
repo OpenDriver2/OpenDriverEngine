@@ -94,10 +94,11 @@ struct HANDLING_DATA
 	LONGVECTOR4 acc;
 	LONGVECTOR4 aacc;
 	WHEEL wheel[4];
-	int wheel_speed, speed;
+	int speed;
+	int front_wheel_speed, wheel_speed;
 	int direction;
-	int front_vel, rear_vel;
-	int mayBeColliding;		// [A] now used as a bitfield to create collision pairs
+	int front_vel, rear_vel;	// sideways velocity on axles
+	int mayBeColliding;			// [A] now used as a bitfield to create collision pairs
 	short revs;
 	int8 gear, changingGear;
 	int8 autoBrake;

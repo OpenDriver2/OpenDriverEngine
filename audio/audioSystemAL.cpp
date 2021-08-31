@@ -5,9 +5,6 @@
 // Description: Equilibrium Engine Audio system
 //////////////////////////////////////////////////////////////////////////////////
 
-#include "core/ignore_vc_new.h"
-#include <sol/forward.hpp>
-
 #include <AL/al.h>
 #include <AL/alc.h>
 #include <AL/alext.h>
