@@ -50,6 +50,8 @@ CarCosmetics::CarCosmetics()
 	gears.append(s_gearDesc[0], 4);
 	gravity = DEFAULT_GRAVITY_FORCE;
 	wheelspinMaxSpeed = 452952;
+	susCoeff = 4096;
+	cbYoffset = 0;
 }
 
 void CarCosmetics::InitFrom(const CAR_COSMETICS_D2& srcCos)
@@ -82,6 +84,34 @@ void CarCosmetics::InitFrom(const CAR_COSMETICS_D2& srcCos)
 
 	// FIXME: this might change if this become array!
 	memcpy(cPoints, srcCos.cPoints, sizeof(cPoints));
+	memcpy(wheelDisp, srcCos.wheelDisp, sizeof(wheelDisp));
+}
+
+void CarCosmetics::InitFrom(const CAR_COSMETICS_D1& srcCos)
+{
+	headLight = srcCos.headLight;
+	frontInd = srcCos.frontInd;
+	backInd = srcCos.backInd;
+	brakeLight = srcCos.brakeLight;
+	revLight = srcCos.revLight;
+	exhaust = srcCos.exhaust;
+	smoke = srcCos.smoke;
+	fire = srcCos.fire;
+
+	susCompressionLimit = 60;
+	susTopLimit = 32767;					// D1 has no limit
+	traction = 4096;
+	wheelSize = 70;
+	wheelspinMaxSpeed = 663552;
+	powerRatio = 5833, // or 6000 for superfly
+
+	colBox = SVECTOR{ 320, 122, 760, 0 },	// TODO: find
+	cog = SVECTOR{ 0, -25, -45, 0 };		// TODO: find
+	twistRateX = 200;
+	twistRateY = 110;
+	twistRateZ = 550;
+	mass = 4096;
+
 	memcpy(wheelDisp, srcCos.wheelDisp, sizeof(wheelDisp));
 }
 
@@ -349,7 +379,7 @@ void CCar::Destroy()
 
 void CCar::StartSounds()
 {
-	ISoundSource* skidSample = m_owner->GetSoundSource(SkidLoop);
+	ISoundSource* skidSample = m_owner->GetSoundSource("SkidLoop");
 
 	if (!m_engineSound)
 		m_engineSound = IAudioSystem::Instance->CreateSource();
@@ -395,9 +425,15 @@ void CCar::StopSounds()
 		m_dirtSound->Release();
 }
 
-void CCar::StartStaticSound(ECarSoundType type, float refDist, float volume, float pitch)
+void CCar::StartStaticSound(const char* type, float refDist, float volume, float pitch)
 {
 	ISoundSource* soundSample = m_owner->GetSoundSource(type);
+
+	if (!soundSample)
+	{
+		MsgError("StartStaticSound - '%s' is not valid sound name\n", type);
+		return;
+	}
 
 	IAudioSource* staticSound = IAudioSystem::Instance->CreateSource();
 
@@ -423,7 +459,7 @@ void CCar::StartStaticSound(ECarSoundType type, float refDist, float volume, flo
 
 void CCar::CollisionSound(int impact, bool car_vs_car)
 {
-	ECarSoundType soundType = Hit_Car_1;
+	const char* soundType = "Hit_Car_1";
 
 	int refDist = 256;
 
@@ -431,21 +467,21 @@ void CCar::CollisionSound(int impact, bool car_vs_car)
 	{
 		if (impact > 900)
 		{
-			soundType = Hit_Car_3;
+			soundType = "Hit_Car_3";
 			refDist = 512;
 		}
 		else if (impact > 380)
-			soundType = Hit_Car_2;
+			soundType = "Hit_Car_2";
 	}
 	else
 	{
 		if (impact > 780)
 		{
-			soundType = Hit_Car_3;
+			soundType = "Hit_Car_3";
 			refDist = 512;
 		}
 		else if (impact > 350)
-			soundType = Hit_Car_2;
+			soundType = "Hit_Car_2";
 	}
 
 	StartStaticSound(soundType, refDist / ONE_F, 1.0f, 1.0f);
@@ -566,7 +602,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		{
 			if (abs(newCompression - oldCompression) > 12 && (i & 1U) != 0)
 			{
-				StartStaticSound(HitCurb, 128 / ONE_F, 0.7f, 400 / ONE_F);
+				StartStaticSound("HitCurb", 128 / ONE_F, 0.7f, 400 / ONE_F);
 			}
 
 #if 0

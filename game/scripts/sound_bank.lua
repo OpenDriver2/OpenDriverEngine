@@ -5,7 +5,7 @@ SoundBanks = {}
 function LoadSoundbank( key, bankTable )
 
 	if SoundBanks[key] ~= nil then
-		MsgWarning("LoadSoundbank - bank '".. key.. "' already loaded!\n")
+		MsgWarning("LoadSoundbank - bank '".. key.. "' already loaded!")
 		return SoundBanks[key]
 	end
 
@@ -24,7 +24,7 @@ end
 function ReleaseSoundbank( key )
 
 	if SoundBanks[key] == nil then
-		MsgWarning("ReleaseSoundbank - bank '".. key.. "' is not loaded!\n")
+		MsgWarning("ReleaseSoundbank - bank '".. key.. "' is not loaded!")
 		return
 	end
 
@@ -46,7 +46,8 @@ SBK_Permanent = {
 	
 	Hit_Car_1 	= "voices2/Bank_1/4.wav",
 	Hit_Car_2 	= "voices2/Bank_1/5.wav",
-	Hit_Car_3 	= "voices/Bank_0/0.wav", --"voices2/Bank_1/6.wav",
+	Hit_Car_3a	= "voices2/Bank_1/6.wav",
+	Hit_Car_3b 	= "voices/Bank_0/0.wav",
 	
 	SkidLoop	= "voices2/Bank_1/7.wav",
 	Thunder 	= "voices2/Bank_1/8.wav",

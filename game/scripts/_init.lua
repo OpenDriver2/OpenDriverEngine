@@ -223,9 +223,11 @@ function ChangeCity(newCityName, newCityType, newWeather)
 	if triggerLoading then
 		
 		-- TODO: call a callback instead of this
-		TestGame.Terminate()
-		cars:RemoveAll()
+		TestGame.Terminate()		
 		ResetFreeCamera()
+		
+		cars:UnloadAllModels()
+		world.UnloadLevel()
 		
 		-- pick the LEV file from the table
 		local levPath
@@ -278,6 +280,7 @@ function StartTest()
 end
 
 function StopTest()
+	cars:UnloadAllModels()
 	world.UnloadLevel()
 	SetUpdateFunc("GameLoop", nil)
 end

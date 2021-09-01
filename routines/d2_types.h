@@ -469,6 +469,21 @@ struct Spool
 
 //----------------------------------------------------------------------------
 
+// Exe embedded car cosmetics
+struct CAR_COSMETICS_D1
+{
+	SVECTOR headLight;
+	SVECTOR frontInd;
+	SVECTOR backInd;
+	SVECTOR brakeLight;
+	SVECTOR revLight;
+	SVECTOR exhaust;
+	SVECTOR smoke;
+	SVECTOR fire;
+	SVECTOR wheelDisp[4];
+	int _pad;
+};
+
 // LCF car cosmetics
 struct CAR_COSMETICS_D2
 {

@@ -18,6 +18,7 @@ return {
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		lcf			= "DRIVER/COSMETICS.LCF",
 		
 		-- this is still not decided
 		frontendPath = {},
@@ -45,6 +46,7 @@ return {
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		lcf			= "DRIVER/COSMETICS.LCF",
 		
 		-- this is still not decided
 		frontendPath = {},
@@ -60,7 +62,7 @@ return {
 		}
 	},
 	["NewCastle"] = {
-		number 		= 5,		-- city index; For necessary hardcoded stuff
+		number 		= 7,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
 		skyPath		= "DRIVER2/DATA/SKY2.RAW",
@@ -72,6 +74,7 @@ return {
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		lcf			= "DRIVER/COSMETICS.LCF",
 		
 		-- this is still not decided
 		frontendPath = {},
@@ -99,6 +102,7 @@ return {
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		lcf			= "DRIVER/COSMETICS.LCF",
 		
 		-- this is still not decided
 		frontendPath = {},
@@ -126,6 +130,7 @@ return {
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		lcf			= "DRIVER/COSMETICS.LCF",
 		
 		-- this is still not decided
 		frontendPath = {},
@@ -154,6 +159,7 @@ return {
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		lcf			= "DRIVER/COSMETICS.LCF",
 		
 		-- this is still not decided
 		frontendPath = {},
@@ -169,7 +175,7 @@ return {
 		}
 	},
 	["NewYork"] = {
-		number 		= 3,		-- city index; For necessary hardcoded stuff
+		number 		= 5,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
 		skyPath		= "DRIVER2/DATA/SKY0.RAW",
@@ -181,6 +187,7 @@ return {
 		
 		events 		= {},
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
+		lcf			= "DRIVER/COSMETICS.LCF",
 		
 		-- this is still not decided
 		frontendPath = {},

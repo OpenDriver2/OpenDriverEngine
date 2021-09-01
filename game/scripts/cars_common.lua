@@ -31,40 +31,24 @@ local defaultHandling = HANDLING_TYPE {
 	autoBrakeOn = 1
 }
 
-local ESoundTypes = {
-	HitCurb = 0,
-	Hit_Car_1 = 1,
-	Hit_Car_2 = 2,
-	Hit_Car_3 = 3,
-	SkidLoop = 4,
-	WetLoop = 5,
-	GravelLoop = 6,
-	AlleyLoop = 7,
-}
-
 -- setup car sound handler
+-- FIXME this is bad a bit
 cars.SoundSourceGetCallback = function(soundType)
+
 	local sbk_perm = SoundBanks["permanent"]
 	
-	if soundType == ESoundTypes.HitCurb then
+	if soundType == "HitCurb" then
 		return sbk_perm.Hit_Cone
-	elseif soundType == ESoundTypes.Hit_Car_1 then
-		return sbk_perm.Hit_Car_1
-	elseif soundType == ESoundTypes.Hit_Car_2 then
-		return sbk_perm.Hit_Car_2
-	elseif soundType == ESoundTypes.Hit_Car_3 then
-		return sbk_perm.Hit_Car_3
-	elseif soundType == ESoundTypes.SkidLoop then
-		return sbk_perm.SkidLoop
-	elseif soundType == ESoundTypes.WetLoop then
-		return sbk_perm.WetLoop
-	elseif soundType == ESoundTypes.GravelLoop then
-		return sbk_perm.GravelLoop
-	elseif soundType == ESoundTypes.AlleyLoop then
-		return sbk_perm.AlleyLoop
+	elseif soundType == "Hit_Car_3" then
+		local sounds = {
+			sbk_perm.Hit_Car_3a,
+			sbk_perm.Hit_Car_3b
+		}
+	
+		return sounds[math.random(1,2)]
 	end
 	
-	return sbk_perm.Hit_Box
+	return sbk_perm[soundType]
 end
 
 return {

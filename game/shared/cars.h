@@ -33,6 +33,7 @@ struct CarCosmetics
 {
 	CarCosmetics();
 	void InitFrom(const struct CAR_COSMETICS_D2& srcCos);
+	void InitFrom(const struct CAR_COSMETICS_D1& srcCos);
 
 	HANDLING_TYPE handlingType;
 	Array<GEAR_DESC> gears;
@@ -339,7 +340,7 @@ protected:
 	int8				get_autobrake() const;
 	void				set_autobrake(const int8& value);
 
-	void				StartStaticSound(enum ECarSoundType type, float refDist, float volume, float pitch);
+	void				StartStaticSound(const char* type, float refDist, float volume, float pitch);
 
 	void				CollisionSound(int impact, bool car_vs_car);
 

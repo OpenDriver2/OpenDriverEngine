@@ -15,28 +15,17 @@ struct POSITION_INFO
 	int direction;
 };
 
-enum ECarSoundType
-{
-	HitCurb,
-	Hit_Car_1,
-	Hit_Car_2,
-	Hit_Car_3,
-	SkidLoop,
-	WetLoop,
-	GravelLoop,
-	AlleyLoop,
-};
-
 class ISoundSource;
 
 class CManager_Cars
 {
 	friend class CCar;
 public:
-	typedef ISoundSource*	(*SoundSourceGetCallback)(const CManager_Cars* self, ECarSoundType type);
+	typedef ISoundSource*	(*SoundSourceGetCallback)(const CManager_Cars* self, const char* type);
 
 	int						LoadModel(int modelNumber, CDriverLevelModels* levelModels = nullptr);
 	bool					LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel);
+	bool					LoadDriver1CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int cosmeticIndex);
 
 	void					UnloadAllModels();
 
@@ -67,7 +56,7 @@ protected:
 
 	void					CheckScenaryCollisions(CCar* cp);
 
-	ISoundSource*			GetSoundSource(ECarSoundType type) const;
+	ISoundSource*			GetSoundSource(const char* name) const;
 
 	Array<CCar*>			m_active_cars;		// [A] to be renamed as m_carList
 	int						m_carIdCnt{ 0 };

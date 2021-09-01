@@ -94,32 +94,6 @@ local buttonState = {
 	[SDL.Scancode.LeftShift] = false
 }
 
--- Fixes car cosmetics in REDRIVER2 way
--- TODO: move to CarCosmetics lua
-local function FixCarCos(carCos)
-	local delta = fix.SVECTOR(0,0,0)
-	delta.vz = -(carCos.wheelDisp[1].vz + carCos.wheelDisp[2].vz - 14) / 2
-
-	local function UpdateCarPoints()
-		for i=1,12 do
-			carCos.cPoints[i].vx = carCos.cPoints[i].vx + delta.vx
-			carCos.cPoints[i].vy = carCos.cPoints[i].vy - delta.vy
-			carCos.cPoints[i].vz = carCos.cPoints[i].vz + delta.vz
-		end
-
-		for i=1,4 do
-			carCos.wheelDisp[i].vx = carCos.wheelDisp[i].vx + delta.vx
-			carCos.wheelDisp[i].vy = carCos.wheelDisp[i].vy - delta.vy
-			carCos.wheelDisp[i].vz = carCos.wheelDisp[i].vz + delta.vz
-		end
-		carCos.cog.vx = carCos.cog.vx + delta.vx;
-		carCos.cog.vy = carCos.cog.vy + delta.vy;
-		carCos.cog.vz = carCos.cog.vz - delta.vz;
-	end
-	
-	UpdateCarPoints()
-end
-
 -- TODO: move to Camera.lua
 local cameraAngle = 0
 local headAngle = 0
@@ -251,7 +225,6 @@ TestGame.Init = function(residentModel)
 		world.SpoolRegions(positionInfo.position, 1)
 		
 		local cosmetics = cityCosmetics[residentModel + 1]
-		FixCarCos(cosmetics)
 
 		local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
 		

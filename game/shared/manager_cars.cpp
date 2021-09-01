@@ -34,10 +34,19 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 		"LoadModel", [](CManager_Cars& self, int idx) {
 			return self.LoadModel(idx);
 		},
-		"LoadCosmeticsFile", [](CManager_Cars& self, std::string& filename, int residentModel, sol::this_state s) {
+		"LoadCosmeticsFileD2", [](CManager_Cars& self, std::string& filename, int residentModel, sol::this_state s) {
 			sol::state_view lua(s);
 			CarCosmetics cosmetic;
 			bool result = self.LoadDriver2CosmeticsFile(cosmetic, filename.c_str(), residentModel);
+
+			if (result)
+				return sol::make_object(lua, cosmetic);
+			return sol::make_object(lua, sol::nil);
+		},
+		"LoadCosmeticsFileD1", [](CManager_Cars& self, std::string& filename, int cosmeticIdx, sol::this_state s) {
+			sol::state_view lua(s);
+			CarCosmetics cosmetic;
+			bool result = self.LoadDriver1CosmeticsFile(cosmetic, filename.c_str(), cosmeticIdx);
 
 			if (result)
 				return sol::make_object(lua, cosmetic);
@@ -55,7 +64,7 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 			}, 
 			[](CManager_Cars& self, sol::function cb) {
 				self.m_soundSourceGetCbLua = cb;
-				self.m_soundSourceGetCb = [](const CManager_Cars* self, ECarSoundType type) {
+				self.m_soundSourceGetCb = [](const CManager_Cars* self, const char* type) {
 					ISoundSource* cbResult = self->m_soundSourceGetCbLua(type);
 					return cbResult;
 				};
@@ -131,6 +140,27 @@ bool CManager_Cars::LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const c
 	CAR_COSMETICS_D2 cosmetics;
 
 	fseek(fp, offsetTable[residentModel], SEEK_SET);
+	fread(&cosmetics, sizeof(cosmetics), 1, fp);
+
+	outCosmetics.InitFrom(cosmetics);
+
+	fclose(fp);
+
+	return true;
+}
+
+bool CManager_Cars::LoadDriver1CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int cosmeticIndex)
+{
+	FILE* fp = fopen(filename, "rb");
+	if (!fp)
+	{
+		MsgError("Cannot open '%s'\n", filename);
+		return false;
+	}
+
+	CAR_COSMETICS_D1 cosmetics;
+
+	fseek(fp, sizeof(CAR_COSMETICS_D1) * cosmeticIndex, SEEK_SET);
 	fread(&cosmetics, sizeof(cosmetics), 1, fp);
 
 	outCosmetics.InitFrom(cosmetics);
@@ -848,12 +878,12 @@ void CManager_Cars::GlobalTimeStep()
 	}
 }
 
-ISoundSource* CManager_Cars::GetSoundSource(ECarSoundType type) const
+ISoundSource* CManager_Cars::GetSoundSource(const char* name) const
 {
 	if (!m_soundSourceGetCb)
 		return nullptr;
 
-	return m_soundSourceGetCb(this, type);
+	return m_soundSourceGetCb(this, name);
 }
 
 void CManager_Cars::CheckScenaryCollisions(CCar* cp)
