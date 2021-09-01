@@ -180,6 +180,59 @@ void LuaInit(sol::state& lua)
 		"w", &Vector4D::w);
 
 	//----------------------------------------------------
+	// MATRIX TYPES
+
+	//
+	// Matrix3x3
+	//
+	vec.new_usertype<Matrix3x3>("mat3",
+		sol::call_constructor, sol::factories(
+			[](const sol::table& table) {
+				return Matrix3x3((Vector3D&)table[1], (Vector3D&)table[2], (Vector3D&)table[3]);
+			},
+			[]() {return identity3(); }),
+		sol::call_constructor, sol::constructors<
+				Matrix3x3(const float&, const float&, const float&, 
+						  const float&, const float&, const float&, 
+						  const float&, const float&, const float&)>(),
+		// matrix - matrix ops
+		sol::meta_function::addition, sol::resolve<Matrix3x3(const Matrix3x3&, const Matrix3x3&)>(&operator+),
+		sol::meta_function::subtraction, sol::resolve<Matrix3x3(const Matrix3x3&, const Matrix3x3&)>(&operator-),
+		sol::meta_function::multiplication, sol::resolve<Matrix3x3(const Matrix3x3&, const Matrix3x3&)>(&operator*),
+		// negate 
+		sol::meta_function::unary_minus, sol::resolve<Matrix3x3(const Matrix3x3&)>(&operator-),
+		// inverse matrix
+		sol::meta_function::bitwise_not, sol::resolve<Matrix3x3(const Matrix3x3&)>(&operator!),
+		// members
+		"r1", sol::property([](Matrix3x3& self) {return self.rows[0]; }, [](Matrix3x3& self, const Vector3D& value) {self.rows[0] = value; }),
+		"r2", sol::property([](Matrix3x3& self) {return self.rows[1]; }, [](Matrix3x3& self, const Vector3D& value) {self.rows[1] = value; }),
+		"r3", sol::property([](Matrix3x3& self) {return self.rows[2]; }, [](Matrix3x3& self, const Vector3D& value) {self.rows[2] = value; }),
+		// members - row access
+		"m11", sol::property([](Matrix3x3& self) {return self.rows[0][0]; }, [](Matrix3x3& self, const float& value) {self.rows[0][0] = value; }),
+		"m12", sol::property([](Matrix3x3& self) {return self.rows[0][1]; }, [](Matrix3x3& self, const float& value) {self.rows[0][1] = value; }),
+		"m13", sol::property([](Matrix3x3& self) {return self.rows[0][2]; }, [](Matrix3x3& self, const float& value) {self.rows[0][2] = value; }),
+		"m21", sol::property([](Matrix3x3& self) {return self.rows[1][0]; }, [](Matrix3x3& self, const float& value) {self.rows[1][0] = value; }),
+		"m22", sol::property([](Matrix3x3& self) {return self.rows[1][1]; }, [](Matrix3x3& self, const float& value) {self.rows[1][1] = value; }),
+		"m23", sol::property([](Matrix3x3& self) {return self.rows[1][2]; }, [](Matrix3x3& self, const float& value) {self.rows[1][2] = value; }),
+		"m31", sol::property([](Matrix3x3& self) {return self.rows[2][0]; }, [](Matrix3x3& self, const float& value) {self.rows[2][0] = value; }),
+		"m32", sol::property([](Matrix3x3& self) {return self.rows[2][1]; }, [](Matrix3x3& self, const float& value) {self.rows[2][1] = value; }),
+		"m33", sol::property([](Matrix3x3& self) {return self.rows[2][2]; }, [](Matrix3x3& self, const float& value) {self.rows[2][2] = value; }),
+		// operations
+		"transformVec", [](Matrix3x3& self, const Vector3D& vec) {return transform3(vec, self); },
+		"transformVecInv", [](Matrix3x3& self, const Vector3D& vec) {return transform3Inv(vec, self); },
+		"transposed", [](Matrix3x3& self) { return transpose(self); },
+		"eulersXYZ", [](Matrix3x3& self) { return EulerMatrixXYZ(self); },
+		"eulersZXY", [](Matrix3x3& self) { return EulerMatrixZXY(self); },
+		// common matrix generators
+		"identity", []() {return identity3(); },
+		"rotationX", [](float val) {return rotateX3(val); },
+		"rotationY", [](float val) {return rotateY3(val); },
+		"rotationZ", [](float val) {return rotateZ3(val); },
+		"rotationXYZ", [](const Vector3D& val) {return rotateXYZ3(val.x, val.y, val.z); },
+		"rotationZXY", [](const Vector3D& val) {return rotateZXY3(val.x, val.y, val.z); }
+	);
+
+	//----------------------------------------------------
 
 	vec["AngleVectors"] = [](const Vector3D& v) {
 		Vector3D forward, right, up;
@@ -227,12 +280,16 @@ void LuaInit(sol::state& lua)
 	fix["toRadian"] = TO_RADIAN;
 	fix["toGTEAngle"] = TO_GTE_ANGLE;
 
-	fix["ToFixed"]		= [](const float& a)	{ return int(a * ONE_F); };
-	fix["FromFixed"]	= [](const int& a)		{ return float(a) / ONE_F; };
+	fix["ToFixed"]		= [](const float& a)					{ return int(a * ONE_F); };
+	fix["FromFixed"]	= [](const int& a)						{ return float(a) / ONE_F; };
 	fix["DivHalfRound"]	= [](const int& a, const int& bits)		{ return FixDivHalfRound(a, bits); };
 
 	fix["ToFixedVector"] = &ToFixedVector;
-	fix["FromFixedVector"] = sol::resolve<Vector3D(const VECTOR_NOPAD&)>(&FromFixedVector);
+	fix["FromFixedVector"] = sol::overload(
+		sol::resolve<Vector3D(const VECTOR_NOPAD&)>(&FromFixedVector), 
+		sol::resolve<Vector3D(const SVECTOR&)>(&FromFixedVector),
+		sol::resolve<Vector3D(const SVECTOR_NOPAD&)>(&FromFixedVector));
+
 	fix["DIFF_ANGLES"] = [](const int& x, const int& y) {
 		return DIFF_ANGLES(x, y);
 	};

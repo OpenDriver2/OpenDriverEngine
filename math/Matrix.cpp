@@ -221,7 +221,7 @@ Vector3D EulerMatrixXYZ(const Matrix3x3 &matrix)
 // converts matrix to euler angles of Z-X-Y order
 Vector3D EulerMatrixZXY(const Matrix3x3 &matrix)
 {
-	float a = asinf(matrix.rows[1][2]);
+	float a = -asinf(matrix.rows[1][2]);
 	float ca = cosf(a);
 
 	if (fabs(ca) > 0.0005f) // handle gimbal lock
@@ -229,7 +229,7 @@ Vector3D EulerMatrixZXY(const Matrix3x3 &matrix)
 		return Vector3D(
 			a,
 			atan2f(-matrix.rows[0][2] / ca, matrix.rows[2][2] / ca),
-			atan2f(-matrix.rows[1][0] / ca, matrix.rows[1][1] / ca)
+			-atan2f(-matrix.rows[1][0] / ca, matrix.rows[1][1] / ca)
 		);
 	}
 	else // gimbal lock has occurred

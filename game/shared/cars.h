@@ -280,8 +280,9 @@ public:
 
 	// utility functions (mostly for Lua)
 	VECTOR_NOPAD			GetInterpolatedCogPosition() const;
-	const VECTOR_NOPAD&		GetInterpolatedPosition() const;
+	VECTOR_NOPAD			GetInterpolatedPosition() const;
 	float					GetInterpolatedDirection() const;
+	Matrix3x3				GetInterpolatedDrawMatrix() const;
 
 	VECTOR_NOPAD			GetCogPosition() const;
 

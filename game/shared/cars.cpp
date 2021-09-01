@@ -351,6 +351,7 @@ void CCar::Lua_Init(sol::state& lua)
 		"i_cog_position", sol::property(&CCar::GetInterpolatedCogPosition),
 		"i_position", sol::property(&CCar::GetInterpolatedPosition),
 		"i_direction", sol::property(&CCar::GetInterpolatedDirection),
+		"i_drawmatrix", sol::property(&CCar::GetInterpolatedDrawMatrix),
 		"linearVelocity", sol::property(&CCar::GetLinearVelocity),
 		"cosmetics", &CCar::m_cosmetics);
 }
@@ -1860,7 +1861,7 @@ VECTOR_NOPAD CCar::GetInterpolatedCogPosition() const
 	return ToFixedVector(lerp(FromFixedVector(m_prevCogPosition), FromFixedVector(GetCogPosition()), factor));
 }
 
-const VECTOR_NOPAD& CCar::GetInterpolatedPosition() const
+VECTOR_NOPAD CCar::GetInterpolatedPosition() const
 {
 	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
 
@@ -1874,6 +1875,16 @@ float CCar::GetInterpolatedDirection() const
 	int shortest_angle = DIFF_ANGLES(m_prevDirection, m_hd.direction);
 
 	return float(m_prevDirection) + float(shortest_angle) * factor;
+}
+
+Matrix3x3 CCar::GetInterpolatedDrawMatrix() const
+{
+	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	return Matrix3x3(
+		lerp(m_prevDrawCarMatrix.rows[0].xyz(), m_drawCarMatrix.rows[0].xyz(), factor),
+		lerp(m_prevDrawCarMatrix.rows[1].xyz(), m_drawCarMatrix.rows[1].xyz(), factor),
+		lerp(m_prevDrawCarMatrix.rows[2].xyz(), m_drawCarMatrix.rows[2].xyz(), factor)
+	);
 }
 
 VECTOR_NOPAD CCar::GetCogPosition() const

@@ -4,19 +4,8 @@
 #include "math/psx_math_types.h"
 #include "math/Matrix.h"
 
-inline Vector3D FromFixedVector(const VECTOR_NOPAD& vec)
-{
-	float one_by_fixed = 1.0f / ONE_F;
-	return Vector3D(vec.vx * one_by_fixed, vec.vy * one_by_fixed, vec.vz * one_by_fixed);
-}
-
-inline Vector3D FromFixedVector(const SVECTOR_NOPAD& vec)
-{
-	float one_by_fixed = 1.0f / ONE_F;
-	return Vector3D(vec.vx * one_by_fixed, vec.vy * one_by_fixed, vec.vz * one_by_fixed);
-}
-
-inline Vector3D FromFixedVector(const SVECTOR& vec)
+template <typename T>
+inline Vector3D FromFixedVector(const T& vec)
 {
 	float one_by_fixed = 1.0f / ONE_F;
 	return Vector3D(vec.vx * one_by_fixed, vec.vy * one_by_fixed, vec.vz * one_by_fixed);
