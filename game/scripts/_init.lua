@@ -10,9 +10,11 @@ MsgInfo("OpenDriverEngine Lua host initialization")
 dofile "scripts/common.lua"
 dofile "scripts/city.lua"
 dofile "scripts/updates.lua"
-dofile "scripts/free_camera.lua"
-dofile "scripts/test_game.lua"
+dofile "scripts/camera.lua"
 dofile "scripts/sound_bank.lua"
+dofile "scripts/free_camera.lua"
+
+dofile "scripts/test_game.lua"
 
 -- "engine" namespace has everything dynamically updated
 -- "driver" & "driver2" namespace has every class to be used with "engine"
@@ -423,6 +425,9 @@ end
 --    unless you know what it is
 -------------------------------------------------
 
+ButtonState = {}
+JustPressed = {}
+
 local function errorHandler ( errobj )
 	MsgError("ERROR - "..errobj)
 	MsgError(debug.traceback())
@@ -442,6 +447,7 @@ EngineHost = {
 	-- You can draw here ImGUI stuff
 	PostFrame = function( dt )
 		xpcall(RenderUI, errorHandler)
+		JustPressed = {}
 	end,
 	
 	MouseMove = function( x, y, xrel, yrel)
@@ -471,7 +477,8 @@ EngineHost = {
 				forceShowUI = not forceShowUI
 			end
 			
-			TestGame.UpdateCarControls(num, down)
+			JustPressed[num] = down
+			ButtonState[num] = down
 		end, errorHandler)
 
 	end

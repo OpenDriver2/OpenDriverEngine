@@ -84,114 +84,19 @@ local PlayerStartInfo = {
 	},
 }
 
--- car controls
-local buttonState = {
-	[SDL.Scancode.Up] = false,
-	[SDL.Scancode.Down] = false,
-	[SDL.Scancode.Left] = false,
-	[SDL.Scancode.Right] = false,
-	[SDL.Scancode.Space] = false,
-	[SDL.Scancode.LeftShift] = false
-}
-
--- TODO: move to Camera.lua
-local cameraAngle = 0
-local headAngle = 0
-
-local function PlaceCameraFollowCar(dt)
-	local car = players.localPlayer.currentCar
-
-	if car == nil then
-		return
-	end
-	
-	local input = {
-		lookLeft = buttonState[SDL.Scancode.A],
-		lookRight = buttonState[SDL.Scancode.D],
-		lookBack = buttonState[SDL.Scancode.S],
-	}
-	
-	local carCos = car.cosmetics
-
-	-- take the base car position
-	local basePos = car.i_cog_position
-	local baseDir = car.i_direction
-	
-	local cameraPos = fix.VECTOR(0,0,0)
-	
-	local addDist = math.max(248, carCos.colBox.vy * 3)
-	
-	local maxCameraDist = carCos.colBox.vz * 2 + carCos.colBox.vy + addDist
-	local carHeight = carCos.colBox.vy * -3 + 85
-	
-	local cameraDist = maxCameraDist
-	
-	local headTarget = 0
-	
-	if input.lookLeft then
-		headTarget = -1024
-	elseif input.lookRight then
-		headTarget = 1024
-	end
-	
-	-- turn head
-	headAngle = headAngle + (headTarget - headAngle) * dt * 15
-	
-	-- smooth follow
-	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
-	cameraAngle = math.floor(cameraAngle + (angleDelta / 8) * dt * 25)
-	
-	local cameraAngleCurrent = cameraAngle + headAngle
-	
-	if input.lookBack then
-		cameraAngle = baseDir
-		cameraAngleCurrent = cameraAngle + 2048
-	end
-	
-	local sn = math.sin(cameraAngleCurrent * fix.toRadian)
-	local cs = math.cos(cameraAngleCurrent * fix.toRadian)
-	
-	cameraPos.vx = math.floor(basePos.vx - (cameraDist * sn))
-	cameraPos.vy = math.floor(basePos.vy)
-	cameraPos.vz = math.floor(basePos.vz - (cameraDist * cs))
-
-	local camPosVy = world.MapHeight(cameraPos)
-	cameraPos.vy = carHeight - basePos.vy	
-	
-	local cammapht = (carHeight - camPosVy) - 100 -- + gCameraOffset.vy;
-	local camera_angle = vec.vec3(25, -cameraAngleCurrent, 0)
-
-	if cameraPos.vy > cammapht then
-		local height = world.MapHeight(basePos);
-
-		if math.abs(height - camPosVy) < 900 then
-			camera_angle.x = (cameraPos.vy - cammapht) / 2 + 25
-			cameraPos.vy = cammapht;
-		end
-	end
-	
-	cameraPos.vy = -cameraPos.vy
-	
-	InitCamera({
-		position = fix.FromFixedVector(cameraPos),
-		angles = vec.vec3(camera_angle.x / fix.ONE * 360.0,camera_angle.y / fix.ONE * 360.0,0),
-		fov = 50,
-		velocity = fix.FromFixedVector(car.linearVelocity)
-	})
-end
-
-local CameraFuncs = {
-	PlaceCameraFollowCar,
-}
-
 -------------------------------------------------------
 
 TestGame = {
-	CameraNumber = 1,
+	CameraNumber = 0,
 }
 
 TestGame.UpdateCamera = function(dt)
-	CameraFuncs[TestGame.CameraNumber](dt)
+
+	if JustPressed[SDL.Scancode.C] == true then
+		TestGame.CameraNumber = (TestGame.CameraNumber + 1) & 1
+	end
+
+	CameraFuncs[TestGame.CameraNumber + 1](dt)
 end
 
 TestGame.Terminate = function()
@@ -234,20 +139,20 @@ end
 
 TestGame.UpdateCarPads = function()
 	local input = {
-		accel = buttonState[SDL.Scancode.Up],
-		brake = buttonState[SDL.Scancode.Down],
-		wheelspin = buttonState[SDL.Scancode.LeftShift],
-		handbrake = buttonState[SDL.Scancode.Space],
+		accel = ButtonState[SDL.Scancode.Up],
+		brake = ButtonState[SDL.Scancode.Down],
+		wheelspin = ButtonState[SDL.Scancode.LeftShift],
+		handbrake = ButtonState[SDL.Scancode.Space],
 		steering = 0,
 		fastSteer = false,
 		horn = 0
 	}
 	
-	if buttonState[SDL.Scancode.Left] then
+	if ButtonState[SDL.Scancode.Left] then
 		input.steering = -1
 	end
 
-	if buttonState[SDL.Scancode.Right] then
+	if ButtonState[SDL.Scancode.Right] then
 		input.steering = 1
 	end
 	
@@ -257,8 +162,4 @@ end
 
 TestGame.IsRunning = function()
 	return (players.localPlayer.currentCar ~= nil)
-end
-
-TestGame.UpdateCarControls = function(num, down)
-	buttonState[num] = down
 end
