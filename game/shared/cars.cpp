@@ -134,12 +134,12 @@ void CCar::Lua_Init(sol::state& lua)
 					table["ratio_id"]
 				};
 			}),
-			"lowidl_ws", &GEAR_DESC::lowidl_ws,
-			"low_ws", &GEAR_DESC::low_ws,
-			"hi_ws", &GEAR_DESC::hi_ws,
-			"ratio_ac", &GEAR_DESC::ratio_ac,
-			"ratio_id", &GEAR_DESC::ratio_id
-		);
+		"lowidl_ws", &GEAR_DESC::lowidl_ws,
+		"low_ws", &GEAR_DESC::low_ws,
+		"hi_ws", &GEAR_DESC::hi_ws,
+		"ratio_ac", &GEAR_DESC::ratio_ac,
+		"ratio_id", &GEAR_DESC::ratio_id
+	);
 
 	lua.new_usertype<HANDLING_TYPE>(
 		"HANDLING_TYPE",
@@ -152,11 +152,11 @@ void CCar::Lua_Init(sol::state& lua)
 					table["autoBrakeOn"],
 				};
 			}),
-			"frictionScaleRatio", &HANDLING_TYPE::frictionScaleRatio,
-			"aggressiveBraking", &HANDLING_TYPE::aggressiveBraking,
-			"fourWheelDrive", &HANDLING_TYPE::fourWheelDrive,
-			"autoBrakeOn", &HANDLING_TYPE::autoBrakeOn
-		);
+		"frictionScaleRatio", &HANDLING_TYPE::frictionScaleRatio,
+		"aggressiveBraking", &HANDLING_TYPE::aggressiveBraking,
+		"fourWheelDrive", &HANDLING_TYPE::fourWheelDrive,
+		"autoBrakeOn", &HANDLING_TYPE::autoBrakeOn
+	);
 
 	lua.new_usertype<CarCosmetics>(
 		"CarCosmetics",
@@ -332,28 +332,40 @@ void CCar::Lua_Init(sol::state& lua)
 		"revSample", &CarCosmetics::revSample,
 		"idleSample", &CarCosmetics::idleSample,
 		"hornSample", &CarCosmetics::hornSample
-		);
+	);
 
 	lua.new_usertype<CCar>(
 		"CCar",
 		"Destroy", &CCar::Destroy,
+		"cosmetics", &CCar::m_cosmetics,
+
+		// inputs
 		"thrust", &CCar::m_thrust,
-		"wheel_angle", &CCar::m_wheel_angle,
+		"wheelAngle", &CCar::m_wheel_angle,
 		"handbrake", &CCar::m_handbrake,
 		"wheelspin", &CCar::m_wheelspin,
-		"changingGear", sol::property(&CCar::get_changingGear),
-		"wheel_speed", sol::property(&CCar::get_wheel_speed),
-		"speed", sol::property(&CCar::get_speed),
-		"autobrake", sol::property(&CCar::get_autobrake, &CCar::set_autobrake),
-		"cog_position", sol::property(&CCar::GetCogPosition),
-		"position", sol::property(&CCar::GetPosition, &CCar::SetPosition),
-		"direction", sol::property(&CCar::GetDirection, &CCar::SetDirection),
-		"i_cog_position", sol::property(&CCar::GetInterpolatedCogPosition),
-		"i_position", sol::property(&CCar::GetInterpolatedPosition),
-		"i_direction", sol::property(&CCar::GetInterpolatedDirection),
-		"i_drawmatrix", sol::property(&CCar::GetInterpolatedDrawMatrix),
+
+		// driving properties
+		"changingGear", sol::property(&CCar::GetChangingGear),
+		"wheelSpeed", sol::property(&CCar::GetWheelSpeed),
+		"speed", sol::property(&CCar::GetSpeed),
+		"autobrake", sol::property(&CCar::GetAutobrake, &CCar::SetAutobrake),
+
+		// physics properties
 		"linearVelocity", sol::property(&CCar::GetLinearVelocity),
-		"cosmetics", &CCar::m_cosmetics);
+		"angularVelocity", sol::property(&CCar::GetAngularVelocity),
+
+		// transform
+		"position", sol::property(&CCar::GetPosition, &CCar::SetPosition),
+		"cogPosition", sol::property(&CCar::GetCogPosition),
+		"direction", sol::property(&CCar::GetDirection, &CCar::SetDirection),
+
+		// interpolated transform
+		"i_position", sol::property(&CCar::GetInterpolatedPosition),
+		"i_cogPosition", sol::property(&CCar::GetInterpolatedCogPosition),
+		"i_direction", sol::property(&CCar::GetInterpolatedDirection),
+		"i_drawMatrix", sol::property(&CCar::GetInterpolatedDrawMatrix)
+	);
 }
 
 //--------------------------------------------------------
@@ -1935,6 +1947,11 @@ const VECTOR_NOPAD& CCar::GetLinearVelocity() const
 	return *(VECTOR_NOPAD*)&m_st.n.linearVelocity;
 }
 
+const VECTOR_NOPAD& CCar::GetAngularVelocity() const
+{
+	return *(VECTOR_NOPAD*)&m_st.n.angularVelocity;
+}
+
 const MATRIX& CCar::GetMatrix() const
 {
 	return m_hd.where;
@@ -1945,27 +1962,27 @@ const OrientedBox& CCar::GetOrientedBox() const
 	return m_hd.oBox;
 }
 
-bool CCar::get_changingGear() const
+bool CCar::GetChangingGear() const
 {
 	return m_hd.changingGear;
 }
 
-int	CCar::get_wheel_speed() const
+int	CCar::GetWheelSpeed() const
 {
 	return m_hd.wheel_speed;
 }
 
-int	CCar::get_speed() const
+int	CCar::GetSpeed() const
 {
 	return m_hd.speed;
 }
 
-int8 CCar::get_autobrake() const
+int8 CCar::GetAutobrake() const
 {
 	return m_hd.autoBrake;
 }
 
-void CCar::set_autobrake(const int8& value)
+void CCar::SetAutobrake(const int8& value)
 {
 	m_hd.autoBrake = value;
 }
@@ -2104,12 +2121,12 @@ void CCar::DrawCar()
 	}
 }
 
-int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int flags)
+bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int flags)
 {
 	int temp;
 	int strikeVel;
 	int boxDiffY;
-	int collided;
+	bool collided;
 	short scale;
 	int chan;
 	MODEL* model;
@@ -2136,11 +2153,13 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 	boxDiffY = m_hd.oBox.location.vy + building.pos.vy;
 	boxDiffY = abs(boxDiffY);
 
-	collided = 0;
+	collided = false;
 
 	buildingHeightY = building.height >> 1;
 
-	if (boxDiffY <= buildingHeightY + (m_hd.oBox.length[1] >> 1) && (model->shape_flags & SHAPE_FLAG_NOCOLLIDE) == 0 /*&& (cop->pos.vx != OBJECT_SMASHED_MARK)*/)
+	if (boxDiffY <= buildingHeightY + (m_hd.oBox.length[1] >> 1) && 
+		(model->shape_flags & SHAPE_FLAG_NOCOLLIDE) == 0 && 
+		(cop->pos.vx != OBJECT_SMASHED_MARK))
 	{
 		tempwhere.vx = m_hd.where.t[0];
 		tempwhere.vz = m_hd.where.t[2];
@@ -2219,7 +2238,7 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 
 		if (m_controlType == CONTROL_TYPE_CAMERACOLLIDER)
 		{
-			collided = 0;// bcollided2d(cd, &gCameraBoxOverlap);
+			collided = false;// bcollided2d(cd, &gCameraBoxOverlap);
 		}
 		else
 		{
@@ -2283,6 +2302,10 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 
 					if (model->flags2 & MODEL_FLAG_SMASHABLE)
 					{
+						// TODO: World lua callback on smashables
+
+						StartStaticSound("Hit_Cone", 256 / ONE_F, 1.0f, 1.0f);
+						cop->pos.vx = OBJECT_SMASHED_MARK;
 #if 0
 						// smash object
 						damage_object(cop, &velocity);
@@ -2444,4 +2467,9 @@ int CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fla
 	}
 
 	return collided;
+}
+
+bool CCar::CarCarCollision(CCar* other, CRET3D& result)
+{
+	return collided3d(this, other, result);
 }

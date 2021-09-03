@@ -23,12 +23,12 @@ struct CRET2D
 	VECTOR_NOPAD hit;
 	VECTOR_NOPAD surfNormal;
 	int penetration;
-	int neverfree;
+	bool neverfree;
 };
 
 //----------------------------------------
 
-int		bcollided2d(CDATA2D body[2], int* boxOverlap = nullptr);
+bool	bcollided2d(CDATA2D body[2], int* boxOverlap = nullptr);
 
 void	bFindCollisionPoint(CDATA2D body[2], CRET2D& collisionResult);
 int		bFindCollisionTime(CDATA2D body[2], CRET2D& collisionResult);

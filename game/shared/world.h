@@ -19,6 +19,7 @@ struct BUILDING_BOX
 	struct MODEL* model;
 };
 
+
 typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
 typedef bool (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
 

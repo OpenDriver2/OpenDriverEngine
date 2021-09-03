@@ -43,6 +43,16 @@ local truckModel
 function InitEventModels()
 	trainModel = world.GetModelByName("ELTRAIN")
 	truckModel = world.GetModelByName("LORRY")
+	
+	-- model properties
+	--[[
+	truckModel.animateInfo = ANIMATED_OBJECT {
+		glowType = 1,
+		glowSize = 125 / fix.ONE,
+		lightRadius = 512 / fix.ONE,
+		color = vec.vec3(1,1,1),
+		position = fix.VECTOR(e,t,c),
+	}]]
 end
 
 --
@@ -66,6 +76,8 @@ function AddEventObjects()
 		world.PushCellObject(CELL_OBJECT(fix.VECTOR(2434, -300, -9641), 128 // 64, truckModel.index))
 	end
 end
+
+
 
 --
 -- StepSim: performs physics fixed time step (callback)

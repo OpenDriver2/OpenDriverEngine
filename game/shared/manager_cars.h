@@ -21,8 +21,6 @@ class CManager_Cars
 {
 	friend class CCar;
 public:
-	typedef ISoundSource*	(*SoundSourceGetCallback)(const CManager_Cars* self, const char* type);
-
 	int						LoadModel(int modelNumber, CDriverLevelModels* levelModels = nullptr);
 	bool					LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel);
 	bool					LoadDriver1CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int cosmeticIndex);
@@ -65,7 +63,6 @@ protected:
 	int64					m_lastUpdateTime{ 0 };
 	int64					m_curUpdateTime{ 0 };
 
-	SoundSourceGetCallback	m_soundSourceGetCb{ nullptr };
 	sol::function			m_soundSourceGetCbLua;
 };
 

@@ -39,9 +39,9 @@ local function PlaceCameraInCar(dt)
 	local carCos = car.cosmetics
 
 	-- take the base car position
-	local basePos = car.i_cog_position
+	local basePos = car.i_cogPosition
 	local baseDir = car.i_direction
-	local baseRot = car.i_drawmatrix
+	local baseRot = car.i_drawMatrix
 	
 	local colBox = fix.FromFixedVector(carCos.colBox)
 	local _headAngle = headAngle
@@ -81,7 +81,7 @@ local function PlaceCameraFollowCar(dt)
 	local carCos = car.cosmetics
 
 	-- take the base car position
-	local basePos = car.i_cog_position
+	local basePos = car.i_cogPosition
 	local baseDir = car.i_direction
 	
 	local cameraPos = fix.VECTOR(0,0,0)

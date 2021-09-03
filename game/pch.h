@@ -13,6 +13,8 @@
 #include <nstd/Math.hpp>
 #include <nstd/File.hpp>
 #include <nstd/Directory.hpp>
+#include <nstd/Mutex.hpp>
+#include <nstd/Thread.hpp>
 
 #include "routines/d2_types.h"
 #include "routines/models.h"

@@ -3,7 +3,7 @@
 
 // Checks of two bodies collides (basic check) with Separating Axis Theorem
 // also initializes axes
-int bcollided2d(CDATA2D body[2], int* boxOverlap)
+bool bcollided2d(CDATA2D body[2], int* boxOverlap)
 {
 	int dtheta;
 	int ac, as;
@@ -201,14 +201,13 @@ void bFindCollisionPoint(CDATA2D body[2], CRET2D& collisionResult)
 // [D] [T]
 int bFindCollisionTime(CDATA2D cd[2], CRET2D& collisionResult)
 {
-	int hit;
+	bool hit, neverfree;
 	int i, q;
 	int time, step;
-	int neverfree;
 	CDATA2D original[2];
 
-	hit = 1;
-	neverfree = 1;
+	hit = true;
+	neverfree = true;
 	time = 4096;
 	step = 2048;
 
@@ -243,7 +242,7 @@ int bFindCollisionTime(CDATA2D cd[2], CRET2D& collisionResult)
 		}
 		else
 		{
-			neverfree = 0;
+			neverfree = false;
 			time += step;
 		}
 
@@ -255,7 +254,7 @@ int bFindCollisionTime(CDATA2D cd[2], CRET2D& collisionResult)
 		i--;
 	} while (i >= 0);
 
-	if (hit == 0)
+	if (!hit)
 	{
 		for (i = 0; i < 2; i++)
 		{

@@ -3,6 +3,13 @@
 
 class CCar;
 
-int CarCarCollision3(CCar* c0, CCar* c1, int& depth, struct VECTOR_NOPAD& where, struct VECTOR_NOPAD& normal);
+struct CRET3D
+{
+	VECTOR_NOPAD location;
+	VECTOR_NOPAD normal;
+	int depth;
+};
+
+bool collided3d(CCar* cp0, CCar* cp1, CRET3D& least);
 
 #endif // BCOLL3D_H

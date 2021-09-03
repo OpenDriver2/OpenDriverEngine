@@ -276,7 +276,8 @@ public:
 	void					StepOneCar();
 
 	// collision
-	int						CarBuildingCollision(struct BUILDING_BOX& building, struct CELL_OBJECT* cop, int flags);
+	bool					CarBuildingCollision(struct BUILDING_BOX& building, struct CELL_OBJECT* cop, int flags);
+	bool					CarCarCollision(CCar* other, struct CRET3D& result);
 
 	// utility functions (mostly for Lua)
 	VECTOR_NOPAD			GetInterpolatedCogPosition() const;
@@ -293,6 +294,7 @@ public:
 	void					SetDirection(const int& newDir);
 
 	const VECTOR_NOPAD&		GetLinearVelocity() const;
+	const VECTOR_NOPAD&		GetAngularVelocity() const;
 
 	const MATRIX&			GetMatrix() const;
 	const OrientedBox&		GetOrientedBox() const;
@@ -333,13 +335,13 @@ protected:
 	void				AddWheelForcesDriver1(CAR_LOCALS& cl);
 	void				ConvertTorqueToAngularAcceleration(CAR_LOCALS& cl);
 
-	bool				get_changingGear() const;
+	bool				GetChangingGear() const;
 
-	int					get_wheel_speed() const;
-	int					get_speed() const;
+	int					GetWheelSpeed() const;
+	int					GetSpeed() const;
 
-	int8				get_autobrake() const;
-	void				set_autobrake(const int8& value);
+	int8				GetAutobrake() const;
+	void				SetAutobrake(const int8& value);
 
 	void				StartStaticSound(const char* type, float refDist, float volume, float pitch);
 

@@ -64,10 +64,6 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 			}, 
 			[](CManager_Cars& self, sol::function cb) {
 				self.m_soundSourceGetCbLua = cb;
-				self.m_soundSourceGetCb = [](const CManager_Cars* self, const char* type) {
-					ISoundSource* cbResult = self->m_soundSourceGetCbLua(type);
-					return cbResult;
-				};
 			})
 	);
 
@@ -409,12 +405,11 @@ void CManager_Cars::GlobalTimeStep()
 	RigidBodyState* d0;
 	RigidBodyState* d1;
 	LONGQUATERNION delta_orientation;
-	LONGVECTOR4 normal, collisionpoint;
 	LONGVECTOR4 AV, lever0, lever1, torque, pointVel0;
 	VECTOR_NOPAD velocity;
 	int do1, do2;
 	int m1, m2;
-	int strikeVel, strength, depth;
+	int strikeVel, strength;
 	int carsDentedThisFrame;
 	short* felony;
 
@@ -572,7 +567,9 @@ void CManager_Cars::GlobalTimeStep()
 						// as it has already composed bitfield / pairs
 						if ((mayBeCollidingBits & (1 << j)) != 0 && (c1->m_hd.speed != 0 || cp->m_hd.speed != 0))
 						{
-							if (CarCarCollision3(cp, c1, depth, (VECTOR_NOPAD&)collisionpoint, (VECTOR_NOPAD&)normal))
+							CRET3D collResult;
+
+							if (cp->CarCarCollision(c1, collResult))
 							{
 								if (RKstep > 0)
 									thisState_j = &_tp[j];
@@ -582,22 +579,22 @@ void CManager_Cars::GlobalTimeStep()
 								int c1InfiniteMass;
 								int c2InfiniteMass;
 
-								collisionpoint[1] -= 0;
+								collResult.location.vy -= 0;
 
-								lever0[0] = collisionpoint[0] - cp->m_hd.where.t[0];
-								lever0[1] = collisionpoint[1] - cp->m_hd.where.t[1];
-								lever0[2] = collisionpoint[2] - cp->m_hd.where.t[2];
+								lever0[0] = collResult.location.vx - cp->m_hd.where.t[0];
+								lever0[1] = collResult.location.vy - cp->m_hd.where.t[1];
+								lever0[2] = collResult.location.vz - cp->m_hd.where.t[2];
 
-								lever1[0] = collisionpoint[0] - c1->m_hd.where.t[0];
-								lever1[1] = collisionpoint[1] - c1->m_hd.where.t[1];
-								lever1[2] = collisionpoint[2] - c1->m_hd.where.t[2];
+								lever1[0] = collResult.location.vx - c1->m_hd.where.t[0];
+								lever1[1] = collResult.location.vy - c1->m_hd.where.t[1];
+								lever1[2] = collResult.location.vz - c1->m_hd.where.t[2];
 
 								strength = 47 - (lever0[1] + lever1[1]) / 2;
 
 								lever0[1] += strength;
 								lever1[1] += strength;
 
-								strikeVel = depth * 0xc000;
+								strikeVel = collResult.depth * 0xc000;
 
 								pointVel0[0] = (FIXEDH(thisState_i->n.angularVelocity[1] * lever0[2] - thisState_i->n.angularVelocity[2] * lever0[1]) + thisState_i->n.linearVelocity[0]) -
 									(FIXEDH(thisState_j->n.angularVelocity[1] * lever1[2] - thisState_j->n.angularVelocity[2] * lever1[1]) + thisState_j->n.linearVelocity[0]);
@@ -608,9 +605,9 @@ void CManager_Cars::GlobalTimeStep()
 								pointVel0[2] = (FIXEDH(thisState_i->n.angularVelocity[0] * lever0[1] - thisState_i->n.angularVelocity[1] * lever0[0]) + thisState_i->n.linearVelocity[2]) -
 									(FIXEDH(thisState_j->n.angularVelocity[0] * lever1[1] - thisState_j->n.angularVelocity[1] * lever1[0]) + thisState_j->n.linearVelocity[2]);
 
-								howHard = (pointVel0[0] / 256) * (normal[0] / 32) +
-									(pointVel0[1] / 256) * (normal[1] / 32) +
-									(pointVel0[2] / 256) * (normal[2] / 32);
+								howHard =	(pointVel0[0] / 256) * (collResult.normal.vx / 32) +
+											(pointVel0[1] / 256) * (collResult.normal.vy / 32) +
+											(pointVel0[2] / 256) * (collResult.normal.vz / 32);
 
 								if (howHard > 0 && RKstep > -1)
 								{
@@ -620,7 +617,7 @@ void CManager_Cars::GlobalTimeStep()
 									if (cp->DamageCar3D(&lever0, howHard >> 1, c1))
 										cp->m_ap.needsDenting = 1;
 
-									if (howHard > 0x32000)
+									if (howHard > 2048 * 100)
 									{
 										if (cp->m_controlType == CONTROL_TYPE_CIV_AI)
 											cp->m_ai.c.carMustDie = 1;
@@ -656,11 +653,11 @@ void CManager_Cars::GlobalTimeStep()
 										velocity.vx = FIXED(cp->m_st.n.linearVelocity[0]);
 										velocity.vz = FIXED(cp->m_st.n.linearVelocity[2]);
 
-										collisionpoint[1] = -collisionpoint[1];
+										collResult.location[1] = -collResult.location[1];
 
 										if (cp->m_controlType == CONTROL_TYPE_PLAYER || c1->m_controlType == CONTROL_TYPE_PLAYER)
 										{
-											Setup_Sparks((VECTOR*)collisionpoint, &velocity, 6, 0);
+											Setup_Sparks((VECTOR*)collResult.location, &velocity, 6, 0);
 
 											if (cp->m_controlType == CONTROL_TYPE_PLAYER)
 												SetPadVibration(*cp->m_ai.padid, 1);
@@ -677,9 +674,9 @@ void CManager_Cars::GlobalTimeStep()
 											debris1 = GetDebrisColour(cp);
 											debris2 = GetDebrisColour(c1);
 
-											Setup_Debris((VECTOR*)collisionpoint, &velocity, 3, 0);
-											Setup_Debris((VECTOR*)collisionpoint, &velocity, 6, debris1 << 0x10);
-											Setup_Debris((VECTOR*)collisionpoint, &velocity, 2, debris2 << 0x10);
+											Setup_Debris((VECTOR*)collResult.location, &velocity, 3, 0);
+											Setup_Debris((VECTOR*)collResult.location, &velocity, 6, debris1 << 0x10);
+											Setup_Debris((VECTOR*)collResult.location, &velocity, 2, debris2 << 0x10);
 										}
 									}
 #endif
@@ -727,9 +724,9 @@ void CManager_Cars::GlobalTimeStep()
 
 									strength1 = FIXEDH(strength1) * do1 >> 3;
 
-									velocity.vx = (normal[0] >> 3) * strength1 >> 6;
-									velocity.vz = (normal[2] >> 3) * strength1 >> 6;
-									velocity.vy = (normal[1] >> 3) * strength1 >> 6;
+									velocity.vx = (collResult.normal.vx >> 3) * strength1 >> 6;
+									velocity.vy = (collResult.normal.vy >> 3) * strength1 >> 6;
+									velocity.vz = (collResult.normal.vz >> 3) * strength1 >> 6;
 
 									thisDelta[i].n.linearVelocity[0] -= velocity.vx;
 									thisDelta[i].n.linearVelocity[1] -= velocity.vy;
@@ -768,9 +765,9 @@ void CManager_Cars::GlobalTimeStep()
 
 									strength2 = FIXEDH(strength2) * do2 >> 3;
 
-									velocity.vx = (normal[0] >> 3) * strength2 >> 6;
-									velocity.vy = (normal[1] >> 3) * strength2 >> 6;
-									velocity.vz = (normal[2] >> 3) * strength2 >> 6;
+									velocity.vx = (collResult.normal.vx >> 3) * strength2 >> 6;
+									velocity.vy = (collResult.normal.vy >> 3) * strength2 >> 6;
+									velocity.vz = (collResult.normal.vz >> 3) * strength2 >> 6;
 
 									thisDelta[j].n.linearVelocity[0] += velocity.vx;
 									thisDelta[j].n.linearVelocity[1] += velocity.vy;
@@ -880,10 +877,19 @@ void CManager_Cars::GlobalTimeStep()
 
 ISoundSource* CManager_Cars::GetSoundSource(const char* name) const
 {
-	if (!m_soundSourceGetCb)
+	if (!m_soundSourceGetCbLua.valid())
 		return nullptr;
 
-	return m_soundSourceGetCb(this, name);
+	ISoundSource* result = nullptr;
+	try {
+		result = m_soundSourceGetCbLua.call(name);
+	}
+	catch (const sol::error& e)
+	{
+		MsgError("CManager_Cars::GetSoundSource error: %s\n", e.what());
+	}
+
+	return result;
 }
 
 void CManager_Cars::CheckScenaryCollisions(CCar* cp)

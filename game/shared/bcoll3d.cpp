@@ -1,15 +1,9 @@
 #include "game/pch.h"
 #include "bcoll3d.h"
 
-struct TestResult
-{
-	int depth;
-	VECTOR_NOPAD location;
-	VECTOR_NOPAD normal;
-};
 
 // [D] [T]
-int PointFaceCheck(CCar* cp0, CCar* cp1, int i, TestResult& least, int nSign)
+int PointFaceCheck(CCar* cp0, CCar* cp1, int i, CRET3D& least, int nSign)
 {
 	int partialDepth, depth;
 	const SVECTOR_NOPAD* radii;
@@ -106,7 +100,7 @@ int PointFaceCheck(CCar* cp0, CCar* cp1, int i, TestResult& least, int nSign)
 }
 
 // [D] [T]
-bool collided3d(CCar* cp0, CCar* cp1, TestResult& least)
+bool collided3d(CCar* cp0, CCar* cp1, CRET3D& least)
 {
 	int i;
 
@@ -137,30 +131,4 @@ bool collided3d(CCar* cp0, CCar* cp1, TestResult& least)
 
 	return false;
 }
-
-// [D] [T]
-int CarCarCollision3(CCar* c0, CCar* c1, int& depth, VECTOR_NOPAD& where, VECTOR_NOPAD& normal)
-{
-	int res;
-	TestResult tr;
-
-	res = collided3d(c0, c1, tr);
-
-	if (res)
-	{
-		depth = tr.depth;
-
-		where.vx = tr.location.vx;
-		where.vy = tr.location.vy;
-		where.vz = tr.location.vz;
-
-		normal.vx = tr.normal.vx;
-		normal.vy = tr.normal.vy;
-		normal.vz = tr.normal.vz;
-	}
-
-	return res;
-}
-
-
 

@@ -286,6 +286,8 @@ struct MODEL
 
 //------------------------------------------------------------------------------------------------------------
 
+#define OBJECT_SMASHED_MARK			0xFD46FEC0
+
 struct CELL_DATA {
 	ushort num; // size=0, offset=0
 };
