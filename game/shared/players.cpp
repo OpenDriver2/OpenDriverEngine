@@ -3,38 +3,52 @@
 
 void CPlayer::Lua_Init(sol::state& lua)
 {
-	lua.new_usertype<InputData>(
-		"PlayerInputData",
-		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
-				InputData in;
+	LUADOC_GLOBAL();
 
-				in.accel = table["accel"];
-				in.brake = table["brake"];
-				in.wheelspin = table["wheelspin"];
-				in.handbrake = table["handbrake"];
-				in.fastSteer = table["fastSteer"];
-				in.steering = table["steering"];
-				in.horn = table["horn"];
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<InputData>(
+			LUADOC_T("PlayerInputData"),
+			sol::call_constructor, sol::factories(
+				[](const sol::table& table) {
+					InputData in;
 
-				return in;
-			},
-			[]() { return InputData(); }),
-		"accel", &InputData::accel,
-		"brake", &InputData::brake,
-		"wheelspin",  &InputData::wheelspin,
-		"handbrake",  &InputData::handbrake,
-		"fastSteer",  &InputData::fastSteer,
-		"steering", &InputData::steering,
-		"horn", &InputData::horn
-	);
+					in.accel = table["accel"];
+					in.brake = table["brake"];
+					in.wheelspin = table["wheelspin"];
+					in.handbrake = table["handbrake"];
+					in.fastSteer = table["fastSteer"];
+					in.steering = table["steering"];
+					in.horn = table["horn"];
 
-	lua.new_usertype<CPlayer>(
-		"CPlayer",
-		"currentCar", sol::property(&CPlayer::GetCurrentCar, &CPlayer::SetCurrentCar),
-		"controlType", &CPlayer::m_controlType,
-		"input", sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls)
-	);
+					return in;
+				},
+				[]() { return InputData(); }),
+			LUADOC_P("accel"), &InputData::accel,
+			LUADOC_P("brake"), &InputData::brake,
+			LUADOC_P("wheelspin"),  &InputData::wheelspin,
+			LUADOC_P("handbrake"),  &InputData::handbrake,
+			LUADOC_P("fastSteer"),  &InputData::fastSteer,
+			LUADOC_P("steering"), &InputData::steering,
+			LUADOC_P("horn"), &InputData::horn
+		);
+	}
+
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<CPlayer>(
+			LUADOC_T("CPlayer"),
+
+			LUADOC_P("currentCar", "get/set player control buttons"), 
+			sol::property(&CPlayer::GetCurrentCar, &CPlayer::SetCurrentCar),
+
+			LUADOC_P("controlType"), 
+			sol::property(&CPlayer::m_controlType),
+
+			LUADOC_P("input", "get/set player control buttons"), 
+			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls)
+		);
+	}
 }
 
 void CPlayer::Net_Init()
@@ -349,9 +363,11 @@ void CManager_Players::Lua_Init(sol::state& lua)
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
-	auto world = engine["Players"].get_or_create<sol::table>();
-
-	world["localPlayer"] = &LocalPlayer;
+	{
+		LUADOC_NAMESPACE("Players");
+		auto world = engine["Players"].get_or_create<sol::table>();
+		world["localPlayer"] = &LocalPlayer;
+	}
 }
 
 void CManager_Players::Update()

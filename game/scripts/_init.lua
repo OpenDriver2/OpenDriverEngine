@@ -7,12 +7,16 @@
 MsgInfo("OpenDriverEngine Lua host initialization")
 
 -- main OpenDriverEngine file
+dofile "scripts/documentation.lua"
 dofile "scripts/common.lua"
 dofile "scripts/city.lua"
 dofile "scripts/updates.lua"
 dofile "scripts/camera.lua"
 dofile "scripts/sound_bank.lua"
 dofile "scripts/free_camera.lua"
+
+-- test print documentation
+PrintDocumentation()
 
 dofile "scripts/test_game.lua"
 

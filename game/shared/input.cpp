@@ -258,6 +258,8 @@ const CommonEnum KeyboardScancodes[] = {
 
 void CInput::Lua_Init(sol::state& lua)
 {
+	LUADOC_NAMESPACE("SDL");
+
 	auto SDL = lua["SDL"].get_or_create<sol::table>();
 	auto Scancode = SDL["Scancode"].get_or_create<sol::table>();
 

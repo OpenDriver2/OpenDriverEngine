@@ -122,250 +122,299 @@ int wetness = 0;					// TODO: CWorld::GetWetness()
 
 void CCar::Lua_Init(sol::state& lua)
 {
-	lua.new_usertype<GEAR_DESC>(
-		"GEAR_DESC",
-		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
-				return GEAR_DESC { 
-					table["lowidl_ws"],
-					table["low_ws"],
-					table["hi_ws"],
-					table["ratio_ac"],
-					table["ratio_id"]
-				};
-			}),
-		"lowidl_ws", &GEAR_DESC::lowidl_ws,
-		"low_ws", &GEAR_DESC::low_ws,
-		"hi_ws", &GEAR_DESC::hi_ws,
-		"ratio_ac", &GEAR_DESC::ratio_ac,
-		"ratio_id", &GEAR_DESC::ratio_id
-	);
+	LUADOC_GLOBAL();
 
-	lua.new_usertype<HANDLING_TYPE>(
-		"HANDLING_TYPE",
-		sol::call_constructor, sol::factories(
-			[](const sol::table& table) {
-				return HANDLING_TYPE{
-					table["frictionScaleRatio"],
-					table["aggressiveBraking"],
-					table["fourWheelDrive"],
-					table["autoBrakeOn"],
-				};
-			}),
-		"frictionScaleRatio", &HANDLING_TYPE::frictionScaleRatio,
-		"aggressiveBraking", &HANDLING_TYPE::aggressiveBraking,
-		"fourWheelDrive", &HANDLING_TYPE::fourWheelDrive,
-		"autoBrakeOn", &HANDLING_TYPE::autoBrakeOn
-	);
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<GEAR_DESC>(
+			LUADOC_T("GEAR_DESC"),
+			sol::call_constructor, sol::factories(
+				[](const sol::table& table) {
+					return GEAR_DESC { 
+						table["lowidl_ws"],
+						table["low_ws"],
+						table["hi_ws"],
+						table["ratio_ac"],
+						table["ratio_id"]
+					};
+				}),
+			LUADOC_P("lowidl_ws"), &GEAR_DESC::lowidl_ws,
+			LUADOC_P("low_ws"), &GEAR_DESC::low_ws,
+			LUADOC_P("hi_ws"), &GEAR_DESC::hi_ws,
+			LUADOC_P("ratio_ac"), &GEAR_DESC::ratio_ac,
+			LUADOC_P("ratio_id"), &GEAR_DESC::ratio_id
+		);
+	}
 
-	lua.new_usertype<CarCosmetics>(
-		"CarCosmetics",
-		sol::call_constructor, sol::factories(
-			[](sol::table& table) {
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<HANDLING_TYPE>(
+			LUADOC_T("HANDLING_TYPE"),
+			sol::call_constructor, sol::factories(
+				[](const sol::table& table) {
+					return HANDLING_TYPE{
+						table["frictionScaleRatio"],
+						table["aggressiveBraking"],
+						table["fourWheelDrive"],
+						table["autoBrakeOn"],
+					};
+				}),
+			LUADOC_P("frictionScaleRatio"), &HANDLING_TYPE::frictionScaleRatio,
+			LUADOC_P("aggressiveBraking"), &HANDLING_TYPE::aggressiveBraking,
+			LUADOC_P("fourWheelDrive"), &HANDLING_TYPE::fourWheelDrive,
+			LUADOC_P("autoBrakeOn"), &HANDLING_TYPE::autoBrakeOn
+		);
+	}
 
-				auto wheelDispTable = table["wheelDisp"].get_or_create<sol::table>();
-				auto cPointsTable = table["cPoints"].get_or_create<sol::table>();
-				auto gearsTable = table["gears"].get_or_create<sol::table>();
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<CarCosmetics>(
+			LUADOC_T("CarCosmetics"),
+			sol::call_constructor, sol::factories(
+				[](sol::table& table) {
 
-				CarCosmetics newCosmetics;
+					auto wheelDispTable = table["wheelDisp"].get_or_create<sol::table>();
+					auto cPointsTable = table["cPoints"].get_or_create<sol::table>();
+					auto gearsTable = table["gears"].get_or_create<sol::table>();
 
-				if (!table.valid())
-					return newCosmetics;
+					CarCosmetics newCosmetics;
 
-				if (!wheelDispTable.valid())
-				{
-					throw new sol::error("wheelDisp is null for CarCosmetics");
-				}
+					if (!table.valid())
+						return newCosmetics;
 
-				if (!cPointsTable.valid())
-				{
-					throw new sol::error("cPoints is null for CarCosmetics");
-				}
-
-				if (wheelDispTable.size() != 4)
-				{
-					throw new sol::error("wheelDisp count must be 4!");
-				}
-
-				if (cPointsTable.size() != 12)
-				{
-					throw new sol::error("cPoints count is not 12!");
-				}
-
-				if (gearsTable.valid() && gearsTable.size())
-				{
-					newCosmetics.gears.clear();
-					for (uint i = 0; i < gearsTable.size(); i++)
+					if (!wheelDispTable.valid())
 					{
-						GEAR_DESC newGear = gearsTable[i + 1];
-						newCosmetics.gears.append(newGear);
+						throw new sol::error("wheelDisp is null for CarCosmetics");
 					}
-				}
 
-				if(table["handlingType"].valid())
-					newCosmetics.handlingType = table["handlingType"];
+					if (!cPointsTable.valid())
+					{
+						throw new sol::error("cPoints is null for CarCosmetics");
+					}
 
-				newCosmetics.headLight = table["headLight"];
-				newCosmetics.frontInd = table["frontInd"];
-				newCosmetics.backInd = table["backInd"];
-				newCosmetics.brakeLight = table["brakeLight"];
-				newCosmetics.revLight = table["revLight"];
-				newCosmetics.policeLight = table["policeLight"];
-				newCosmetics.exhaust = table["exhaust"];
-				newCosmetics.smoke = table["smoke"];
-				newCosmetics.fire = table["fire"];
-				newCosmetics.gravity = table["gravity"];
+					if (wheelDispTable.size() != 4)
+					{
+						throw new sol::error("wheelDisp count must be 4!");
+					}
 
-				for(int i = 0; i < 4; i++)
-					newCosmetics.wheelDisp[i] = wheelDispTable[i + 1];
+					if (cPointsTable.size() != 12)
+					{
+						throw new sol::error("cPoints count is not 12!");
+					}
+
+					if (gearsTable.valid() && gearsTable.size())
+					{
+						newCosmetics.gears.clear();
+						for (uint i = 0; i < gearsTable.size(); i++)
+						{
+							GEAR_DESC newGear = gearsTable[i + 1];
+							newCosmetics.gears.append(newGear);
+						}
+					}
+
+					if(table["handlingType"].valid())
+						newCosmetics.handlingType = table["handlingType"];
+
+					newCosmetics.headLight = table["headLight"];
+					newCosmetics.frontInd = table["frontInd"];
+					newCosmetics.backInd = table["backInd"];
+					newCosmetics.brakeLight = table["brakeLight"];
+					newCosmetics.revLight = table["revLight"];
+					newCosmetics.policeLight = table["policeLight"];
+					newCosmetics.exhaust = table["exhaust"];
+					newCosmetics.smoke = table["smoke"];
+					newCosmetics.fire = table["fire"];
+					newCosmetics.gravity = table["gravity"];
+
+					for(int i = 0; i < 4; i++)
+						newCosmetics.wheelDisp[i] = wheelDispTable[i + 1];
+
+					for (int i = 0; i < 12; i++)
+						newCosmetics.cPoints[i] = cPointsTable[i + 1];
+
+					newCosmetics.wheelspinMaxSpeed = table["wheelspinMaxSpeed"];
+					newCosmetics.extraInfo = table["extraInfo"];
+					newCosmetics.powerRatio = table["powerRatio"];
+					newCosmetics.cbYoffset = table["cbYoffset"];
+					newCosmetics.susCoeff = table["susCoeff"];
+					newCosmetics.susCompressionLimit = table["susCompressionLimit"];
+					newCosmetics.susTopLimit = table["susTopLimit"];
+					newCosmetics.traction = table["traction"];
+					newCosmetics.wheelSize = table["wheelSize"];
+					newCosmetics.colBox = table["colBox"];
+					newCosmetics.cog = table["cog"];
+					newCosmetics.twistRateX = table["twistRateX"];
+					newCosmetics.twistRateY = table["twistRateY"];
+					newCosmetics.twistRateZ = table["twistRateZ"];
+					newCosmetics.mass = table["mass"];
+
+					newCosmetics.revSample = table["revSample"];
+					newCosmetics.idleSample = table["idleSample"];
+					newCosmetics.hornSample = table["hornSample"];
+
+					return newCosmetics;
+				}),
+			LUADOC_M("ToTable"), [](CarCosmetics& self, sol::this_state s) {
+				sol::state_view lua(s);
+				auto& table = lua.create_table();
+			
+				table["headLight"] = self.headLight;
+				table["frontInd"] = self.frontInd;
+				table["backInd"] = self.backInd;
+				table["brakeLight"] = self.brakeLight;
+				table["revLight"] = self.revLight;
+				table["policeLight"] = self.policeLight;
+				table["exhaust"] = self.exhaust;
+				table["smoke"] = self.smoke;
+				table["fire"] = self.fire;
+				table["gravity"] = self.gravity;
+
+				table["handlingType"] = self.handlingType;
+
+				auto& wheelDispTable = table["wheelDisp"].get_or_create<sol::table>();
+				auto& cPointsTable = table["cPoints"].get_or_create<sol::table>();
+
+				for (int i = 0; i < 4; i++)
+					wheelDispTable[i + 1] = self.wheelDisp[i];
 
 				for (int i = 0; i < 12; i++)
-					newCosmetics.cPoints[i] = cPointsTable[i + 1];
+					cPointsTable[i + 1] = self.cPoints[i];
 
-				newCosmetics.wheelspinMaxSpeed = table["wheelspinMaxSpeed"];
-				newCosmetics.extraInfo = table["extraInfo"];
-				newCosmetics.powerRatio = table["powerRatio"];
-				newCosmetics.cbYoffset = table["cbYoffset"];
-				newCosmetics.susCoeff = table["susCoeff"];
-				newCosmetics.susCompressionLimit = table["susCompressionLimit"];
-				newCosmetics.susTopLimit = table["susTopLimit"];
-				newCosmetics.traction = table["traction"];
-				newCosmetics.wheelSize = table["wheelSize"];
-				newCosmetics.colBox = table["colBox"];
-				newCosmetics.cog = table["cog"];
-				newCosmetics.twistRateX = table["twistRateX"];
-				newCosmetics.twistRateY = table["twistRateY"];
-				newCosmetics.twistRateZ = table["twistRateZ"];
-				newCosmetics.mass = table["mass"];
+				table["wheelspinMaxSpeed"] = self.wheelspinMaxSpeed;
+				table["extraInfo"] = self.extraInfo;
+				table["powerRatio"] = self.powerRatio;
+				table["cbYoffset"] = self.cbYoffset;
+				table["susCoeff"] = self.susCoeff;
+				table["susCompressionLimit"] = self.susCompressionLimit;
+				table["susTopLimit"] = self.susTopLimit;
+				table["traction"] = self.traction;
+				table["wheelSize"] = self.wheelSize;
+				table["colBox"] = self.colBox;
+				table["cog"] = self.cog;
+				table["twistRateX"] = self.twistRateX;
+				table["twistRateY"] = self.twistRateY;
+				table["twistRateZ"] = self.twistRateZ;
+				table["mass"] = self.mass;
 
-				newCosmetics.revSample = table["revSample"];
-				newCosmetics.idleSample = table["idleSample"];
-				newCosmetics.hornSample = table["hornSample"];
+				table["revSample"] = self.revSample;
+				table["idleSample"] = self.idleSample;
+				table["hornSample"] = self.hornSample;
 
-				return newCosmetics;
-			}),
-		"ToTable", [](CarCosmetics& self, sol::this_state s) {
-			sol::state_view lua(s);
-			auto& table = lua.create_table();
-			
-			table["headLight"] = self.headLight;
-			table["frontInd"] = self.frontInd;
-			table["backInd"] = self.backInd;
-			table["brakeLight"] = self.brakeLight;
-			table["revLight"] = self.revLight;
-			table["policeLight"] = self.policeLight;
-			table["exhaust"] = self.exhaust;
-			table["smoke"] = self.smoke;
-			table["fire"] = self.fire;
-			table["gravity"] = self.gravity;
-
-			table["handlingType"] = self.handlingType;
-
-			auto& wheelDispTable = table["wheelDisp"].get_or_create<sol::table>();
-			auto& cPointsTable = table["cPoints"].get_or_create<sol::table>();
-
-			for (int i = 0; i < 4; i++)
-				wheelDispTable[i + 1] = self.wheelDisp[i];
-
-			for (int i = 0; i < 12; i++)
-				cPointsTable[i + 1] = self.cPoints[i];
-
-			table["wheelspinMaxSpeed"] = self.wheelspinMaxSpeed;
-			table["extraInfo"] = self.extraInfo;
-			table["powerRatio"] = self.powerRatio;
-			table["cbYoffset"] = self.cbYoffset;
-			table["susCoeff"] = self.susCoeff;
-			table["susCompressionLimit"] = self.susCompressionLimit;
-			table["susTopLimit"] = self.susTopLimit;
-			table["traction"] = self.traction;
-			table["wheelSize"] = self.wheelSize;
-			table["colBox"] = self.colBox;
-			table["cog"] = self.cog;
-			table["twistRateX"] = self.twistRateX;
-			table["twistRateY"] = self.twistRateY;
-			table["twistRateZ"] = self.twistRateZ;
-			table["mass"] = self.mass;
-
-			table["revSample"] = self.revSample;
-			table["idleSample"] = self.idleSample;
-			table["hornSample"] = self.hornSample;
-
-			return table;
-		},
-		"headLight", &CarCosmetics::headLight,
-		"frontInd", &CarCosmetics::frontInd,
-		"backInd", &CarCosmetics::backInd,
-		"brakeLight", &CarCosmetics::brakeLight,
-		"revLight", &CarCosmetics::revLight,
-		"policeLight", &CarCosmetics::policeLight,
-		"exhaust", &CarCosmetics::exhaust,
-		"smoke", &CarCosmetics::smoke,
-		"fire", &CarCosmetics::fire,
-		"wheelDisp", 
-			[](CarCosmetics& self, int i) {
-				return self.wheelDisp[i - 1];
+				return table;
 			},
-		"setWheelDisp",
-			[](CarCosmetics& self, int i, SVECTOR& v) {
-				self.wheelDisp[i - 1] = v;
+			LUADOC_P("handlingType"), & CarCosmetics::handlingType,
+			LUADOC_P("headLight"), &CarCosmetics::headLight,
+			LUADOC_P("frontInd"), &CarCosmetics::frontInd,
+			LUADOC_P("backInd"), &CarCosmetics::backInd,
+			LUADOC_P("brakeLight"), &CarCosmetics::brakeLight,
+			LUADOC_P("revLight"), &CarCosmetics::revLight,
+			LUADOC_P("policeLight"), &CarCosmetics::policeLight,
+			LUADOC_P("exhaust"), &CarCosmetics::exhaust,
+			LUADOC_P("smoke"), &CarCosmetics::smoke,
+			LUADOC_P("fire"), &CarCosmetics::fire,
+			// TODO: gears table
+			LUADOC_M("wheelDisp"), 
+				[](CarCosmetics& self, int i) {
+					return self.wheelDisp[i - 1];
+				},
+			LUADOC_M("setWheelDisp"),
+				[](CarCosmetics& self, int i, SVECTOR& v) {
+					self.wheelDisp[i - 1] = v;
+				},
+			LUADOC_P("wheelspinMaxSpeed"), &CarCosmetics::wheelspinMaxSpeed,
+			LUADOC_P("extraInfo"), &CarCosmetics::extraInfo,
+			LUADOC_P("powerRatio"), &CarCosmetics::powerRatio,
+			LUADOC_P("cbYoffset"), &CarCosmetics::cbYoffset,
+			LUADOC_P("susCoeff"), &CarCosmetics::susCoeff,
+			LUADOC_P("traction"), &CarCosmetics::traction,
+			LUADOC_P("wheelSize"), &CarCosmetics::wheelSize,
+			LUADOC_M("cPoints"), [](CarCosmetics& self, int i) {
+				return self.cPoints[i];
 			},
-		"wheelspinMaxSpeed", &CarCosmetics::wheelspinMaxSpeed,
-		"extraInfo", &CarCosmetics::extraInfo,
-		"powerRatio", &CarCosmetics::powerRatio,
-		"cbYoffset", &CarCosmetics::cbYoffset,
-		"susCoeff", &CarCosmetics::susCoeff,
-		"traction", &CarCosmetics::traction,
-		"wheelSize", &CarCosmetics::wheelSize,
-		"cPoints", [](CarCosmetics& self, int i) {
-			return self.cPoints[i];
-		},
-		"setcPoints",
-			[](CarCosmetics& self, int i, SVECTOR& v) {
-			self.cPoints[i - 1] = v;
-		},
-		"colBox", &CarCosmetics::colBox,
-		"cog", &CarCosmetics::cog,
-		"twistRateX", &CarCosmetics::twistRateX,
-		"twistRateY", &CarCosmetics::twistRateY,
-		"twistRateZ", &CarCosmetics::twistRateZ,
-		"mass", &CarCosmetics::mass,
-		"revSample", &CarCosmetics::revSample,
-		"idleSample", &CarCosmetics::idleSample,
-		"hornSample", &CarCosmetics::hornSample
-	);
+			LUADOC_M("setcPoints"),
+				[](CarCosmetics& self, int i, SVECTOR& v) {
+				self.cPoints[i - 1] = v;
+			},
+			LUADOC_P("colBox"), &CarCosmetics::colBox,
+			LUADOC_P("cog"), &CarCosmetics::cog,
+			LUADOC_P("twistRateX"), &CarCosmetics::twistRateX,
+			LUADOC_P("twistRateY"), &CarCosmetics::twistRateY,
+			LUADOC_P("twistRateZ"), &CarCosmetics::twistRateZ,
+			LUADOC_P("mass"), &CarCosmetics::mass,
 
-	lua.new_usertype<CCar>(
-		"CCar",
-		"Destroy", &CCar::Destroy,
-		"cosmetics", &CCar::m_cosmetics,
+			LUADOC_P("revSample", "audio sample"),
+			&CarCosmetics::revSample,
 
-		// inputs
-		"thrust", &CCar::m_thrust,
-		"wheelAngle", &CCar::m_wheel_angle,
-		"handbrake", &CCar::m_handbrake,
-		"wheelspin", &CCar::m_wheelspin,
+			LUADOC_P("idleSample", "audio sample"), 
+			&CarCosmetics::idleSample,
 
-		// driving properties
-		"changingGear", sol::property(&CCar::GetChangingGear),
-		"wheelSpeed", sol::property(&CCar::GetWheelSpeed),
-		"speed", sol::property(&CCar::GetSpeed),
-		"autobrake", sol::property(&CCar::GetAutobrake, &CCar::SetAutobrake),
+			LUADOC_P("hornSample", "audio sample"),
+			&CarCosmetics::hornSample
+		);
+	}
 
-		// physics properties
-		"linearVelocity", sol::property(&CCar::GetLinearVelocity),
-		"angularVelocity", sol::property(&CCar::GetAngularVelocity),
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<CCar>(
+			LUADOC_T("CCar"),
 
-		// transform
-		"position", sol::property(&CCar::GetPosition, &CCar::SetPosition),
-		"cogPosition", sol::property(&CCar::GetCogPosition),
-		"direction", sol::property(&CCar::GetDirection, &CCar::SetDirection),
+			LUADOC_M("Destroy", "Marks object for destruction in next physics frame"),
+			&CCar::Destroy,
 
-		// interpolated transform
-		"i_position", sol::property(&CCar::GetInterpolatedPosition),
-		"i_cogPosition", sol::property(&CCar::GetInterpolatedCogPosition),
-		"i_direction", sol::property(&CCar::GetInterpolatedDirection),
-		"i_drawMatrix", sol::property(&CCar::GetInterpolatedDrawMatrix)
-	);
+			LUADOC_P("cosmetics", "Car configuration"),
+			&CCar::m_cosmetics,
+
+			// inputs
+			LUADOC_P("thrust", "controls"), 
+			&CCar::m_thrust,
+
+			LUADOC_P("wheelAngle", "controls"),
+			&CCar::m_wheel_angle,
+
+			LUADOC_P("handbrake", "controls"),
+			&CCar::m_handbrake,
+
+			LUADOC_P("wheelspin", "controls"),
+			&CCar::m_wheelspin,
+
+			LUADOC_P("autobrake", "controls"),
+			sol::property(&CCar::GetAutobrake, &CCar::SetAutobrake),
+
+			// driving properties
+			LUADOC_P("changingGear"), sol::property(&CCar::GetChangingGear),
+
+			LUADOC_P("wheelSpeed"), sol::property(&CCar::GetWheelSpeed),
+
+			LUADOC_P("speed"), sol::property(&CCar::GetSpeed),
+
+			// physics properties
+			LUADOC_P("linearVelocity"), sol::property(&CCar::GetLinearVelocity),
+			LUADOC_P("angularVelocity"), sol::property(&CCar::GetAngularVelocity),
+
+			// transform
+			LUADOC_P("position", "raw transform"),
+			sol::property(&CCar::GetPosition, &CCar::SetPosition),
+
+			LUADOC_P("cogPosition", "raw transform"),
+			sol::property(&CCar::GetCogPosition),
+
+			LUADOC_P("direction", "raw transform"),
+			sol::property(&CCar::GetDirection, &CCar::SetDirection),
+
+			// interpolated transform
+			LUADOC_P("i_position", "interpolated transform"), 
+			sol::property(&CCar::GetInterpolatedPosition),
+
+			LUADOC_P("i_cogPosition", "interpolated transform"),
+			sol::property(&CCar::GetInterpolatedCogPosition),
+
+			LUADOC_P("i_direction", "interpolated transform"),
+			sol::property(&CCar::GetInterpolatedDirection),
+
+			LUADOC_P("i_drawMatrix", "interpolated transform"),
+			sol::property(&CCar::GetInterpolatedDrawMatrix)
+		);
+	}
 }
 
 //--------------------------------------------------------

@@ -342,12 +342,20 @@ void CSky::Init()
 
 void CSky::Lua_Init(sol::state& lua)
 {
+	LUADOC_GLOBAL();
+
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
-	auto sky = engine["Sky"].get_or_create<sol::table>();
+	{
+		LUADOC_TYPE("Sky");
+		auto sky = engine["Sky"].get_or_create<sol::table>();
 
-	sky["Load"] = &Load;
-	sky["Unload"] = &Unload;
+		sky[LUADOC_M("Load", "Loads sky from file with specified index")]
+			= &Load;
+
+		sky[LUADOC_M("Unload")]
+			= &Unload;
+	}
 }
 
 // Initialize sky texture and UVs

@@ -16,6 +16,8 @@
 #include <nstd/Mutex.hpp>
 #include <nstd/Thread.hpp>
 
+#include "shared/lua_init.h" // TODO: lua_doc.h instead
+
 #include "routines/d2_types.h"
 #include "routines/models.h"
 #include "routines/regions.h"

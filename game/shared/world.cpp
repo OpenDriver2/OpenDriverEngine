@@ -18,54 +18,96 @@ void CWorld::Lua_Init(sol::state& lua)
 {
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
-	auto world = engine["World"].get_or_create<sol::table>();
+	LUADOC_GLOBAL();
+	{
+		LUADOC_TYPE("World");
 
-	world["GetHWTexture"] = &GetHWTexture;
-	world["LoadLevel"] = &LoadLevel;
-	world["UnloadLevel"] = &UnloadLevel;
-	world["SpoolAllRegions"] = &SpoolAllRegions;
-	world["SpoolRegions"] = &SpoolRegions;
+		auto world = engine["World"].get_or_create<sol::table>();
 
-	world["IsLevelLoaded"] = &IsLevelLoaded;
-	world["GetModelByIndex"] = &GetModelByIndex;
-	world["GetModelByName"] = &GetModelByName;
-	world["MapHeight"] = &MapHeight;
+		world[LUADOC_M("GetHWTexture")]
+			= &GetHWTexture;
 
-	world["PushCellObject"] = &PushCellObject;
-	world["PurgeCellObjects"] = &PurgeCellObjects;
+		world[LUADOC_M("LoadLevel", "loads level from file")] 
+			= &LoadLevel;
+
+		world[LUADOC_M("UnloadLevel")] 
+			= &UnloadLevel;
+
+		world[LUADOC_M("SpoolAllRegions", "load all models, regions and textures")] 
+			= &SpoolAllRegions;
+
+		world[LUADOC_M("SpoolRegions", "spool regions at specified point and radius")]
+			= &SpoolRegions;
+
+		world[LUADOC_M("IsLevelLoaded")] 
+			= &IsLevelLoaded;
+
+		world[LUADOC_M("GetModelByIndex", "returns model reference by specified index")] 
+			= &GetModelByIndex;
+
+		world[LUADOC_M("GetModelByName", "returns model reference by specified name")]
+			= &GetModelByName;
+
+		world[LUADOC_M("MapHeight", "returns height value at specified 3D point")]
+			= &MapHeight;
+
+		world[LUADOC_M("PushCellObject", "push event cell object. Any collision checks afterwards will have an effect with it")]
+			= &PushCellObject;
+
+		world[LUADOC_M("PurgeCellObjects", "purges list of recently added objects by PushCellObject")]
+			= &PurgeCellObjects;
+	}
 
 	// level properties
-	lua.new_usertype<LevelRenderProps>("LevelRenderProps",
-		"nightAmbientScale", &LevelRenderProps::nightAmbientScale,
-		"nightLightScale", &LevelRenderProps::nightLightScale,
-		"ambientScale", &LevelRenderProps::ambientScale,
-		"lightScale", &LevelRenderProps::lightScale,
-		"nightMode", &LevelRenderProps::nightMode,
-		"noLod", &LevelRenderProps::noLod,
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<LevelRenderProps>(
+			LUADOC_T("LevelRenderProps"),
 
-		"displayCollisionBoxes", &LevelRenderProps::displayCollisionBoxes,
-		"displayHeightMap", &LevelRenderProps::displayHeightMap,
-		"displayAllCellLevels", &LevelRenderProps::displayAllCellLevels);
+			LUADOC_P("nightAmbientScale"), &LevelRenderProps::nightAmbientScale,
+			LUADOC_P("nightLightScale"), &LevelRenderProps::nightLightScale,
+			LUADOC_P("ambientScale"), &LevelRenderProps::ambientScale,
+			LUADOC_P("lightScale"), &LevelRenderProps::lightScale,
+			LUADOC_P("nightMode"), &LevelRenderProps::nightMode,
+			LUADOC_P("noLod"), &LevelRenderProps::noLod,
 
-	lua.new_usertype<ModelRef_t>("ModelRef",
-		"name", &ModelRef_t::name,
-		"index", &ModelRef_t::index,
-		"highDetailId", &ModelRef_t::highDetailId,
-		"lowDetailId", &ModelRef_t::lowDetailId);
+			LUADOC_P("displayCollisionBoxes"), &LevelRenderProps::displayCollisionBoxes,
+			LUADOC_P("displayHeightMap"), &LevelRenderProps::displayHeightMap,
+			LUADOC_P("displayAllCellLevels"), &LevelRenderProps::displayAllCellLevels
+		);
+	}
+
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<ModelRef_t>(
+			LUADOC_T("ModelRef"),
+
+			LUADOC_P("name"), &ModelRef_t::name,
+			LUADOC_P("index"), &ModelRef_t::index,
+			LUADOC_P("highDetailId"), &ModelRef_t::highDetailId,
+			LUADOC_P("lowDetailId"), &ModelRef_t::lowDetailId
+		);
+	}
 
 	// level properties
-	lua.new_usertype<CELL_OBJECT>("CELL_OBJECT",
-		sol::call_constructor, sol::factories(
-			[](const VECTOR_NOPAD& position, const ubyte& yang, const ushort& type) {
-				return CELL_OBJECT{ position, 0, yang, type };
-			},
-			[](const sol::table& table) {
-				return CELL_OBJECT{ (VECTOR_NOPAD&)table["position"], 0, table["yang"], table["type"] };
-			},
-			[]() { return CELL_OBJECT{ 0 }; }),
-		"pos", &CELL_OBJECT::pos,
-		"yang", &CELL_OBJECT::yang,
-		"type", &CELL_OBJECT::type);
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<CELL_OBJECT>(
+			LUADOC_T("CELL_OBJECT"),
+
+			sol::call_constructor, sol::factories(
+				[](const VECTOR_NOPAD& position, const ubyte& yang, const ushort& type) {
+					return CELL_OBJECT{ position, 0, yang, type };
+				},
+				[](const sol::table& table) {
+					return CELL_OBJECT{ (VECTOR_NOPAD&)table["position"], 0, table["yang"], table["type"] };
+				},
+				[]() { return CELL_OBJECT{ 0 }; }),
+			LUADOC_P("pos"), &CELL_OBJECT::pos,
+			LUADOC_P("yang"), &CELL_OBJECT::yang,
+			LUADOC_P("type", "model index"), &CELL_OBJECT::type
+		);
+	}
 
 	engine["LevelRenderProps"] = &g_levRenderProps;
 }

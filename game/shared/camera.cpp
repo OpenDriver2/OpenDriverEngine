@@ -12,6 +12,7 @@ Vector3D CCamera::MainViewVelocity;
 
 void CCamera::Lua_Init(sol::state& lua)
 {
+	LUADOC_GLOBAL();
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
 	auto world = engine["Camera"].get_or_create<sol::table>();
@@ -20,14 +21,20 @@ void CCamera::Lua_Init(sol::state& lua)
 	world["MainViewVelocity"] = &MainViewVelocity;
 
 	// level properties
-	engine.new_usertype<CameraViewParams>("CameraViewParams",
-		"position", &CameraViewParams::position,
-		"angles", &CameraViewParams::angles,
-		"fov", &CameraViewParams::fov, 
-		"right", sol::property(&CameraViewParams::GetRight),
-		"up", sol::property(&CameraViewParams::GetUp),
-		"forward", sol::property(&CameraViewParams::GetForward),
-		"vectors", sol::property(&CameraViewParams::GetVectors));
+	{
+		LUADOC_TYPE();
+		engine.new_usertype<CameraViewParams>(
+			LUADOC_T("CameraViewParams"),
+
+			LUADOC_P("position"), &CameraViewParams::position,
+			LUADOC_P("angles"), &CameraViewParams::angles,
+			LUADOC_P("fov"), &CameraViewParams::fov, 
+			LUADOC_P("right"), sol::property(&CameraViewParams::GetRight),
+			LUADOC_P("up"), sol::property(&CameraViewParams::GetUp),
+			LUADOC_P("forward"), sol::property(&CameraViewParams::GetForward),
+			LUADOC_P("vectors", "get mat3 vectors "), sol::property(&CameraViewParams::GetVectors)
+		);
+	}
 }
 
 //-------------------------------------------------------

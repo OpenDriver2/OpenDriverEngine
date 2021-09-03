@@ -2,6 +2,8 @@
 --	script utility functions
 -------------------------------------------------------------
 
+dofile "scripts/orderedPairs.lua"
+
 util = {}
 
 -- cond ? a : b
