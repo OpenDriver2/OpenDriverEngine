@@ -16,8 +16,6 @@
 #include <nstd/Mutex.hpp>
 #include <nstd/Thread.hpp>
 
-#include "shared/lua_init.h" // TODO: lua_doc.h instead
-
 #include "routines/d2_types.h"
 #include "routines/models.h"
 #include "routines/regions.h"
@@ -46,6 +44,7 @@
 #include "render/render_level.h"
 #include "render/render_sky.h"
 
+#include "shared/luadocs.h" 
 #include "shared/world.h"
 #include "shared/manager_cars.h"
 #include "shared/cars.h"

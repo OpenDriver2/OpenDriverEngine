@@ -99,7 +99,7 @@ public:
 
 	// full scale
 	void					GetParams(Params& params);
-	void					UpdateParams(Params params, int mask);
+	void					UpdateParams(Params params, int mask = 0);
 
 	// atomic
 	ESourceState			GetState() const { return m_state; }

@@ -347,9 +347,9 @@ protected:
 
 	void				CollisionSound(int impact, bool car_vs_car);
 
-	static int			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
-	static int			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
-	static int			SkidSoundUpdateCb(void* obj, IAudioSource::Params& params);
+	static void			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
+	static void			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
+	static void			SkidSoundUpdateCb(void* obj, IAudioSource::Params& params);
 
 	// --------------------
 	HANDLING_DATA		m_hd;

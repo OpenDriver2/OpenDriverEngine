@@ -369,28 +369,28 @@ void CAudioSystemAL::StopAllSounds(int chanType /*= -1*/, void* callbackObject /
 void CAudioSystemAL::PauseAllSounds(int chanType /*= -1*/, void* callbackObject /*= nullptr*/)
 {
 	IAudioSource::Params param;
-	param.state = IAudioSource::PAUSED;
+	param.set_state(IAudioSource::PAUSED);
 
 	// suspend all sources
 	for (uint i = 0; i < m_sources.size(); i++)
 	{
 		CAudioSourceAL* source = m_sources[i].p();
 		if (chanType == -1 || source->m_chanType == chanType && source->m_callbackObject == callbackObject)
-			source->UpdateParams(param, IAudioSource::UPDATE_STATE);
+			source->UpdateParams(param);
 	}
 }
 
 void CAudioSystemAL::ResumeAllSounds(int chanType /*= -1*/, void* callbackObject /*= nullptr*/)
 {
 	IAudioSource::Params param;
-	param.state = IAudioSource::PLAYING;
+	param.set_state(IAudioSource::PLAYING);
 
 	// suspend all sources
 	for (uint i = 0; i < m_sources.size(); i++)
 	{
 		CAudioSourceAL* source = m_sources[i].p();
 		if (chanType == -1 || source->m_chanType == chanType && source->m_callbackObject == callbackObject)
-			source->UpdateParams(param, IAudioSource::UPDATE_STATE);
+			source->UpdateParams(param);
 	}
 }
 
@@ -571,6 +571,8 @@ void CAudioSourceAL::Ref_DeleteObject()
 // Updates channel with user parameters
 void CAudioSourceAL::UpdateParams(Params params, int mask)
 {
+	mask |= params.flags;
+
 	if (mask == 0)
 		return;
 
@@ -785,10 +787,10 @@ bool CAudioSourceAL::DoUpdate()
 		Params params;
 		GetParams(params);
 
-		int mask = m_callback(m_callbackObject, params);
+		m_callback(m_callbackObject, params);
 
 		// update channel parameters
-		UpdateParams(params, mask);
+		UpdateParams(params);
 	}
 
 	if (m_sample == nullptr)

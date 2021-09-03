@@ -456,20 +456,16 @@ void CCar::StartSounds()
 	m_skidSound->Setup(0, /*m_owner->skidSample*/skidSample, &SkidSoundUpdateCb, this);
 
 	IAudioSource::Params params;
-	params.state = IAudioSource::PLAYING;
-	params.looping = true;
-	params.referenceDistance = 512 / ONE_F;
-	params.releaseOnStop = true;
+	params.set_state(IAudioSource::PLAYING);
+	params.set_looping(true);
+	params.set_referenceDistance(512 / ONE_F);
+	params.set_releaseOnStop(true);
 
-	int flags =
-		IAudioSource::UPDATE_STATE |
-		IAudioSource::UPDATE_LOOPING |
-		IAudioSource::UPDATE_REF_DIST |
-		IAudioSource::UPDATE_RELEASE_ON_STOP;
+	params.flags |= IAudioSource::UPDATE_RELEASE_ON_STOP;
 
-	m_engineSound->UpdateParams(params, flags);
-	m_idleSound->UpdateParams(params, flags);
-	m_skidSound->UpdateParams(params, flags);
+	m_engineSound->UpdateParams(params);
+	m_idleSound->UpdateParams(params);
+	m_skidSound->UpdateParams(params);
 }
 
 void CCar::StopSounds()
@@ -500,23 +496,15 @@ void CCar::StartStaticSound(const char* type, float refDist, float volume, float
 	IAudioSource* staticSound = IAudioSystem::Instance->CreateSource();
 
 	IAudioSource::Params params;
-	params.state = IAudioSource::PLAYING;
-	params.position = FromFixedVector(GetPosition());
-	params.releaseOnStop = true;
-	params.referenceDistance = refDist;
-	params.volume = volume;
-	params.pitch = pitch;
-
-	int flags =
-		IAudioSource::UPDATE_STATE |
-		IAudioSource::UPDATE_POSITION |
-		IAudioSource::UPDATE_REF_DIST |
-		IAudioSource::UPDATE_VOLUME |
-		IAudioSource::UPDATE_PITCH |
-		IAudioSource::UPDATE_RELEASE_ON_STOP;
+	params.set_state(IAudioSource::PLAYING);
+	params.set_position(FromFixedVector(GetPosition()));
+	params.set_releaseOnStop(true);
+	params.set_referenceDistance(refDist);
+	params.set_volume(volume);
+	params.set_pitch(pitch);
 
 	staticSound->Setup(0, soundSample, nullptr, this);
-	staticSound->UpdateParams(params, flags);
+	staticSound->UpdateParams(params);
 }
 
 void CCar::CollisionSound(int impact, bool car_vs_car)
@@ -837,6 +825,10 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				else
 					wheelPos[1] = (wheelPos[1] * 19) / 32;
 			}
+			/*else // this will turn it into Driver 1 wheel forces with car always tend to flip over
+			{
+				wheelPos[1] = 5 * wheelPos[1] / 16;
+			}*/
 
 			m_hd.acc[0] += force.vx;
 			m_hd.acc[1] += force.vy;
@@ -1521,60 +1513,48 @@ void CCar::RebuildCarMatrix(RigidBodyState& st)
 	InitOrientedBox();
 }
 
-int CCar::EngineSoundUpdateCb(void* obj, IAudioSource::Params& params)
+void CCar::EngineSoundUpdateCb(void* obj, IAudioSource::Params& params)
 {
 	CCar* thisCar = (CCar*)obj;
 
 	if (thisCar->m_controlType == CONTROL_TYPE_NONE)
 	{
-		params.state = IAudioSource::STOPPED;
-		return IAudioSource::UPDATE_STATE;
+		params.set_state(IAudioSource::STOPPED);
+		return;
 	}
 
 	int pitch = thisCar->m_hd.revs / 4 + thisCar->m_revsvol / 64 + 1500;
-	params.volume = (10000 + thisCar->m_revsvol) / 10000.0f;
-	params.pitch = (pitch / ONE_F);
-	params.position = FromFixedVector(thisCar->GetPosition());
-	params.velocity = FromFixedVector(thisCar->GetLinearVelocity());
-
-	return 
-		IAudioSource::UPDATE_VOLUME |
-		IAudioSource::UPDATE_PITCH |
-		IAudioSource::UPDATE_POSITION | 
-		IAudioSource::UPDATE_VELOCITY;
+	params.set_volume((10000 + thisCar->m_revsvol) / 10000.0f);
+	params.set_pitch(pitch / ONE_F);
+	params.set_position(FromFixedVector(thisCar->GetPosition()));
+	params.set_velocity(FromFixedVector(thisCar->GetLinearVelocity()));
 }
 
-int CCar::IdleSoundUpdateCb(void* obj, IAudioSource::Params& params)
+void CCar::IdleSoundUpdateCb(void* obj, IAudioSource::Params& params)
 {
 	CCar* thisCar = (CCar*)obj;
 
 	if (thisCar->m_controlType == CONTROL_TYPE_NONE)
 	{
-		params.state = IAudioSource::STOPPED;
-		return IAudioSource::UPDATE_STATE;
+		params.set_state(IAudioSource::STOPPED);
+		return;
 	}
 
 	int pitch = thisCar->m_hd.revs / 4 + 4096;
-	params.volume = (10000 + thisCar->m_idlevol) / 10000.0f;
-	params.pitch = (pitch / ONE_F);
-	params.position = FromFixedVector(thisCar->GetPosition());
-	params.velocity = FromFixedVector(thisCar->GetLinearVelocity());
-
-	return
-		IAudioSource::UPDATE_VOLUME |
-		IAudioSource::UPDATE_PITCH |
-		IAudioSource::UPDATE_POSITION |
-		IAudioSource::UPDATE_VELOCITY;
+	params.set_volume((10000 + thisCar->m_idlevol) / 10000.0f);
+	params.set_pitch(pitch / ONE_F);
+	params.set_position(FromFixedVector(thisCar->GetPosition()));
+	params.set_velocity(FromFixedVector(thisCar->GetLinearVelocity()));
 }
 
-int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
+void CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 {
 	CCar* thisCar = (CCar*)obj;
 
 	if (thisCar->m_controlType == CONTROL_TYPE_NONE)
 	{
-		params.state = IAudioSource::STOPPED;
-		return IAudioSource::UPDATE_STATE;
+		params.set_state(IAudioSource::STOPPED);
+		return;
 	}
 
 	int skidsound = 0;
@@ -1627,33 +1607,22 @@ int CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 
 	if (skidsound == 0)
 	{
-		params.state = IAudioSource::PAUSED;
-		return IAudioSource::UPDATE_STATE;
+		params.set_state(IAudioSource::PAUSED);
+		return;
 	}
-
-	int updateFlags = IAudioSource::UPDATE_VOLUME |
-		IAudioSource::UPDATE_PITCH |
-		IAudioSource::UPDATE_POSITION |
-		IAudioSource::UPDATE_VELOCITY;
 
 	if (params.state != IAudioSource::PLAYING)
 	{
-		params.state = IAudioSource::PLAYING;
-		updateFlags |= IAudioSource::UPDATE_STATE;
+		params.set_state(IAudioSource::PLAYING);
 	}
-
-
 
 	int volume = (skidsound - 10000) * 3 / 4 - 5000;
 	int pitch = skidsound * 1024 / 13000 + 3072;
 
-	params.volume = (10000 + volume) / 10000.0f;
-	params.pitch = (pitch / ONE_F);
-	params.position = FromFixedVector(thisCar->GetPosition());
-	params.velocity = FromFixedVector(thisCar->GetLinearVelocity());
-
-	return updateFlags;
-		
+	params.set_volume((10000 + volume) / 10000.0f);
+	params.set_pitch(pitch / ONE_F);
+	params.set_position(FromFixedVector(thisCar->GetPosition()));
+	params.set_velocity(FromFixedVector(thisCar->GetLinearVelocity()));		
 }
 
 void CCar::CheckCarEffects()

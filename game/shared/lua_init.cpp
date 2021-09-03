@@ -6,109 +6,6 @@
 #include <imgui_internal.h>
 #include <sol_ImGui/sol_imgui.h>
 
-enum EDocPropType
-{
-	DocProp_MemberFunc,
-	DocProp_Property
-};
-
-struct LuaDocProp
-{
-	EDocPropType type;
-	String declName;
-	String description;
-};
-
-struct LuaDocItem
-{
-	String namespaceName;
-	String declName;
-	String description;
-	Array<LuaDocProp> members;
-};
-
-Array<LuaDocItem*> g_luaDoc_typeList;
-
-CLuaDocumentation::NamespaceGuard::NamespaceGuard(const char* name /*= nullptr*/)
-{
-	m_name = name ? String::fromCString(name) : "_G";
-}
-
-CLuaDocumentation::NamespaceGuard::~NamespaceGuard()
-{
-
-}
-
-CLuaDocumentation::TypeGuard::TypeGuard(NamespaceGuard& ns, const char* name /*= nullptr*/, const char* docText /*= nullptr*/)
-	: m_ns(ns)
-{
-	m_item = new LuaDocItem();
-	m_item->namespaceName = m_ns.m_name;
-
-	if (name)
-		Init(name, docText);
-
-	g_luaDoc_typeList.append(m_item);
-}
-
-CLuaDocumentation::TypeGuard::~TypeGuard()
-{
-}
-
-const char* CLuaDocumentation::TypeGuard::Init(const char* name, const char* docText /*= nullptr*/)
-{
-	m_item->declName = String::fromCString(name);
-	m_item->description = docText ? String::fromCString(docText) : "";
-	return name;
-}
-
-const char* CLuaDocumentation::TypeGuard::Property(const char* name, const char* docText /*= nullptr*/)
-{
-	m_item->members.append(LuaDocProp{
-		DocProp_Property,
-		String::fromCString(name),
-		docText ? String::fromCString(docText) : ""
-		});
-
-	return name;
-}
-
-const char* CLuaDocumentation::TypeGuard::MemberFunc(const char* name, const char* docText /*= nullptr*/)
-{
-	m_item->members.append(LuaDocProp{
-		DocProp_MemberFunc,
-		String::fromCString(name),
-		docText ? String::fromCString(docText) : ""
-		});
-
-	return name;
-}
-
-//--------------------------------------
-
-void CLuaDocumentation::Initialize(sol::state& lua)
-{
-	auto& docsTable = lua["docs"].get_or_create<sol::table>();
-
-	for (usize i = 0; i < g_luaDoc_typeList.size(); i++)
-	{
-		LuaDocItem* doc = g_luaDoc_typeList[i];
-
-		auto& namespaceTable = docsTable[(char*)doc->namespaceName].get_or_create<sol::table>();
-
-		auto& declTable = namespaceTable[(char*)doc->declName].get_or_create<sol::table>();
-		declTable["description"] = (char*)doc->description;
-
-		auto& membersTable = declTable["members"].get_or_create<sol::table>();
-		for (usize j = 0; j < doc->members.size(); j++)
-		{
-			LuaDocProp& prop = doc->members[j];
-			membersTable[(char*)prop.declName] = (char*)prop.description;
-		}
-
-		delete doc;
-	}
-}
 
 #define VEC_OPERATORS(vec_type) \
 	/* vec - vec */\
@@ -163,13 +60,100 @@ void IAudioSystem_Lua_Init(sol::state& lua)
 	{
 		LUADOC_TYPE();
 		lua.new_usertype<ISoundSource>(
-			LUADOC_T("ISoundSource", "Audio sound source"),
+			LUADOC_T("ISoundSource", "Audio sample data"),
 
 			LUADOC_M("GetFilename"), 
 			&ISoundSource::GetFilename,
 
 			LUADOC_M("IsStreaming", "true if sample is streaming"), 
 			&ISoundSource::IsStreaming
+		);
+	}
+
+	// audible source parameters
+	{
+		lua["SoundState"] = lua.create_table_with(
+			"Stopped", IAudioSource::STOPPED,
+			"Playing", IAudioSource::PLAYING,
+			"Paused", IAudioSource::PAUSED
+		);
+
+		LUADOC_TYPE();
+		lua.new_usertype<IAudioSource::Params>(
+			LUADOC_T("SOUND_PARAMS", "Audio source parameters"),
+
+			sol::call_constructor, sol::default_constructor,
+			
+
+			LUADOC_P("position"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_position<Vector3D>), &IAudioSource::Params::position),
+
+			LUADOC_P("velocity"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_velocity<Vector3D>), &IAudioSource::Params::velocity),
+
+			LUADOC_P("volume"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_volume<float>), &IAudioSource::Params::volume),
+
+			LUADOC_P("pitch"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_pitch<float>), &IAudioSource::Params::pitch),
+
+			LUADOC_P("referenceDistance"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_referenceDistance<float>)	, &IAudioSource::Params::referenceDistance),
+
+			LUADOC_P("rolloff"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_rolloff<float>), &IAudioSource::Params::rolloff),
+
+			LUADOC_P("airAbsorption"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_airAbsorption<float>), &IAudioSource::Params::airAbsorption),
+
+			LUADOC_P("state"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_state<IAudioSource::ESourceState>), &IAudioSource::Params::state),
+
+			LUADOC_P("effectSlot"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_effectSlot<int>), &IAudioSource::Params::effectSlot),
+
+			LUADOC_P("relative"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_relative<bool>), &IAudioSource::Params::relative),
+
+			LUADOC_P("looping"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_looping<bool>), &IAudioSource::Params::looping),
+
+			LUADOC_P("releaseOnStop"),
+			sol::property(sol::resolve(&IAudioSource::Params::set_releaseOnStop<bool>), &IAudioSource::Params::releaseOnStop)
+		);
+	}
+
+	// audible source
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<IAudioSource>(
+			LUADOC_T("IAudioSource", "Audible sound source"),
+
+			LUADOC_M("Setup", "sets up type id and sound sample for playback"), 
+			[](IAudioSource* self, int typeId, ISoundSource* sample) { 
+				// no callbacks are allowed
+				self->Setup(typeId, sample, nullptr);
+			},
+
+			LUADOC_M("UpdateParams", "updates sound parameters while this it is playing"), 
+			&IAudioSource::UpdateParams,
+
+			LUADOC_M("Release", "stops the sound and drops the reference"),
+			&IAudioSource::Release,
+
+			LUADOC_M("GetState", "returns sound source playback state"),
+			&IAudioSource::GetState,
+
+			LUADOC_M("IsLooping", "returns loop state"),
+			&IAudioSource::IsLooping,
+
+			LUADOC_M("params", "get/set sound parameters"),
+			sol::property([](IAudioSource* self) {
+				IAudioSource::Params params;
+				self->GetParams(params);
+				return params;
+			}, & IAudioSource::UpdateParams)
+			
 		);
 	}
 
@@ -381,7 +365,7 @@ void LuaInit(sol::state& lua)
 				[](Matrix3x3& self) { return EulerMatrixZXY(self); },
 
 				// common matrix generators
-				LUADOC_M("identity"), []() {return identity3(); },
+				LUADOC_M("identity", "Returns new identity matrix"), []() {return identity3(); },
 
 				LUADOC_M("rotationX", "Makes rotation matrix around specified axis"),
 				[](float val) {return rotateX3(val); },
