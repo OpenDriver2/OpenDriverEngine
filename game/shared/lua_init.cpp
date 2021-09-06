@@ -487,5 +487,6 @@ void LuaInit(sol::state& lua)
 	CSky::Lua_Init(lua);
 	CCamera::Lua_Init(lua);
 
-	CLuaDocumentation::Initialize(lua);
+	// this should come last always
+	CLuaDocumentation::Lua_Init(lua);
 }

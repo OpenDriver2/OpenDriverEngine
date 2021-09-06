@@ -56,3 +56,27 @@ SBK_Permanent = {
 	GravelLoop 	= "voices2/Bank_1/10.wav",
 	AlleyLoop 	= "voices2/Bank_1/11.wav",
 }
+
+--[[ Usage
+	-- load bank
+	local spermBank = LoadSoundbank("permanent", SBK_Permanent)
+	
+	-- create audio source
+	local audioSource = audio:CreateSource()
+	audioSource:Setup(0, spermBank.AlleyLoop)
+	
+	-- modify current parameters
+	-- you cannot modify audioSource.params itself
+	-- this will copy into new parameters instance
+	local sparams = audioSource.params
+	
+	sparams.position = vec.vec3(0,0,0)
+	sparams.state = SoundState.Playing
+	sparams.looping = true
+	sparams.relative = true
+	sparams.volume = 0.5
+	sparams.pitch = 0.5
+	
+	-- set new parameters and as result it will play
+	audioSource.params = sparams
+]]

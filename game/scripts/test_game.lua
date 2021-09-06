@@ -132,7 +132,7 @@ TestGame.Init = function(residentModel)
 		local cosmetics = cityCosmetics[residentModel + 1]
 
 		local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
-		
+
 		players.localPlayer.currentCar = plcar
 	end
 end

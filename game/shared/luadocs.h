@@ -24,7 +24,7 @@ public:
 		const char* MemberFunc(const char* name, const char* docText = nullptr);
 	};
 
-	static void			Initialize(sol::state& lua);
+	static void		Lua_Init(sol::state& lua);
 };
 
 //------------------------------------------------------------------------

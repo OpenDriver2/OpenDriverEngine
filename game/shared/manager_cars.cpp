@@ -38,10 +38,12 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 			LUADOC_TYPE();
 			lua.new_usertype<CManager_Cars>(
 				LUADOC_T("CManager_Cars", "Car manager"),
+
 				LUADOC_M("LoadModel", "loads car model with specified index"),
-				[](CManager_Cars& self, int idx) {
-					return self.LoadModel(idx);
+				[](CManager_Cars& self, int residentModel) {
+					return self.LoadModel(residentModel);
 				},
+
 				LUADOC_M("LoadCosmeticsFileD2", "Loads specified LCF file and cosmetic index"),
 				[](CManager_Cars& self, std::string& filename, int residentModel, sol::this_state s) {
 					sol::state_view lua(s);
@@ -52,6 +54,7 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 						return sol::make_object(lua, cosmetic);
 					return sol::make_object(lua, sol::nil);
 				},
+
 				LUADOC_M("LoadCosmeticsFileD1", "Loads specified LCF file and cosmetic index"),
 				[](CManager_Cars& self, std::string& filename, int cosmeticIdx, sol::this_state s) {
 					sol::state_view lua(s);
@@ -62,7 +65,20 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 						return sol::make_object(lua, cosmetic);
 					return sol::make_object(lua, sol::nil);
 				},
-				LUADOC_M("UnloadAllModels", "removs all cars and unload all models"), 
+
+				LUADOC_P("carModels", "Loaded car models table"),
+				sol::property([](CManager_Cars& self, sol::this_state s)
+				{
+					sol::state_view lua(s);
+					auto& table = lua.create_table();
+
+					for (usize i = 0; i < self.m_carModels.size(); i++)
+						table[i + 1] = self.m_carModels[i];
+
+					return table;
+				}),
+
+				LUADOC_M("UnloadAllModels", "removes all cars and unload all models"), 
 				&UnloadAllModels,
 
 				LUADOC_M("Create", "create new car. <PARAMS>(cosmetic: CAR_COSMETICS, control: number, modelId: number, positionInfo: POSITION_INFO)"), 
@@ -81,13 +97,13 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 				&GlobalTimeStep,
 
 				LUADOC_P("SoundSourceGetCallback"), 
-					sol::property(
-						[](CManager_Cars& self) {
-							return self.m_soundSourceGetCbLua;
-						}, 
-						[](CManager_Cars& self, sol::function cb) {
-							self.m_soundSourceGetCbLua = cb;
-						})
+				sol::property(
+					[](CManager_Cars& self) {
+						return self.m_soundSourceGetCbLua;
+					}, 
+					[](CManager_Cars& self, sol::function cb) {
+						self.m_soundSourceGetCbLua = cb;
+					})
 			);
 		}
 	}
@@ -584,7 +600,7 @@ void CManager_Cars::GlobalTimeStep()
 					thisDelta[i].n.angularVelocity[1] = 0;
 					thisDelta[i].n.angularVelocity[2] = 0;
 
-					for (int j = 0; j < i; j++)
+					for (usize j = 0; j < i; j++)
 					{
 						c1 = m_active_cars[j];
 

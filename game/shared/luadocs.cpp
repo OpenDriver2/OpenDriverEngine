@@ -80,7 +80,7 @@ const char* CLuaDocumentation::TypeGuard::MemberFunc(const char* name, const cha
 
 //--------------------------------------
 
-void CLuaDocumentation::Initialize(sol::state& lua)
+void CLuaDocumentation::Lua_Init(sol::state& lua)
 {
 	auto& docsTable = lua["docs"].get_or_create<sol::table>();
 

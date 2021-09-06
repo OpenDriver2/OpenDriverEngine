@@ -16,13 +16,14 @@ dofile "scripts/sound_bank.lua"
 dofile "scripts/free_camera.lua"
 
 -- test print documentation
-PrintDocumentation()
+--PrintDocumentation()
 
 dofile "scripts/test_game.lua"
 
 -- "engine" namespace has everything dynamically updated
 -- "driver" & "driver2" namespace has every class to be used with "engine"
 
+local audio = engine.Audio
 local players = engine.Players					-- local players
 local cars = engine.Cars						-- cars, handling
 --local peds = engine.Pedestrians				-- pedestrians and motion capture system
@@ -257,6 +258,11 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		
 		if world.LoadLevel(levPath) then
 		
+			-- try load all 13 car models
+			for i = 0,12 do
+				cars:LoadModel(i)
+			end
+		
 			LoadSoundbank("permanent", SBK_Permanent)
 		
 			InitEventModels()
@@ -420,9 +426,10 @@ function RenderUI()
 			end
 			
 			if ImGui.BeginMenu("Change car") then
-				for num = 0,12 do
-					if ImGui.MenuItem(tostring(num)) then
-						TestGame.Init(num)
+				
+				for i,model in ipairs(cars.carModels) do
+					if ImGui.MenuItem(tostring(model.index)) then
+						TestGame.Init(model.index)
 					end
 				end
 				ImGui.EndMenu()
