@@ -29,6 +29,20 @@ struct HANDLING_TYPE
 	int autoBrakeOn;
 };
 
+struct ExtraLightInfo
+{
+	ushort backOffset;
+	ushort frontOffset;
+
+	bool frontDouble;
+	bool backDouble;
+
+	bool frontVertical;
+	bool backVertical;
+
+	bool hasBackLights;
+};
+
 struct CarCosmetics
 {
 	CarCosmetics();
@@ -43,9 +57,9 @@ struct CarCosmetics
 	SVECTOR policeLight;
 	SVECTOR exhaust, smoke, fire;
 	SVECTOR wheelDisp[4];			// TODO: array
+	ExtraLightInfo extraInfo;
 	int wheelspinMaxSpeed;
 	short gravity;
-	short extraInfo;
 	short powerRatio;
 	short cbYoffset;
 	short susCoeff;
@@ -277,7 +291,7 @@ public:
 
 	// collision
 	bool					CarBuildingCollision(struct BUILDING_BOX& building, struct CELL_OBJECT* cop, int flags);
-	bool					CarCarCollision(CCar* other, struct CRET3D& result);
+	bool					CarCarCollision(CCar* other, int RKstep);
 
 	// utility functions (mostly for Lua)
 	VECTOR_NOPAD			GetInterpolatedCogPosition() const;
@@ -346,6 +360,7 @@ protected:
 	void				StartStaticSound(const char* type, float refDist, float volume, float pitch);
 
 	void				CollisionSound(int impact, bool car_vs_car);
+	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, const LONGVECTOR4& lever, const struct CRET3D& collResult);
 
 	static void			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
 	static void			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
@@ -353,7 +368,12 @@ protected:
 
 	// --------------------
 	HANDLING_DATA		m_hd;
-	RigidBodyState		m_st;
+
+	RigidBodyState&		m_st{ m_rbState[0] };
+
+	RigidBodyState		m_rbState[2];
+	RigidBodyState		m_rbDelta[2];
+
 	APPEARANCE_DATA		m_ap;
 	CarCosmetics		m_cosmetics;
 	BOUND_BOX			m_bbox;
@@ -408,6 +428,17 @@ protected:
 	CRefPointer<IAudioSource*> m_idleSound;
 	CRefPointer<IAudioSource*> m_skidSound;
 	CRefPointer<IAudioSource*> m_dirtSound;
+
+	// lua callbacks
+	sol::function	m_carEventsLua;
+	/* car events are: 
+		"HitGround",
+		"HitCurb",
+		"HitCellObject",
+		"HitSmashable",
+		"HitCar",
+		"CarsCollision",
+	*/
 };
 
 #endif // CARS_H

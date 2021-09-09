@@ -64,6 +64,7 @@ protected:
 	int64					m_curUpdateTime{ 0 };
 
 	sol::function			m_soundSourceGetCbLua;
+	sol::function			m_carEventsLua;
 };
 
 #endif // MANAGER_CARS_H

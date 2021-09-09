@@ -8,6 +8,8 @@ return {
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
 		skyPath		= "DRIVER2/DATA/SKY0.RAW",
+		
+		brightnessScale = 1.1,
 
 		-- lev path for all city types
 		levPath		= {
@@ -44,6 +46,8 @@ return {
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
 		skyPath		= "DRIVER2/DATA/SKY1.RAW",
+		
+		brightnessScale = 1.1,
 
 		-- lev path for all city types
 		levPath		= {
@@ -73,6 +77,8 @@ return {
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
 		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		
+		brightnessScale = 0.85,
 
 		-- lev path for all city types
 		levPath		= {
@@ -102,6 +108,7 @@ return {
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
 		skyPath		= "DRIVER2/DATA/SKY3.RAW",
+		brightnessScale = 1.1,
 
 		-- lev path for all city types
 		levPath		= {

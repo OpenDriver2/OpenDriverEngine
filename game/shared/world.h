@@ -16,7 +16,7 @@ struct BUILDING_BOX
 	VECTOR_NOPAD pos;
 	int xsize, zsize;
 	int theta, height;
-	struct MODEL* model;
+	ModelRef_t* modelRef;
 };
 
 

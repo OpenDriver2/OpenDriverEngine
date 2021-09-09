@@ -560,7 +560,7 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 
 			bbox.height = collide->ysize;
 			bbox.theta = (co->yang + collide->yang) * 64 & 0xfff;
-			bbox.model = model;
+			bbox.modelRef = ref;
 
 			if (!func(bbox, co, object))
 				return;

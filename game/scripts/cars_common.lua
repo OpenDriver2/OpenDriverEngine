@@ -33,7 +33,7 @@ local defaultHandling = HANDLING_TYPE {
 
 -- setup car sound handler
 -- FIXME this is bad a bit
-cars.SoundSourceGetCallback = function(soundType)
+cars.soundSourceGetCallback = function(soundType)
 
 	local sbk_perm = SoundBanks["permanent"]
 	
@@ -49,6 +49,11 @@ cars.SoundSourceGetCallback = function(soundType)
 	end
 	
 	return sbk_perm[soundType]
+end
+
+-- attach to event sink TODO: event manager with subscribers etc
+cars.eventCallback = function(caller, eventType, parameters)
+	Msg("Got event '", eventType, "'")
 end
 
 return {
