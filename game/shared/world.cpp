@@ -78,6 +78,7 @@ void CWorld::Lua_Init(sol::state& lua)
 	}
 
 	{
+		MAKE_PROPERTY_REF(lua, ModelRef_t*);
 		LUADOC_TYPE();
 		lua.new_usertype<ModelRef_t>(
 			LUADOC_T("ModelRef"),
@@ -91,6 +92,8 @@ void CWorld::Lua_Init(sol::state& lua)
 
 	// level properties
 	{
+		MAKE_PROPERTY_REF(lua, CELL_OBJECT);
+		MAKE_PROPERTY_REF(lua, CELL_OBJECT*);
 		LUADOC_TYPE();
 		lua.new_usertype<CELL_OBJECT>(
 			LUADOC_T("CELL_OBJECT"),

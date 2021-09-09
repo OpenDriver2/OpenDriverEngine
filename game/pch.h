@@ -44,7 +44,9 @@
 #include "render/render_level.h"
 #include "render/render_sky.h"
 
-#include "shared/luadocs.h" 
+#include "luabinding/luadocs.h"
+#include "luabinding/luarefvalue.h" 
+
 #include "shared/world.h"
 #include "shared/manager_cars.h"
 #include "shared/cars.h"

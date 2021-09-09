@@ -1,7 +1,7 @@
 #include "game/pch.h"
 
 #include "shared/input.h"
-#include "shared/lua_init.h"
+#include "luabinding/lua_init.h"
 
 #include <enet/enet.h>
 #include <SDL_events.h>

@@ -128,6 +128,7 @@ int wetness = 0;					// TODO: CWorld::GetWetness()
 
 //--------------------------------------------------------
 
+
 void CCar::Lua_Init(sol::state& lua)
 {
 	LUADOC_GLOBAL();
@@ -388,6 +389,7 @@ void CCar::Lua_Init(sol::state& lua)
 	}
 
 	{
+		MAKE_PROPERTY_REF(lua, CCar*);
 		LUADOC_TYPE();
 		lua.new_usertype<CCar>(
 			LUADOC_T("CCar"),
@@ -693,25 +695,29 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		// and apply vibration to player controller
 		if (m_controlType == CONTROL_TYPE_PLAYER)
 		{
-			if (abs(newCompression - oldCompression) > 12 && (i & 1U) != 0)
+			int compressionDiff = abs(newCompression - oldCompression);
+			if (compressionDiff > 12 && (i & 1U) != 0)
 			{
 				StartStaticSound("HitCurb", 128 / ONE_F, 0.7f, 400 / ONE_F);
 			}
 
 			// Lua interaction
-			if (m_carEventsLua.valid())
+			if (compressionDiff > 12)
 			{
-				try {
-					sol::state_view sv(m_carEventsLua.lua_state());
-					sol::table tbl = sv.create_table_with(
-						"wheelNum", i,
-						"newCompression", newCompression
-					);
-					m_carEventsLua.call(this, "HitCurb", tbl);
-				}
-				catch (const sol::error& e)
+				if (m_carEventsLua.valid())
 				{
-					MsgError("CCar event call error: %s\n", e.what());
+					try {
+						sol::state_view sv(m_carEventsLua.lua_state());
+						sol::table tbl = sv.create_table_with(
+							"wheelNum", i,
+							"newCompression", compressionDiff
+						);
+						m_carEventsLua.call(this, "HitCurb", tbl);
+					}
+					catch (const sol::error& e)
+					{
+						MsgError("CCar event call error: %s\n", e.what());
+					}
 				}
 			}
 #if 0
@@ -1227,9 +1233,9 @@ void CCar::StepOneCar()
 			try {
 				sol::state_view sv(m_carEventsLua.lua_state());
 				sol::table tbl = sv.create_table_with(
-					"position", surfacePoint,
-					"normal", surfaceNormal,
-					"strikeVel", impulse		// in reversed code it's probably named incorrectly
+					"position", LuaPropertyRef(surfacePoint),
+					"normal", LuaPropertyRef(surfaceNormal),
+					"strikeVel", LuaPropertyRef(impulse)		// in reversed code it's probably named incorrectly
 				);
 				m_carEventsLua.call(this, "HitGround", tbl);
 			}
@@ -2383,9 +2389,9 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 							sol::table tbl = sv.create_table_with(
 								"model", building.modelRef,
 								"cellObject", cop,
-								"position", collisionResult.hit,
-								"normal", collisionResult.surfNormal,
-								"strikeVel", strikeVel
+								"position", LuaPropertyRef(collisionResult.hit),
+								"normal", LuaPropertyRef(collisionResult.surfNormal),
+								"strikeVel", LuaPropertyRef(strikeVel)
 							);
 							m_carEventsLua.call(this, "HitCellObject", tbl);
 						}
@@ -2427,10 +2433,10 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 								sol::table tbl = sv.create_table_with(
 									"model", building.modelRef,
 									"cellObject", cop,
-									"position", collisionResult.hit,
-									"normal", collisionResult.surfNormal,
-									"velocity", velocity,
-									"strikeVel", strikeVel
+									"position", LuaPropertyRef(collisionResult.hit),
+									"normal", LuaPropertyRef(collisionResult.surfNormal),
+									"velocity", LuaPropertyRef(velocity),
+									"strikeVel", LuaPropertyRef(strikeVel)
 								);
 								m_carEventsLua.call(this, "HitSmashable", tbl);
 							}
@@ -2693,26 +2699,6 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 				c1->m_ai.c.carMustDie = 1;
 		}
 
-		// Lua interaction
-		if (m_carEventsLua.valid())
-		{
-			try {
-				sol::state_view sv(m_carEventsLua.lua_state());
-				sol::table tbl = sv.create_table_with(
-					"car1", this,
-					"car2", other,
-					"position", collResult.location,
-					"normal", collResult.normal,
-					"strikeVel", strikeVel
-				);
-				m_carEventsLua.call(this, "CarsCollision", tbl);
-			}
-			catch (const sol::error& e)
-			{
-				MsgError("CCar event call error: %s\n", e.what());
-			}
-	}
-
 #if 0
 		// wake up cops if they've ben touched
 		// [A] check player felony.
@@ -2777,6 +2763,39 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	int m1 = cp->m_cosmetics.mass;
 	int m2 = c1->m_cosmetics.mass;
 
+	// defaults
+	c1InfiniteMass = (cp->m_controlType == CONTROL_TYPE_CUTSCENE || m1 == 0x7fff);
+	c2InfiniteMass = (c1->m_controlType == CONTROL_TYPE_CUTSCENE || m2 == 0x7fff);
+
+#if 0
+	if (c1InfiniteMass || c2InfiniteMass)
+		strikeVel = strikeVel * 10 >> 2;
+#endif
+
+	// Lua interaction
+	if (m_carEventsLua.valid())
+	{
+		try {
+			sol::state_view sv(m_carEventsLua.lua_state());
+			sol::table tbl = sv.create_table_with(
+				"car1", this,
+				"car2", other,
+				"position", LuaPropertyRef(collResult.location),
+				"normal", LuaPropertyRef(collResult.normal),
+				"strikeVel", LuaPropertyRef(strikeVel),
+				"mass1", LuaPropertyRef(m1),
+				"mass2", LuaPropertyRef(m2),
+				"c1InfiniteMass", LuaPropertyRef(c1InfiniteMass),
+				"c2InfiniteMass", LuaPropertyRef(c2InfiniteMass)
+			);
+			m_carEventsLua.call(this, "CarsCollision", tbl);
+		}
+		catch (const sol::error& e)
+		{
+			MsgError("CCar event call error: %s\n", e.what());
+		}
+	}
+
 	if (m2 < m1)
 	{
 		do1 = (m2 * 4096) / m1;
@@ -2788,22 +2807,14 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 		do1 = 4096;
 	}
 
-	c1InfiniteMass = cp->m_controlType == CONTROL_TYPE_CUTSCENE || m1 == 0x7fff;
-	c2InfiniteMass = c1->m_controlType == CONTROL_TYPE_CUTSCENE || m2 == 0x7fff;
-
-	// [A] if any checked cars has infinite mass, reduce bouncing
-	// TODO: very easy difficulty
-	if (c1InfiniteMass || c2InfiniteMass)
-		strikeVel = strikeVel * 10 >> 2;
-
-	CollisionResponse(cpDelta, other, strikeVel, do1, lever0, collResult);
+	CollisionResponse(cpDelta, other, strikeVel, do1, c1InfiniteMass, lever0, collResult);
 
 	// don't forget to invert normal
 	collResult.normal.vx = -collResult.normal.vx;
 	collResult.normal.vy = -collResult.normal.vy;
 	collResult.normal.vz = -collResult.normal.vz;
 
-	other->CollisionResponse(c1Delta, this, strikeVel, do2, lever1, collResult);
+	other->CollisionResponse(c1Delta, this, strikeVel, do2, c2InfiniteMass, lever1, collResult);
 
 #if 0
 	if (cp->m_id == player[0].playerCarId || c1->m_id == player[0].playerCarId)
@@ -2819,18 +2830,20 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	return true;
 }
 
-void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, const LONGVECTOR4& lever, const CRET3D& collResult)
+void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const LONGVECTOR4& lever, const CRET3D& collResult)
 {
 	// Lua interaction
 	if (m_carEventsLua.valid())
 	{
 		try {
+
 			sol::state_view sv(m_carEventsLua.lua_state());
 			sol::table tbl = sv.create_table_with(
 				"other", other,
-				"position", collResult.location,
-				"normal", collResult.normal,
-				"strikeVel", strikeVel
+				"position", LuaPropertyRef(collResult.location),
+				"normal", LuaPropertyRef(collResult.normal),
+				"strikeVel", LuaPropertyRef(strikeVel),
+				"infiniteMass", LuaPropertyRef(infiniteMass)
 			);
 			m_carEventsLua.call(this, "HitCar", tbl);
 		}
@@ -2841,7 +2854,7 @@ void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, 
 	}
 
 	// apply force to car 0
-	if (!(m_controlType == CONTROL_TYPE_CUTSCENE || m_cosmetics.mass == 0x7fff))
+	if (!infiniteMass)
 	{
 		int twistY, strength1;
 #if 0

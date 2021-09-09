@@ -360,7 +360,7 @@ protected:
 	void				StartStaticSound(const char* type, float refDist, float volume, float pitch);
 
 	void				CollisionSound(int impact, bool car_vs_car);
-	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, const LONGVECTOR4& lever, const struct CRET3D& collResult);
+	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const LONGVECTOR4& lever, const struct CRET3D& collResult);
 
 	static void			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
 	static void			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
