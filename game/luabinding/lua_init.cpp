@@ -11,6 +11,7 @@
 void LuaInit(sol::state& lua)
 {
 	lua.open_libraries(sol::lib::base);
+	lua.open_libraries(sol::lib::package);
 	lua.open_libraries(sol::lib::debug);
 	lua.open_libraries(sol::lib::math);
 	lua.open_libraries(sol::lib::bit32);

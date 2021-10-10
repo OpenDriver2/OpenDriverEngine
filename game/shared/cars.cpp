@@ -454,7 +454,7 @@ void CCar::Lua_Init(sol::state& lua)
 			sol::property(&CCar::GetInterpolatedDrawMatrix),
 
 			// Events
-			LUADOC_P("eventCallback", "Events callback. Signature: func(self, name: 'HitGround' | 'HitCurb' | 'HitCellObject' | 'HitSmashable' | 'HitCar' | 'CarsCollision', params: table)"),
+			LUADOC_P("eventCallback", "Events callback. Signature: func(self, name: 'HitGround' | 'HitCurb' | 'HitCellObject' | 'HitSmashable' | 'CarsCollision' | 'HitCar', params: table)"),
 			&CCar::m_carEventsLua
 		);
 	}
@@ -498,7 +498,7 @@ void CCar::StartSounds()
 
 	if (!m_skidSound)
 		m_skidSound = IAudioSystem::Instance->CreateSource();
-	m_skidSound->Setup(0, /*m_owner->skidSample*/skidSample, &SkidSoundUpdateCb, this);
+	m_skidSound->Setup(0, skidSample, &SkidSoundUpdateCb, this);
 
 	IAudioSource::Params params;
 	params.set_state(IAudioSource::PLAYING);

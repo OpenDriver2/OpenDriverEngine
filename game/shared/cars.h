@@ -436,8 +436,8 @@ protected:
 		"HitCurb",
 		"HitCellObject",
 		"HitSmashable",
-		"HitCar",
 		"CarsCollision",
+		"HitCar",
 	*/
 };
 
