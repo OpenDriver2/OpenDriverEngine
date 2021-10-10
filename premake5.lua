@@ -48,7 +48,7 @@ workspace "OpenDriverEngine"
 			"NDEBUG",
 		}
 		optimize "Full"
-
+		
 group "Dependencies"
 
 -- NoSTD
@@ -210,3 +210,5 @@ project "OpenDriverGame"
 	
 	pchheader "game/pch.h"
 	pchsource "game/pch.cpp"
+	
+	files { "TODO.md" }
