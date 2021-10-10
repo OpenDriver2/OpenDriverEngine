@@ -1465,6 +1465,38 @@ namespace sol_ImGui
     inline bool IsPopupOpen(const std::string& str_id)													{ return ImGui::IsPopupOpen(str_id.c_str()); }
     inline bool IsPopupOpen(const std::string& str_id, int popup_flags)									{ return ImGui::IsPopupOpen(str_id.c_str(), popup_flags); }
 
+	//Tables
+    inline bool BeginTable(const std::string& str_id, int columns)                                                                          { return ImGui::BeginTable(str_id.c_str(), columns); }
+    inline bool BeginTable(const std::string& str_id, int columns, int flags)                                                               { return ImGui::BeginTable(str_id.c_str(), columns, static_cast<ImGuiTableFlags>(flags)); }
+    inline bool BeginTable(const std::string& str_id, int columns, int flags, float outer_sizeX, float outer_sizeY)                         { return ImGui::BeginTable(str_id.c_str(), columns, static_cast<ImGuiTableFlags>(flags), { outer_sizeX, outer_sizeY }); }
+    inline bool BeginTable(const std::string& str_id, int columns, int flags, float outer_sizeX, float outer_sizeY, float inner_width)      { return ImGui::BeginTable(str_id.c_str(), columns, static_cast<ImGuiTableFlags>(flags), { outer_sizeX, outer_sizeY }, inner_width); }
+    inline void EndTable()                                                                                                                  { ImGui::EndTable(); }
+    inline void TableNextRow()                                                                                                              { ImGui::TableNextRow(); }
+    inline void TableNextRow(int flags)                                                                                                     { ImGui::TableNextRow(static_cast<ImGuiTableRowFlags>(flags)); }
+    inline void TableNextRow(int flags, float min_row_height)                                                                               { ImGui::TableNextRow(static_cast<ImGuiTableRowFlags>(flags), min_row_height); }
+    inline bool TableNextColumn()                                                                                                           { return ImGui::TableNextColumn(); }
+    inline bool TableSetColumnIndex(int column_n)                                                                                           { return ImGui::TableSetColumnIndex(column_n); }
+    inline void TableSetupColumn(const std::string& label)                                                                                  { ImGui::TableSetupColumn(label.c_str()); }
+    inline void TableSetupColumn(const std::string& label, int flags)                                                                       { ImGui::TableSetupColumn(label.c_str(), static_cast<ImGuiTableColumnFlags>(flags)); }
+    inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight)                                           { ImGui::TableSetupColumn(label.c_str(), static_cast<ImGuiTableColumnFlags>(flags), init_width_or_weight); }
+    inline void TableSetupColumn(const std::string& label, int flags, float init_width_or_weight, int user_id)                              { ImGui::TableSetupColumn(label.c_str(), static_cast<ImGuiTableColumnFlags>(flags), init_width_or_weight, ImU32(user_id)); }
+    inline void TableSetupScrollFreeze(int cols, int rows)                                                                                  { ImGui::TableSetupScrollFreeze(cols, rows); }
+    inline void TableHeadersRow()                                                                                                           { ImGui::TableHeadersRow(); }
+    inline void TableHeader(const std::string& label)                                                                                       { ImGui::TableHeader(label.c_str()); }
+    inline ImGuiTableSortSpecs* TableGetSortSpecs()                                                                                         { return ImGui::TableGetSortSpecs(); }
+    inline int TableGetColumnCount()                                                                                                        { return ImGui::TableGetColumnCount(); }
+    inline int TableGetColumnIndex()                                                                                                        { return ImGui::TableGetColumnIndex(); }
+    inline int TableGetRowIndex()                                                                                                           { return ImGui::TableGetRowIndex(); }
+    inline std::string TableGetColumnName()                                                                                                 { return std::string(ImGui::TableGetColumnName()); }
+    inline std::string TableGetColumnName(int column_n)                                                                                     { return std::string(ImGui::TableGetColumnName(column_n)); }
+    inline ImGuiTableColumnFlags TableGetColumnFlags()                                                                                      { return ImGui::TableGetColumnFlags(); }
+    inline ImGuiTableColumnFlags TableGetColumnFlags(int column_n)                                                                          { return ImGui::TableGetColumnFlags(column_n); }
+    inline void TableSetBgColor(int target, int color)                                                                                      { ImGui::TableSetBgColor(static_cast<ImGuiTableBgTarget>(target), ImU32(color)); }
+    inline void TableSetBgColor(int target, float colR, float colG, float colB, float colA)                                                 { ImGui::TableSetBgColor(static_cast<ImGuiTableBgTarget>(target), ImGui::ColorConvertFloat4ToU32({ colR, colG, colB, colA })); }
+    inline void TableSetBgColor(int target, int color, int column_n)                                                                        { ImGui::TableSetBgColor(static_cast<ImGuiTableBgTarget>(target), ImU32(color), column_n); }
+    inline void TableSetBgColor(int target, float colR, float colG, float colB, float colA, int column_n)                                   { ImGui::TableSetBgColor(static_cast<ImGuiTableBgTarget>(target), ImGui::ColorConvertFloat4ToU32({ colR, colG, colB, colA }), column_n); }
+
+
     // Columns
     inline void Columns()																				{ ImGui::Columns(); }
     inline void Columns(int count)																		{ ImGui::Columns(count); }
@@ -1540,12 +1572,15 @@ namespace sol_ImGui
     inline bool IsRectVisible(float minX, float minY, float maxX, float maxY)							{ return ImGui::IsRectVisible({ minX, minY }, { maxX, maxY }); }
     inline double GetTime()																				{ return ImGui::GetTime(); }
     inline int GetFrameCount()																			{ return ImGui::GetFrameCount(); }
-    /* TODO: GetBackgroundDrawList(), GetForeGroundDrawList(), GetDrawListSharedData() ==> UNSUPPORTED */
+    inline ImDrawList* GetBackgroundDrawList()															{ return ImGui::GetBackgroundDrawList(); }
+    inline ImDrawList* GetForegroundDrawList()															{ return ImGui::GetForegroundDrawList(); }
+    /* TODO: GetDrawListSharedData() ==> UNSUPPORTED */
     inline std::string GetStyleColorName(int idx)														{ return std::string(ImGui::GetStyleColorName(static_cast<ImGuiCol>(idx))); }
     /* TODO: SetStateStorage(), GetStateStorage(), CalcListClipping() ==> UNSUPPORTED */
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY)								{ return ImGui::BeginChildFrame(id, { sizeX, sizeY }); }
     inline bool BeginChildFrame(unsigned int id, float sizeX, float sizeY, int flags)					{ return ImGui::BeginChildFrame(id, { sizeX, sizeY }, static_cast<ImGuiWindowFlags>(flags)); }
     inline void EndChildFrame()																			{ return ImGui::EndChildFrame(); }
+	inline ImGuiStyle& GetStyle()																		{ return ImGui::GetStyle(); }
 
     // Text Utilities
     inline std::tuple<float, float> CalcTextSize(const std::string& text)																					{ const auto vec2{ ImGui::CalcTextSize(text.c_str()) }; return std::make_tuple(vec2.x, vec2.y); }
@@ -1829,8 +1864,7 @@ namespace sol_ImGui
             "NoUndoRedo"			, ImGuiInputTextFlags_NoUndoRedo,
             "CharsScientific"		, ImGuiInputTextFlags_CharsScientific,
             "CallbackResize"		, ImGuiInputTextFlags_CallbackResize,
-            "Multiline"				, ImGuiInputTextFlags_Multiline,
-            "NoMarkEdited"			, ImGuiInputTextFlags_NoMarkEdited
+            "CallbackEdit"			, ImGuiInputTextFlags_CallbackEdit
         );
 #pragma endregion InputText Flags
 
@@ -1862,12 +1896,12 @@ namespace sol_ImGui
             "InputRGB"				, ImGuiColorEditFlags_InputRGB,
             "InputHSV"				, ImGuiColorEditFlags_InputHSV,
 
-            "_OptionsDefault"		, ImGuiColorEditFlags__OptionsDefault,
+            "DefaultOptions_"		, ImGuiColorEditFlags_DefaultOptions_,
 
-            "_DisplayMask"			, ImGuiColorEditFlags__DisplayMask,
-            "_DataTypeMask"			, ImGuiColorEditFlags__DataTypeMask,
-            "_PickerMask"			, ImGuiColorEditFlags__PickerMask,
-            "_InputMask"			, ImGuiColorEditFlags__InputMask,
+            "DisplayMask_"			, ImGuiColorEditFlags_DisplayMask_,
+            "DataTypeMask_"			, ImGuiColorEditFlags_DataTypeMask_,
+            "PickerMask_"			, ImGuiColorEditFlags_PickerMask_,
+            "InputMask_"			, ImGuiColorEditFlags_InputMask_,
 
             "RGB"					, ImGuiColorEditFlags_RGB
         );
@@ -1920,6 +1954,125 @@ namespace sol_ImGui
             "AnyPopup"				, ImGuiPopupFlags_AnyPopup
         );
 #pragma endregion Popup Flags
+
+		
+#pragma region Table Flags
+        lua.new_enum("ImGuiTableFlags",
+            // Features
+            "None"                           , ImGuiTableFlags_None,
+            "Resizable"                      , ImGuiTableFlags_Resizable,
+            "Reorderable"                    , ImGuiTableFlags_Reorderable,
+            "Hideable"                       , ImGuiTableFlags_Hideable,
+            "Sortable"                       , ImGuiTableFlags_Sortable,
+            "NoSavedSettings"                , ImGuiTableFlags_NoSavedSettings,
+            "ContextMenuInBody"              , ImGuiTableFlags_ContextMenuInBody,
+            // Decorations
+            "RowBg"                          , ImGuiTableFlags_RowBg,
+            "BordersInnerH"                  , ImGuiTableFlags_BordersInnerH,
+            "BordersOuterH"                  , ImGuiTableFlags_BordersOuterH,
+            "BordersInnerV"                  , ImGuiTableFlags_BordersInnerV,
+            "BordersOuterV"                  , ImGuiTableFlags_BordersOuterV,
+            "BordersH"                       , ImGuiTableFlags_BordersH,
+            "BordersV"                       , ImGuiTableFlags_BordersV,
+            "BordersInner"                   , ImGuiTableFlags_BordersInner,
+            "BordersOuter"                   , ImGuiTableFlags_BordersOuter,
+            "Borders"                        , ImGuiTableFlags_Borders,
+            "NoBordersInBody"                , ImGuiTableFlags_NoBordersInBody,
+            "NoBordersInBodyUntilResize"     , ImGuiTableFlags_NoBordersInBodyUntilResize,
+            // Sizing Policy (read above for defaults)
+            "SizingFixedFit"                 , ImGuiTableFlags_SizingFixedFit,
+            "SizingFixedSame"                , ImGuiTableFlags_SizingFixedSame,
+            "SizingStretchProp"              , ImGuiTableFlags_SizingStretchProp,
+            "SizingStretchSame"              , ImGuiTableFlags_SizingStretchSame,
+            // Sizing Extra Options
+            "NoHostExtendX"                  , ImGuiTableFlags_NoHostExtendX,
+            "NoHostExtendY"                  , ImGuiTableFlags_NoHostExtendY,
+            "NoKeepColumnsVisible"           , ImGuiTableFlags_NoKeepColumnsVisible,
+            "PreciseWidths"                  , ImGuiTableFlags_PreciseWidths,
+            // Clipping
+            "NoClip"                         , ImGuiTableFlags_NoClip,
+            // Padding
+            "PadOuterX"                      , ImGuiTableFlags_PadOuterX,
+            "NoPadOuterX"                    , ImGuiTableFlags_NoPadOuterX,
+            "NoPadInnerX"                    , ImGuiTableFlags_NoPadInnerX,
+            // Scrolling
+            "ScrollX"                        , ImGuiTableFlags_ScrollX,
+            "ScrollY"                        , ImGuiTableFlags_ScrollY,
+            // Sorting
+            "SortMulti"                      , ImGuiTableFlags_SortMulti,
+            "SortTristate"                   , ImGuiTableFlags_SortTristate,
+            // [Internal] Combinations and masks
+            "SizingMask"                     , ImGuiTableFlags_SizingMask_
+        );
+#pragma endregion Table Flags
+
+#pragma region TableColumn Flags
+        lua.new_enum("ImGuiTableColumnFlags",
+        // Input configuration flags
+            "None"                           , ImGuiTableColumnFlags_None,
+            "Disabled"                       , ImGuiTableColumnFlags_Disabled,
+            "DefaultHide"                    , ImGuiTableColumnFlags_DefaultHide,
+            "DefaultSort"                    , ImGuiTableColumnFlags_DefaultSort,
+            "WidthStretch"                   , ImGuiTableColumnFlags_WidthStretch,
+            "WidthFixed"                     , ImGuiTableColumnFlags_WidthFixed,
+            "NoResize"                       , ImGuiTableColumnFlags_NoResize,
+            "NoReorder"                      , ImGuiTableColumnFlags_NoReorder,
+            "NoHide"                         , ImGuiTableColumnFlags_NoHide,
+            "NoClip"                         , ImGuiTableColumnFlags_NoClip,
+            "NoSort"                         , ImGuiTableColumnFlags_NoSort,
+            "NoSortAscending"                , ImGuiTableColumnFlags_NoSortAscending,
+            "NoSortDescending"               , ImGuiTableColumnFlags_NoSortDescending,
+            "NoHeaderLabel"                  , ImGuiTableColumnFlags_NoHeaderLabel,
+            "NoHeaderWidth"                  , ImGuiTableColumnFlags_NoHeaderWidth,
+            "PreferSortAscending"            , ImGuiTableColumnFlags_PreferSortAscending,
+            "PreferSortDescending"           , ImGuiTableColumnFlags_PreferSortDescending,
+            "IndentEnable"                   , ImGuiTableColumnFlags_IndentEnable,
+            "IndentDisable"                  , ImGuiTableColumnFlags_IndentDisable,
+            // Output status flags, read-only via TableGetColumnFlags()
+            "IsEnabled"                      , ImGuiTableColumnFlags_IsEnabled,
+            "IsVisible"                      , ImGuiTableColumnFlags_IsVisible,
+            "IsSorted"                       , ImGuiTableColumnFlags_IsSorted,
+            "IsHovered"                      , ImGuiTableColumnFlags_IsHovered,
+            // [Internal] Combinations and masks
+            "WidthMask_"                     , ImGuiTableColumnFlags_WidthMask_,
+            "IndentMask_"                    , ImGuiTableColumnFlags_IndentMask_,
+            "StatusMask_"                    , ImGuiTableColumnFlags_StatusMask_,
+            "NoDirectResize_"                , ImGuiTableColumnFlags_NoDirectResize_
+        );
+#pragma endregion TableColumn Flags
+
+#pragma region TableRow Flags
+        lua.new_enum("ImGuiTableRowFlags",
+            "None"                           , ImGuiTableRowFlags_None,
+            "Headers"                        , ImGuiTableRowFlags_Headers
+        );
+#pragma endregion TableRow Flags
+
+#pragma region TableBg Target
+        lua.new_enum("ImGuiTableBgTarget",
+            "None"                           , ImGuiTableBgTarget_None,
+            "RowBg0"                         , ImGuiTableBgTarget_RowBg0,
+            "RowBg1"                         , ImGuiTableBgTarget_RowBg1,
+            "CellBg"                         , ImGuiTableBgTarget_CellBg
+        );
+#pragma endregion TableBg Target
+
+#pragma region Draw Flags
+        lua.new_enum("ImDrawFlags",
+            "None"                              , ImDrawFlags_None,
+            "Closed"                            , ImDrawFlags_Closed,
+            "ImDrawFlags_RoundCornersTopLeft"   , ImDrawFlags_RoundCornersTopLeft,
+            "RoundCornersTopRight"              , ImDrawFlags_RoundCornersTopRight,
+            "RoundCornersBottomLeft"            , ImDrawFlags_RoundCornersBottomLeft,
+            "RoundCornersBottomRight"           , ImDrawFlags_RoundCornersBottomRight,
+            "RoundCornersNone"                  , ImDrawFlags_RoundCornersNone,
+            "RoundCornersTop"                   , ImDrawFlags_RoundCornersTop,
+            "RoundCornersBottom"                , ImDrawFlags_RoundCornersBottom,
+            "RoundCornersLeft"                  , ImDrawFlags_RoundCornersLeft,
+            "RoundCornersRight"                 , ImDrawFlags_RoundCornersRight,
+            "RoundCornersAll"                   , ImDrawFlags_RoundCornersAll
+        );
+#pragma endregion Draw Flags
 
 #pragma region TabBar Flags
         lua.new_enum("ImGuiTabBarFlags",
@@ -2004,8 +2157,107 @@ namespace sol_ImGui
 #endif // SOL_IMGUI_ENABLE_INPUT_FUNCTIONS
     }
 
+	// Drawing APIs
+    // Primitives
+    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col)                                                                                                    { drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, ImU32(col)); }
+    inline void ImDrawListAddLine(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, int col, float thickness)                                                                                   { drawlist->AddLine({ p1X, p1Y }, { p2X, p2Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col)); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                        { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                             { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawFlags>(flags)); }
+    inline void ImDrawListAddRect(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags, float thickness)                                            { drawlist->AddRect({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawFlags>(flags), thickness); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col)                                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col)); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding)                                                                  { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding); }
+    inline void ImDrawListAddRectFilled(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col, float rounding, int flags)                                                       { drawlist->AddRectFilled({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col), rounding, static_cast<ImDrawFlags>(flags)); }
+    inline void ImDrawListAddRectFilledMultiColor(ImDrawList* drawlist, float p_minX, float p_minY, float p_maxX, float p_maxY, int col_upr_left, int col_upr_right, int col_bot_right, int col_bot_left)       { drawlist->AddRectFilledMultiColor({ p_minX, p_minY }, { p_maxX, p_maxY }, ImU32(col_upr_left), ImU32(col_upr_right), ImU32(col_bot_right), ImU32(col_bot_left)); }
+    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                        { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col)); }
+    inline void ImDrawListAddQuad(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                       { drawlist->AddQuad({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddQuadFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col)                                                  { drawlist->AddQuadFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col)); }
+    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                          { drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col)); }
+    inline void ImDrawListAddTriangle(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                         { drawlist->AddTriangle({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddTriangleFilled(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col)                                                                    { drawlist->AddTriangleFilled({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col)); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                                  { drawlist->AddCircle({ centerX, centerY }, radius, ImU32(col)); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                { drawlist->AddCircle({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddCircle(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                               { drawlist->AddCircle({ centerX, centerY }, radius, ImU32(col), num_segments, thickness); }
+    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col)                                                                                            { drawlist->AddCircleFilled({ centerX, centerY }, radius, ImU32(col)); }
+    inline void ImDrawListAddCircleFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                          { drawlist->AddCircleFilled({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                                  { drawlist->AddNgon({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddNgon(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments, float thickness)                                                                 { drawlist->AddNgon({ centerX, centerY }, radius, ImU32(col), num_segments, thickness); }
+    inline void ImDrawListAddNgonFilled(ImDrawList* drawlist, float centerX, float centerY, float radius, int col, int num_segments)                                                                            { drawlist->AddNgonFilled({ centerX, centerY }, radius, ImU32(col), num_segments); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float posX, float posY, int col, const std::string& text_begin)                                                                                         { drawlist->AddText({ posX, posY }, ImU32(col), text_begin.c_str()); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin)                                                                        { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str()); }
+    inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width)                                                      { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width); }
+    // TODO
+    // inline void ImDrawListAddText(ImDrawList* drawlist, float font_size, float posX, float posY, int col, const std::string& text_begin, float wrap_width, sol::table float cpu_fine_clip_rect)                 { drawlist->AddText(ImGui::GetFont(), font_size, { posX, posY }, ImU32(col), text_begin.c_str(), NULL, wrap_width, cpu_fine_clip_rect); }
+    // inline void ImDrawListAddPolyline(ImDrawList* drawlist, sol::table points, int num_points, int col, int flags, float thickness)                                                                             { drawlist->AddPolyline(points, num_points, ImU32(col), static_cast<ImDrawFlags>(flags), thickness); }
+    // inline void ImDrawListAddConvexPolyFilled(ImDrawList* drawlist, sol::table points, int num_points, int col)                                                                                                 { drawlist->AddConvexPolyFilled(points, num_points, ImU32(col)); }
+    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness)                                { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddBezierCubic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, float p4X, float p4Y, int col, float thickness, int num_segments)              { drawlist->AddBezierCubic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, { p4X, p4Y }, ImU32(col), thickness, num_segments); }
+    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness)                                                  { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness); }
+    inline void ImDrawListAddBezierQuadratic(ImDrawList* drawlist, float p1X, float p1Y, float p2X, float p2Y, float p3X, float p3Y, int col, float thickness, int num_segments)                                { drawlist->AddBezierQuadratic({ p1X, p1Y }, { p2X, p2Y }, { p3X, p3Y }, ImU32(col), thickness, num_segments); }
+
+
+	inline void InitUserType(sol::state_view& lua)
+    {
+        lua.new_usertype<ImVec2>("ImVec2", sol::constructors<ImVec2(), ImVec2(float, float)>(),
+            "x"                              , &ImVec2::x,
+            "y"                              , &ImVec2::y
+        );
+
+        lua.new_usertype<ImVec4>("ImVec4", sol::constructors<ImVec4(), ImVec4(float, float, float, float)>(),
+            "x"                              , &ImVec4::x,
+            "y"                              , &ImVec4::y,
+            "z"                              , &ImVec4::z,
+            "w"                              , &ImVec4::w
+        );
+
+        lua.new_usertype<ImGuiStyle>("ImGuiStyle",
+            "Alpha"                          , &ImGuiStyle::Alpha,
+            "DisabledAlpha"                  , &ImGuiStyle::DisabledAlpha,
+            "WindowPadding"                  , &ImGuiStyle::WindowPadding,
+            "WindowRounding"                 , &ImGuiStyle::WindowRounding,
+            "WindowBorderSize"               , &ImGuiStyle::WindowBorderSize,
+            "WindowMinSize"                  , &ImGuiStyle::WindowMinSize,
+            "WindowTitleAlign"               , &ImGuiStyle::WindowTitleAlign,
+            "WindowMenuButtonPosition"       , &ImGuiStyle::WindowMenuButtonPosition,
+            "ChildRounding"                  , &ImGuiStyle::ChildRounding,
+            "ChildBorderSize"                , &ImGuiStyle::ChildBorderSize,
+            "PopupRounding"                  , &ImGuiStyle::PopupRounding,
+            "PopupBorderSize"                , &ImGuiStyle::PopupBorderSize,
+            "FramePadding"                   , &ImGuiStyle::FramePadding,
+            "FrameRounding"                  , &ImGuiStyle::FrameRounding,
+            "FrameBorderSize"                , &ImGuiStyle::FrameBorderSize,
+            "ItemSpacing"                    , &ImGuiStyle::ItemSpacing,
+            "ItemInnerSpacing"               , &ImGuiStyle::ItemInnerSpacing,
+            "CellPadding"                    , &ImGuiStyle::CellPadding,
+            "TouchExtraPadding"              , &ImGuiStyle::TouchExtraPadding,
+            "IndentSpacing"                  , &ImGuiStyle::IndentSpacing,
+            "ColumnsMinSpacing"              , &ImGuiStyle::ColumnsMinSpacing,
+            "ScrollbarSize"                  , &ImGuiStyle::ScrollbarSize,
+            "ScrollbarRounding"              , &ImGuiStyle::ScrollbarRounding,
+            "GrabMinSize"                    , &ImGuiStyle::GrabMinSize,
+            "GrabRounding"                   , &ImGuiStyle::GrabRounding,
+            "LogSliderDeadzone"              , &ImGuiStyle::LogSliderDeadzone,
+            "TabRounding"                    , &ImGuiStyle::TabRounding,
+            "TabBorderSize"                  , &ImGuiStyle::TabBorderSize,
+            "TabMinWidthForCloseButton"      , &ImGuiStyle::TabMinWidthForCloseButton,
+            "ColorButtonPosition"            , &ImGuiStyle::ColorButtonPosition,
+            "ButtonTextAlign"                , &ImGuiStyle::ButtonTextAlign,
+            "SelectableTextAlign"            , &ImGuiStyle::SelectableTextAlign,
+            "DisplayWindowPadding"           , &ImGuiStyle::DisplayWindowPadding,
+            "DisplaySafeAreaPadding"         , &ImGuiStyle::DisplaySafeAreaPadding,
+            "MouseCursorScale"               , &ImGuiStyle::MouseCursorScale,
+            "AntiAliasedLines"               , &ImGuiStyle::AntiAliasedLines,
+            "AntiAliasedLinesUseTex"         , &ImGuiStyle::AntiAliasedLinesUseTex,
+            "AntiAliasedFill"                , &ImGuiStyle::AntiAliasedFill,
+            "CurveTessellationTol"           , &ImGuiStyle::CurveTessellationTol,
+            "CircleTessellationMaxError"     , &ImGuiStyle::CircleTessellationMaxError,
+            "ScaleAllSizes"                  , &ImGuiStyle::ScaleAllSizes
+        );
+    }
+
     inline void InitBindings(sol::state_view& lua)
     {
+		InitUserType(lua);
         InitEnums(lua);
 
         sol::table ImGui = lua.create_named_table("ImGui");
@@ -2585,6 +2837,50 @@ namespace sol_ImGui
                                                             ));
 #pragma endregion Popups, Modals
 
+#pragma region Tables
+        ImGui.set_function("BeginTable"              , sol::overload(
+                                                                      sol::resolve<bool(const std::string&, int)>(BeginTable),
+                                                                      sol::resolve<bool(const std::string&, int, int)>(BeginTable),
+                                                                      sol::resolve<bool(const std::string&, int, int, float, float)>(BeginTable),
+                                                                      sol::resolve<bool(const std::string&, int, int, float, float, float)>(BeginTable)
+                                                                    ));
+        ImGui.set_function("EndTable"                , EndTable);
+        ImGui.set_function("TableNextRow"            , sol::overload(
+                                                                      sol::resolve<void()>(TableNextRow),
+                                                                      sol::resolve<void(int)>(TableNextRow),
+                                                                      sol::resolve<void(int, float)>(TableNextRow)
+                                                                    ));
+        ImGui.set_function("TableNextColumn"         , TableNextColumn);
+        ImGui.set_function("TableSetColumnIndex"     , TableSetColumnIndex);
+        ImGui.set_function("TableSetupColumn"        , sol::overload(
+                                                                      sol::resolve<void(const std::string&)>(TableSetupColumn),
+                                                                      sol::resolve<void(const std::string&, int)>(TableSetupColumn),
+                                                                      sol::resolve<void(const std::string&, int, float)>(TableSetupColumn),
+                                                                      sol::resolve<void(const std::string&, int, float, int)>(TableSetupColumn)
+                                                                    ));
+        ImGui.set_function("TableSetupScrollFreeze"  , TableSetupScrollFreeze);
+        ImGui.set_function("TableHeadersRow"         , TableHeadersRow);
+        ImGui.set_function("TableHeader"             , TableHeader);
+        ImGui.set_function("TableGetSortSpecs"       , TableGetSortSpecs);
+        ImGui.set_function("TableGetColumnCount"     , TableGetColumnCount);
+        ImGui.set_function("TableGetColumnIndex"     , TableGetColumnIndex);
+        ImGui.set_function("TableGetRowIndex"        , TableGetRowIndex);
+        ImGui.set_function("TableGetColumnName"      , sol::overload(
+                                                                      sol::resolve<std::string()>(TableGetColumnName),
+                                                                      sol::resolve<std::string(int)>(TableGetColumnName)
+                                                                    ));
+        ImGui.set_function("TableGetColumnFlags"     , sol::overload(
+                                                                      sol::resolve<int()>(TableGetColumnFlags),
+                                                                      sol::resolve<int(int)>(TableGetColumnFlags)
+                                                                    ));
+        ImGui.set_function("TableSetBgColor"         , sol::overload(
+                                                                      sol::resolve<void(int, int)>(TableSetBgColor),
+                                                                      sol::resolve<void(int, float, float, float, float)>(TableSetBgColor),
+                                                                      sol::resolve<void(int, int, int)>(TableSetBgColor),
+                                                                      sol::resolve<void(int, float, float, float, float, int)>(TableSetBgColor)
+                                                                    ));
+#pragma endregion Tables
+
 #pragma region Columns
         ImGui.set_function("Columns"						, sol::overload(
                                                                 sol::resolve<void()>(Columns),
@@ -2686,12 +2982,15 @@ namespace sol_ImGui
                                                             ));
         ImGui.set_function("GetTime"						, GetTime);
         ImGui.set_function("GetFrameCount"					, GetFrameCount);
+		ImGui.set_function("GetBackgroundDrawList"			, GetBackgroundDrawList);
+        ImGui.set_function("GetForegroundDrawList"			, GetForegroundDrawList);
         ImGui.set_function("GetStyleColorName"				, GetStyleColorName);
         ImGui.set_function("BeginChildFrame"				, sol::overload(
                                                                 sol::resolve<bool(unsigned int, float, float)>(BeginChildFrame),
                                                                 sol::resolve<bool(unsigned int, float, float, int)>(BeginChildFrame)
                                                             ));
         ImGui.set_function("EndChildFrame"					, EndChildFrame);
+		ImGui.set_function("GetStyle"						, GetStyle);
 #pragma endregion Miscellaneous Utilities
 
 #pragma region Text Utilities
@@ -2765,5 +3064,64 @@ namespace sol_ImGui
         ImGui.set_function("GetClipboardText"				, GetClipboardText);
         ImGui.set_function("SetClipboardText"				, SetClipboardText);
 #pragma endregion Clipboard Utilities
+
+#pragma region Drawing APIs
+        ImGui.set_function("ImDrawListAddLine"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int)>(ImDrawListAddLine),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float)>(ImDrawListAddLine)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddRect"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int)>(ImDrawListAddRect),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float)>(ImDrawListAddRect),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float, int)>(ImDrawListAddRect),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float, int, float)>(ImDrawListAddRect)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddRectFilled"           , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int)>(ImDrawListAddRectFilled),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float)>(ImDrawListAddRectFilled),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, int, float, int)>(ImDrawListAddRectFilled)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddRectFilledMultiColor" , ImDrawListAddRectFilledMultiColor);
+        ImGui.set_function("ImDrawListAddQuad"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int)>(ImDrawListAddQuad),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int, float)>(ImDrawListAddQuad)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddQuadFilled"           , ImDrawListAddQuadFilled);
+        ImGui.set_function("ImDrawListAddTriangle"             , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int)>(ImDrawListAddTriangle),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int, float)>(ImDrawListAddTriangle)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddTriangleFilled"       , ImDrawListAddTriangleFilled);
+        ImGui.set_function("ImDrawListAddCircle"               , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int)>(ImDrawListAddCircle),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int)>(ImDrawListAddCircle),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int, float)>(ImDrawListAddCircle)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddCircleFilled"         , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int)>(ImDrawListAddCircleFilled),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int)>(ImDrawListAddCircleFilled)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddNgon"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int)>(ImDrawListAddNgon),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, int, float)>(ImDrawListAddNgon)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddNgonFilled"           , ImDrawListAddNgonFilled);
+        ImGui.set_function("ImDrawListAddText"                 , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, int, const std::string&)>(ImDrawListAddText),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, const std::string&)>(ImDrawListAddText),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, int, const std::string&, float)>(ImDrawListAddText)
+                                                                            //    sol::resolve<void(ImDrawList*, float, float, float, int, const std::string&, float, ImVec4*)>(ImDrawListAddText)
+                                                                    ));
+        // ImGui.set_function("ImDrawListAddPolyline  "           , ImDrawListAddPolyline);
+        // ImGui.set_function("ImDrawListAddConvexPolyFilled"     , ImDrawListAddConvexPolyFilled);
+        ImGui.set_function("ImDrawListAddBezierCubic"          , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int, float)>(ImDrawListAddBezierCubic),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, float, float, int, float, int)>(ImDrawListAddBezierCubic)
+                                                                    ));
+        ImGui.set_function("ImDrawListAddBezierQuadratic"      , sol::overload(
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int, float)>(ImDrawListAddBezierQuadratic),
+                                                                               sol::resolve<void(ImDrawList*, float, float, float, float, float, float, int, float, int)>(ImDrawListAddBezierQuadratic)
+                                                                    ));
+#pragma endregion Drawing APIs
     }
 }
