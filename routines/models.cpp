@@ -207,10 +207,7 @@ void CDriverLevelModels::LoadLevelModelsLump(IVirtualStream* pFile)
 	// initialize to dummies
 	for (int i = 0; i < MAX_MODELS; i++)
 	{
-		memset(&m_levelModels[i], 0, sizeof(ModelRef_t));
-		m_levelModels[i].index = i;
-		m_levelModels[i].highDetailId = 0xFFFF;
-		m_levelModels[i].lowDetailId = 0xFFFF;
+		m_levelModels[i] = ModelRef_t();
 	}
 
 	// read from file

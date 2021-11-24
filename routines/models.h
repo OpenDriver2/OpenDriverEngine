@@ -53,13 +53,15 @@ struct ModelRef_t
 	const char* name{ nullptr };
 	MODEL*		model{ nullptr };
 
-	int			index{ -1 };
-	int			size{ 0 };
+	short		index{ -1 };
+	ushort		size{ 0 };
 
 	ushort		highDetailId{ 0xffff };
 	ushort		lowDetailId{ 0xffff };
 	
 	void*		userData{ nullptr }; // might contain a hardware model pointer
+
+	bool		enabled { true };
 };
 
 //------------------------------------------------------------------------------------------------------------

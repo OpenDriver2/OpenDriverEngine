@@ -2,6 +2,16 @@ local cars = engine.Cars
 local world = engine.World
 local players = engine.Players
 
+-- TODO: move to worldUtils.lua
+local function EnableModel(name, value)
+	local modelRef = world.GetModelByName(name)
+	if modelRef ~= nil then
+		modelRef.enabled = value
+	else
+		MsgError("Model '" .. name .. "' not found!")
+	end
+end
+
 local PlayerStartInfo = {
 	----------- Driver 2 freeride startpos -------------
 	["Chicago"] = {
@@ -112,6 +122,19 @@ TestGame.Init = function(residentModel)
 
 	-- terminate old game
 	--TestGame.Terminate()
+	
+	--Disable ALL cones and posts
+	EnableModel("Trainingcones1", false)
+	EnableModel("Trainingcones2", false)
+	EnableModel("Trainingcones3", false)
+	EnableModel("pole1", false)
+	EnableModel("pole2", false)
+	EnableModel("pole3", false)
+	EnableModel("pole4", false)
+	EnableModel("cone_tastic1", false)
+	EnableModel("cone_tastic2", false)
+	EnableModel("cone_tastic3", false)
+	EnableModel("cone_tastic4", false)
 
 	-- add test car
 	-- create car cosmetics from table
@@ -132,6 +155,22 @@ TestGame.Init = function(residentModel)
 		local cosmetics = cityCosmetics[residentModel + 1]
 
 		local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+
+		local evtCb = plcar.eventCallback
+		plcar.eventCallback = function(self, eventType, parameters)
+			--MsgInfo("Got player event ", eventType)
+			
+			-- this will scale up collision verocity and response is modified
+			if eventType == "CarsCollision" then
+				parameters.strikeVel.value = parameters.strikeVel.value // 2
+			end
+			
+			-- call base event function
+			evtCb(self, eventType, parameters)
+		end
+		
+		-- plcar.replayStream:Rewind()
+		-- plcar.replayStream:Start()
 
 		players.localPlayer.currentCar = plcar
 	end

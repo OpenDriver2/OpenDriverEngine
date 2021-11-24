@@ -70,6 +70,9 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 	if (!ref->model)
 		return;
 
+	if(!ref->enabled)
+		return;
+
 	MODEL* model = ref->model;
 
 	CRenderModel* renderModel = (CRenderModel*)ref->userData;

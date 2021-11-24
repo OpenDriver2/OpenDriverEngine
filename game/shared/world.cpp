@@ -86,7 +86,8 @@ void CWorld::Lua_Init(sol::state& lua)
 			LUADOC_P("name"), &ModelRef_t::name,
 			LUADOC_P("index"), &ModelRef_t::index,
 			LUADOC_P("highDetailId"), &ModelRef_t::highDetailId,
-			LUADOC_P("lowDetailId"), &ModelRef_t::lowDetailId
+			LUADOC_P("lowDetailId"), &ModelRef_t::lowDetailId,
+			LUADOC_P("enabled"), &ModelRef_t::enabled
 		);
 	}
 
@@ -481,10 +482,13 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 		for (int j = 0; j < 2; j++)
 		{
 			CWorld::ForEachCellObjectAt(cell, [](int listType, CELL_OBJECT* co) {
-				if (listType != -1)
+				if (listType != -1) // TODO: check event objects too!
 					return false;
 
 				ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
+
+				if (!ref->enabled)
+					return true;
 
 				if (ref && ref->baseInstance)
 					ref = ref->baseInstance;
@@ -504,6 +508,7 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxColl
 	}
 
 	// add event cell objects to list
+	// TODO: check distance!
 	for(usize i = 0; i < m_CellObjects.size(); i++)
 		collisionObjects.append(&m_CellObjects[i]);
 
