@@ -1896,12 +1896,12 @@ namespace sol_ImGui
             "InputRGB"				, ImGuiColorEditFlags_InputRGB,
             "InputHSV"				, ImGuiColorEditFlags_InputHSV,
 
-            "DefaultOptions_"		, ImGuiColorEditFlags_DefaultOptions_,
+            "OptionsDefault"		, ImGuiColorEditFlags__OptionsDefault,
 
-            "DisplayMask_"			, ImGuiColorEditFlags_DisplayMask_,
-            "DataTypeMask_"			, ImGuiColorEditFlags_DataTypeMask_,
-            "PickerMask_"			, ImGuiColorEditFlags_PickerMask_,
-            "InputMask_"			, ImGuiColorEditFlags_InputMask_,
+            "_DisplayMask"			, ImGuiColorEditFlags__DisplayMask,
+            "_DataTypeMask"			, ImGuiColorEditFlags__DataTypeMask,
+            "_PickerMask"			, ImGuiColorEditFlags__PickerMask,
+            "_InputMask"			, ImGuiColorEditFlags__InputMask,
 
             "RGB"					, ImGuiColorEditFlags_RGB
         );
@@ -2212,7 +2212,6 @@ namespace sol_ImGui
 
         lua.new_usertype<ImGuiStyle>("ImGuiStyle",
             "Alpha"                          , &ImGuiStyle::Alpha,
-            "DisabledAlpha"                  , &ImGuiStyle::DisabledAlpha,
             "WindowPadding"                  , &ImGuiStyle::WindowPadding,
             "WindowRounding"                 , &ImGuiStyle::WindowRounding,
             "WindowBorderSize"               , &ImGuiStyle::WindowBorderSize,
