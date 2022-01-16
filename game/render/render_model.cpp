@@ -74,6 +74,13 @@ CRenderModel::~CRenderModel()
 	Destroy();
 }
 
+// FIXME: remove this or don't use when using custom models
+void VertexTileWaterOrGrassCb(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
+{
+	// HACK: move vertices slightly to get rid of Z-fighting
+	vert.vy -= 0.0005f;
+}
+
 bool CRenderModel::Initialize(ModelRef_t* model)
 {
 	if (!model)
@@ -87,7 +94,13 @@ bool CRenderModel::Initialize(ModelRef_t* model)
 	
 	m_sourceModel = model;
 
-	GenerateBuffers();
+	ModelVertexCb cb = nullptr;
+
+	// grass should be under pavements and other things
+	if ((model->model->shape_flags & SHAPE_FLAG_WATER) || (model->model->flags2 & MODEL_FLAG_GRASS))
+		cb = VertexTileWaterOrGrassCb;
+
+	GenerateBuffers(nullptr, cb);
 
 	return true;
 }

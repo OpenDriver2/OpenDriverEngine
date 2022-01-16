@@ -3,7 +3,6 @@
 #include "shared/input.h"
 #include "luabinding/lua_init.h"
 
-#include <enet/enet.h>
 #include <SDL_events.h>
 
 #include <backends/imgui_impl_opengl3.h>
@@ -288,12 +287,6 @@ int main(int argc, char* argv[])
 	CSky::Init();
 
 	bool canRunLoop = true;
-
-	if (enet_initialize() != 0)
-	{
-		MsgError("An error occurred while initializing ENet.\n");
-		canRunLoop = false;
-	}
 
 	// FIXME: force here?
 	CManager_Players::Net_Init();

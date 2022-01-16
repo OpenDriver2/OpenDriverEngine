@@ -2,7 +2,6 @@
 #define PLAYERS_H
 
 #include <sol/forward.hpp>
-#include <enet/enet.h>
 
 class CCar;
 
@@ -46,9 +45,6 @@ protected:
 	InputData				m_currentInputs;
 	CCar*					m_currentCar{ nullptr };
 	EPlayerControlType		m_controlType{ PlayerControl_Local };
-
-	Array<ENetAddress>		m_stationAddresses;
-	ENetHost*				m_netHost{ nullptr };
 };
 
 //---------------------------------------------------------------------------------
