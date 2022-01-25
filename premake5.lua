@@ -146,7 +146,6 @@ include "dependencies/sol2/premake5.lua"
 include "dependencies/openal-soft/premake5.lua"
 include "dependencies/libogg/premake5.lua"
 include "dependencies/libvorbis/premake5.lua"
-include "dependencies/enet/premake5.lua"
 		
 group "Game"
 
@@ -195,8 +194,7 @@ project "OpenDriverGame"
 		"ImGui", 
 		"frameworkLib",
 		"driverLib",
-		"lua", "sol2",
-		"enet"
+		"lua", "sol2"
 	}
 
 	includedirs {
