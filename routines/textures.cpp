@@ -6,9 +6,11 @@
 #include <string.h>
 
 #include <nstd/String.hpp>
+#include <nstd/Math.hpp>
 
 #include "textures.h"
 #include "level.h"
+
 
 
 //-------------------------------------------------------------------------------
@@ -496,6 +498,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 			{
 				TexDetailInfo_t& detail = m_texPages[data.tpage].m_details[info.texnum];
 				detail.extraCLUTs[data.palette] = &data.clut;
+				detail.numExtraCLUTs = Math::max(detail.numExtraCLUTs, data.palette);
 			}
 		}
 	}
