@@ -17,6 +17,9 @@ const float TO_GTE_ANGLE	= (1.0f / (PI_F * 2.0f) * ONE_F);
 #define DIFF_ANGLES( _ang1, _ang2 ) \
 	(((((_ang2) - (_ang1)) + 2048) & 4095) - 2048)
 
+#define DIFF_ANGLES_F( _ang1, _ang2 ) \
+	(fmodf((((_ang2) - (_ang1)) + 2048.0f), 4096.0f) - 2048.0f)
+
 struct VECTOR_NOPAD
 {
 	int vx, vy, vz;

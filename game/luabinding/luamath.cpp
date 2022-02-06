@@ -247,7 +247,10 @@ void Math_Lua_Init(sol::state& lua)
 			fix["ToFixed"]		= [](const float& a)					{ return int(a * ONE_F); };
 			fix["FromFixed"]	= [](const int& a)						{ return float(a) / ONE_F; };
 			fix["DivHalfRound"]	= [](const int& a, const int& bits)		{ return FixDivHalfRound(a, bits); };
-			fix["DIFF_ANGLES"]  = [](const int& x, const int& y)		{ return DIFF_ANGLES(x, y); };
+			fix["DIFF_ANGLES"] = sol::overload(
+				[](const int& x, const int& y)		{ return DIFF_ANGLES(x, y); },
+				[](const float& x, const float& y)	{ return DIFF_ANGLES_F(x, y); }
+			);
 
 			fix["ToFixedVector"] = &ToFixedVector;
 			fix["FromFixedVector"] = sol::overload(

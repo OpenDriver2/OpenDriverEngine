@@ -4,9 +4,7 @@
 #include "luaengine.h"
 #include "game/shared/input.h"
 
-#include <imgui.h>
-#include <imgui_internal.h>
-#include <sol_ImGui/sol_imgui.h>
+extern void LuaImGuiInit(sol::state& lua);
 
 void LuaInit(sol::state& lua)
 {
@@ -18,7 +16,7 @@ void LuaInit(sol::state& lua)
 	lua.open_libraries(sol::lib::string);
 	lua.open_libraries(sol::lib::table);
 
-	sol_ImGui::InitBindings(lua);
+	LuaImGuiInit(lua);
 
 	MAKE_PROPERTY_REF(lua, bool);
 	MAKE_PROPERTY_REF(lua, int);
@@ -74,7 +72,6 @@ void LuaInit(sol::state& lua)
 		"Error", SPEW_ERROR,
 		"Success", SPEW_SUCCESS
 	);
-
 
 	//-----------------------------------
 	// MODULES
