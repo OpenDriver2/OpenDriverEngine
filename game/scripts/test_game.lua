@@ -96,7 +96,7 @@ local PlayerStartInfo = {
 
 -------------------------------------------------------
 
-TestGame = {
+local TestGame = {
 	CameraNumber = 0,
 }
 
@@ -195,6 +195,14 @@ TestGame.UpdateCarPads = function()
 		input.steering = 1
 	end
 	
+	if ButtonState[SDL.Scancode.LeftControl] then
+		input.fastSteer = true
+	end
+	
+	if ButtonState[SDL.Scancode.H] then
+		input.horn = input.horn + 1
+	end
+	
 	-- update local player inputs
 	players.localPlayer.input = PlayerInputData(input)
 end
@@ -202,3 +210,5 @@ end
 TestGame.IsRunning = function()
 	return (players.localPlayer.currentCar ~= nil)
 end
+
+return TestGame

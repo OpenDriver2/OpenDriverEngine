@@ -97,7 +97,7 @@ local function PlaceCameraFollowCar(dt)
 	
 	-- smooth follow
 	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
-	cameraAngle = math.floor(cameraAngle + (angleDelta / 8) * dt * 25)
+	cameraAngle = (cameraAngle + (angleDelta / 8) * dt * 25)
 	
 	local cameraAngleCurrent = cameraAngle + headAngle
 	
