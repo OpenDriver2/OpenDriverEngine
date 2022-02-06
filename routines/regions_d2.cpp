@@ -14,8 +14,8 @@
 #define IS_CURVED_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x4000 && ((surfid) & 0x1FFF) < m_numCurves)
 #define IS_JUNCTION_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x2000 && ((surfid) & 0x1FFF) < m_numJunctions)
 
-sdPlane g_defaultPlane	= { SurfType_Asphalt, 0, 0, 0, 2048 };
-sdPlane g_seaPlane		= { SurfType_DeepWater, 0, 16384, 0, 2048 };
+sdPlane g_defaultPlane	= { (short)SurfaceType::Concrete, 0, 0, 0, 2048 };
+sdPlane g_seaPlane		= { (short)SurfaceType::DeepWater, 0, 16384, 0, 2048 };
 
 int SdHeightOnPlane(const VECTOR_NOPAD& position, sdPlane* plane, DRIVER2_CURVE* curves)
 {

@@ -593,10 +593,10 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 			if (model)
 			{
 				if (model->shape_flags & SHAPE_FLAG_WATER)
-					outPlane.surfaceType = SurfType_Water;
+					outPlane.surfaceType = (int)SurfaceType::Water;
 
 				if (model->flags2 & MODEL_FLAG_GRASS)
-					outPlane.surfaceType = SurfType_Grass;
+					outPlane.surfaceType = (int)SurfaceType::Grass;
 			}
 		}
 

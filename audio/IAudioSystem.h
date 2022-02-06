@@ -17,7 +17,7 @@ typedef uint effectId_t;
 class IAudioSource : public RefCountedObject
 {
 public:
-	enum ESoundSourceUpdate
+	enum Update
 	{
 		UPDATE_POSITION = (1 << 0),
 		UPDATE_VELOCITY = (1 << 1),
@@ -36,7 +36,7 @@ public:
 		UPDATE_DO_REWIND = (1 << 12),
 	};
 
-	enum ESourceState
+	enum State
 	{
 		STOPPED = 0,
 		PLAYING,
@@ -57,7 +57,7 @@ public:
 		float				referenceDistance{ 1.0f };
 		float				rolloff{ 0.0f };
 		float				airAbsorption{ 0.0f };
-		ESourceState		state{ STOPPED };
+		State				state{ STOPPED };
 		int					effectSlot{ -1 };
 		bool				relative{ true };
 		bool				looping{ false };
@@ -95,7 +95,7 @@ public:
 	virtual void			UpdateParams(Params params, int mask = 0) = 0;
 
 	// atomic
-	virtual ESourceState	GetState() const = 0;
+	virtual State			GetState() const = 0;
 	virtual bool			IsLooping() const = 0;
 };
 

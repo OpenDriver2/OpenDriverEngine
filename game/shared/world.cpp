@@ -439,7 +439,7 @@ int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, V
 {
 	int fr = g_levMap->FindSurface(position, outNormal, outPoint, outPlane);
 
-	 if (outPlane.surfaceType == SurfType_Grass)
+	 if (outPlane.surfaceType == (int)SurfaceType::Grass)
 	{
 		// TODO: move this hardcoding away
 #if 0

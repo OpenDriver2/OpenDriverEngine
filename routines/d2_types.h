@@ -311,12 +311,14 @@ struct CELL_OBJECT {
 
 //------------------------------------------------------------------------------------------------------------
 
-enum SurfaceType
+enum class SurfaceType
 {
-	SurfType_Asphalt = 0,
-	SurfType_Grass = 4,
-	SurfType_Water = 6,
-	SurfType_DeepWater = 9,		// the default surface
+	Concrete	= 0,	// concrete/paved tiles
+	Grass		= 4,
+	Water		= 6,
+	Alley		= 8,
+	DeepWater	= 9,
+	Sand		= 11,
 };
 
 struct sdPlane

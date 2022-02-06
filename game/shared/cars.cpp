@@ -641,22 +641,18 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 
 		newCompression = CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, Surface);
 
-		//Vector3D lineA = FromFixedVector(*(VECTOR_NOPAD*)&wheelPos) * Vector3D(1, -1, 1);
-		//Vector3D lineB = FromFixedVector(*(VECTOR_NOPAD*)&surfacePoint) * Vector3D(1,-1,1);
-		//CDebugOverlay::Line(lineA, lineB, ColorRGBA(1, 0, 0, 1));
-
 		friction_coef = (newCompression * (32400 - wetness) >> 15) + 500;
 
-		wheel->onGrass = Surface.surfaceType == 4;
+		wheel->onGrass = Surface.surfaceType == (short)SurfaceType::Grass;
 		wheel->surface = 0;
 
 		{
-			switch (Surface.surfaceType)
+			switch ((SurfaceType)Surface.surfaceType)
 			{
-				case 4:
-				case 6:
-				case 9:
-				case 11:
+				case SurfaceType::Grass:
+				case SurfaceType::Water:
+				case SurfaceType::DeepWater:
+				case SurfaceType::Sand:
 					wheel->surface = 0x80;
 					break;
 				default:
@@ -667,16 +663,16 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 			if (Surface.surfaceType - 16U < 16)
 				wheel->surface |= 0x8;
 
-			switch (Surface.surfaceType)
+			switch ((SurfaceType)Surface.surfaceType)
 			{
-				case 8:
+				case SurfaceType::Alley:
 					wheel->surface |= 0x2;
 					break;
-				case 6:
-				case 9:
+				case SurfaceType::Water:
+				case SurfaceType::DeepWater:
 					wheel->surface |= 0x1;
 					break;
-				case 11:
+				case SurfaceType::Sand:
 					wheel->surface |= 0x3;
 					break;
 			}

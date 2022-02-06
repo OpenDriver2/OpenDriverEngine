@@ -75,7 +75,7 @@ void IAudioSystem_Lua_Init(sol::state& lua)
 			sol::property(sol::resolve(&IAudioSource::Params::set_airAbsorption<float>), &IAudioSource::Params::airAbsorption),
 
 			LUADOC_P("state"),
-			sol::property(sol::resolve(&IAudioSource::Params::set_state<IAudioSource::ESourceState>), &IAudioSource::Params::state),
+			sol::property(sol::resolve(&IAudioSource::Params::set_state<IAudioSource::State>), &IAudioSource::Params::state),
 
 			LUADOC_P("effectSlot"),
 			sol::property(sol::resolve(&IAudioSource::Params::set_effectSlot<int>), &IAudioSource::Params::effectSlot),

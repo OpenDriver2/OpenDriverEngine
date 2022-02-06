@@ -102,7 +102,7 @@ public:
 	void					UpdateParams(Params params, int mask = 0);
 
 	// atomic
-	ESourceState			GetState() const { return m_state; }
+	State					GetState() const { return m_state; }
 	bool					IsLooping() const { return m_looping; }
 
 protected:
@@ -126,7 +126,7 @@ protected:
 
 	ALuint					m_source;
 	int						m_streamPos;
-	ESourceState			m_state;
+	State					m_state;
 
 	int						m_chanType;
 	bool					m_releaseOnStop;
