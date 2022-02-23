@@ -298,6 +298,7 @@ public:
 	VECTOR_NOPAD			GetInterpolatedPosition() const;
 	float					GetInterpolatedDirection() const;
 	Matrix3x3				GetInterpolatedDrawMatrix() const;
+	Matrix4x4				GetInterpolatedDrawMatrix4() const;
 
 	VECTOR_NOPAD			GetCogPosition() const;
 

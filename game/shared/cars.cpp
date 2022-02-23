@@ -1997,6 +1997,17 @@ Matrix3x3 CCar::GetInterpolatedDrawMatrix() const
 	);
 }
 
+Matrix4x4 CCar::GetInterpolatedDrawMatrix4() const
+{
+	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	return Matrix4x4(
+		lerp(m_prevDrawCarMatrix.rows[0], m_drawCarMatrix.rows[0], factor),
+		lerp(m_prevDrawCarMatrix.rows[1], m_drawCarMatrix.rows[1], factor),
+		lerp(m_prevDrawCarMatrix.rows[2], m_drawCarMatrix.rows[2], factor),
+		lerp(m_prevDrawCarMatrix.rows[3], m_drawCarMatrix.rows[3], factor)
+	);
+}
+
 VECTOR_NOPAD CCar::GetCogPosition() const
 {
 	VECTOR_NOPAD result;

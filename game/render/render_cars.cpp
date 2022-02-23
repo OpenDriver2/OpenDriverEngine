@@ -1,6 +1,6 @@
 #include "game/pch.h"
 #include "render_cars.h"
-
+#pragma optimize("", off)
 /* TODO:
 	- Add car model rendering and denting stuff
 */
@@ -129,7 +129,7 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars)
 	GR_SetTexture(carShadowPage);
 	GR_SetMatrix(MATRIX_WORLD, identity4());
 	GR_UpdateMatrixUniforms();
-	GR_SetCullMode(CULL_BACK);
+	GR_SetCullMode(CULL_NONE);
 	carShadow.End();
 }
 
@@ -140,25 +140,20 @@ void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car)
 
 	const CarCosmetics& car_cos = car->GetCosmetics();
 
-	Matrix3x3 carMatrix = car->GetInterpolatedDrawMatrix();
-	VECTOR_NOPAD carPos = car->GetInterpolatedPosition();
-
-	//gte_SetRotMatrix(&car->GetMatrix());
-	//gte_SetTransMatrix(&car->GetMatrix());
+	Matrix4x4 drawCarMat = car->GetInterpolatedDrawMatrix4();
 
 	meshBuilder.Color4f(0.6f, 0.6f, 0.6f, 0.35f);
 
 	Vector3D result[4];
 	for (int i = 0; i < 4; i++)
 	{
-		Vector3D pointPos = carMatrix * FromFixedVector(car_cos.cPoints[i]);
-		pointPos += FromFixedVector(carPos);
+		Vector3D pointPos = (drawCarMat * Vector4D(FromFixedVector(car_cos.cPoints[i]), 1.0f)).xyz();
 
 		sdPlane surfacePtr;
 		VECTOR_NOPAD posFix, surfaceNormal;
 		CWorld::FindSurface(ToFixedVector(pointPos), surfaceNormal, posFix, surfacePtr);
 
-		posFix.vy += 4;
+		posFix.vy += 8;
 		result[i] = FromFixedVector(posFix);
 	}
 
