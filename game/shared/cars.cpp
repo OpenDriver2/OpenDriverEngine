@@ -886,10 +886,10 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				else
 					wheelPos[1] = (wheelPos[1] * 19) / 32;
 			}
-			/*else // this will turn it into Driver 1 wheel forces with car always tend to flip over
+			else if(m_cosmetics.wheelDisp[i].vy < -100) // this will turn it into Driver 1 wheel forces with car always tend to flip over
 			{
 				wheelPos[1] = 5 * wheelPos[1] / 16;
-			}*/
+			}
 
 			m_hd.acc[0] += force.vx;
 			m_hd.acc[1] += force.vy;
