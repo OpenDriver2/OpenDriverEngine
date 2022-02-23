@@ -612,7 +612,7 @@ GrVAO* GR_CreateVAO(int numVertices, GrVertex* verts /*= nullptr*/, int dynamic 
 
 GrVAO* GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts /*= nullptr*/, uint16* indices /*= nullptr*/, int dynamic /*= 0*/)
 {
-	GLuint buffers[2] = { GL_NONE };
+	GLuint buffers[2] = { GL_NONE, GL_NONE };
 	GLuint vertexArray;
 
 	// gen vertex buffer and index buffer
@@ -662,16 +662,24 @@ void GR_UpdateVAO(GrVAO* vaoPtr, int numVertices, GrVertex* verts)
 
 void GR_UpdateVAO(GrVAO* vaoPtr, int numVertices, GrVertex* verts, int numIndices, uint16* indices)
 {
-	glBindBuffer(GL_ARRAY_BUFFER, vaoPtr->buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GrVertex) * numVertices, verts, vaoPtr->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// unbind vertex array or shiitty GL will crash
+	glBindVertexArray(0);
 
-	if (numIndices && vaoPtr->buffers[1])
+	if (verts)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, vaoPtr->buffers[0]);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(GrVertex) * numVertices, verts, vaoPtr->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+	}
+
+	if (indices && vaoPtr->buffers[1])
 	{
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vaoPtr->buffers[1]);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16) * numIndices, indices, vaoPtr->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
+
+	// bind back and continue good life
+	if(g_CurrentVAO)
+		glBindVertexArray(g_CurrentVAO->vertexArray);
 }
 
 void GR_SetVAO(GrVAO* vaoPtr)
@@ -704,10 +712,16 @@ void GR_DestroyVAO(GrVAO* vaoPtr)
 
 void GR_DrawNonIndexed(GR_PrimitiveType primitivesType, int firstVertex, int numVertices)
 {
+	if (!numVertices)
+		return;
+
 	glDrawArrays(glPrimitiveType[primitivesType], firstVertex, numVertices);
 }
 
 void GR_DrawIndexed(GR_PrimitiveType primitivesType, int firstIndex, int numIndices)
 {
+	if (!numIndices)
+		return;
+
 	glDrawElements(glPrimitiveType[primitivesType], numIndices, GL_UNSIGNED_SHORT, (void*)(intptr_t)(firstIndex*sizeof(uint16)));
 }

@@ -12,7 +12,7 @@ Vector4D CRender_Cars::carShadowUV(0.0f);
 
 void CRender_Cars::InitCarRender()
 {
-	carShadowVAO = GR_CreateVAO(8192, nullptr, 0);
+	carShadowVAO = GR_CreateVAO(8192, 8192);
 	carShadowDetail = CWorld::FindTextureDetail("CARSHAD");
 	if (carShadowDetail) 
 	{
