@@ -190,9 +190,12 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		levRenderProps.ambientScale = 3
 		levRenderProps.lightScale = 0
 	else
-		levRenderProps.ambientScale = 0.6 * (CurrentCityInfo.brightnessScale or 1)
+		levRenderProps.ambientScale = 1.0 * (CurrentCityInfo.brightnessScale or 1)
 		levRenderProps.lightScale = 1.25 * (CurrentCityInfo.brightnessScale or 1)
 	end
+
+	levRenderProps.ambientColor = LightPresets[CurrentSkyType].ambientColor
+	levRenderProps.lightColor = LightPresets[CurrentSkyType].lightColor
 	
 	if triggerLoading then
 		
