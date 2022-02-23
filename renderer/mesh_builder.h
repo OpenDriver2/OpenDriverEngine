@@ -134,8 +134,10 @@ inline void CMeshBuilder::End(bool render/* = true*/)
 {
 	if (m_begun && render)
 	{
+		int numVerts = m_curVertex - m_verts;
+		GR_UpdateVAO(m_mesh, numVerts, m_verts);
 		GR_SetVAO(m_mesh);
-		GR_DrawNonIndexed(m_primType, 0, m_curVertex - m_verts);
+		GR_DrawNonIndexed(m_primType, 0, numVerts);
 	}
 
 	m_begun = false;
@@ -358,6 +360,8 @@ inline void CMeshBuilder::Line3fv(const Vector3D& v1, const Vector3D& v2)
 inline void CMeshBuilder::Triangle2(const Vector2D& v1, const Vector2D& v2, const Vector2D& v3)
 {
 	// TODO: alloc indices in size of 3
+	if (!m_curVertex)
+		m_curVertex = m_verts;
 
 	Position2fv(v1);
 	AdvanceVertexPtr();
@@ -383,6 +387,8 @@ inline void CMeshBuilder::Quad2(const Vector2D& v_tl, const Vector2D& v_tr, cons
 	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
 
 	// TODO: alloc indices in size of quadIndices
+	if (!m_curVertex)
+		m_curVertex = m_verts;
 
 	// top left 0
 	Position2fv(v_tl);
@@ -432,6 +438,8 @@ inline void CMeshBuilder::TexturedQuad2(const Vector2D& v_tl, const Vector2D& v_
 	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
 
 	// TODO: alloc indices in size of quadIndices
+	if (!m_curVertex)
+		m_curVertex = m_verts;
 
 	// top left 0
 	Position2fv(v_tl);
@@ -482,6 +490,8 @@ inline void CMeshBuilder::Quad3(const Vector3D& v1, const Vector3D& v2, const Ve
 	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
 
 	// TODO: alloc indices in size of quadIndices
+	if (!m_curVertex)
+		m_curVertex = m_verts;
 
 	// top left 0
 	Position3fv(v1);
@@ -529,6 +539,8 @@ inline void CMeshBuilder::TexturedQuad3(const Vector3D& v1, const Vector3D& v2, 
 	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
 
 	// TODO: alloc indices in size of quadIndices
+	if (!m_curVertex)
+		m_curVertex = m_verts;
 
 	// top left 0
 	Position3fv(v1);
