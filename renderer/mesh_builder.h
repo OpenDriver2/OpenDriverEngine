@@ -76,14 +76,17 @@ public:
 	// advances index with custom index
 	int			AdvanceVertexIndex(uint16 index);
 
+	void		AddStripBreak();
 protected:
+	int					StartPrim(int reserveIndices, uint16** outIndices, bool addStripBreak);
+	void				AdvanceVertexPtr();
+	void				CopyVertex();
+	
+
 	struct vertdata_t
 	{
-		Vector4D			value;
+		Vector4D		value;
 	};
-
-	void		AdvanceVertexPtr();
-	void		CopyVertex();
 
 	vertdata_t			m_position;
 	vertdata_t			m_normal;
@@ -92,8 +95,10 @@ protected:
 
 	GrVAO*				m_mesh{ nullptr };
 	GrVertex*			m_verts{ nullptr };
+	uint16*				m_indices{ nullptr };
 
 	GrVertex*			m_curVertex{ nullptr };
+	uint16*				m_curIndices{ nullptr };
 	int					m_stride{ 0 };
 
 	GR_PrimitiveType	m_primType{ PRIM_TRIANGLES };
@@ -107,18 +112,22 @@ inline CMeshBuilder::CMeshBuilder(GrVAO* mesh, int maxVerts /*= 8192*/) :
 	m_mesh(mesh),
 	m_stride(sizeof(GrVertex))
 {
-	m_verts = (GrVertex*)Memory::alloc(sizeof(GrVertex)*maxVerts);
+	m_verts = (GrVertex*)Memory::alloc(sizeof(GrVertex) * maxVerts);
+	m_indices = (uint16*)Memory::alloc(sizeof(uint16) * maxVerts);
 }
 
 inline CMeshBuilder::~CMeshBuilder()
 {
 	Memory::free(m_verts);
+	Memory::free(m_indices);
 }
 
 // begins the mesh
 inline void CMeshBuilder::Begin(GR_PrimitiveType type)
 {
 	m_primType = type;
+	m_curVertex = nullptr;
+	m_curIndices = nullptr;
 
 	m_position.value = Vector4D(0, 0, 0, 1.0f);
 	m_texcoord.value = vec4_zero;
@@ -134,10 +143,15 @@ inline void CMeshBuilder::End(bool render/* = true*/)
 {
 	if (m_begun && render)
 	{
-		int numVerts = m_curVertex - m_verts;
-		GR_UpdateVAO(m_mesh, numVerts, m_verts);
-		GR_SetVAO(m_mesh);
-		GR_DrawNonIndexed(m_primType, 0, numVerts);
+		if (m_curVertex && m_curIndices)
+		{
+			const int numVerts = m_curVertex - m_verts;
+			const int numIndices = m_curIndices - m_indices;
+			GR_UpdateVAO(m_mesh, numVerts, m_verts, numIndices, m_indices);
+
+			GR_SetVAO(m_mesh);
+			GR_DrawIndexed(m_primType, 0, numIndices);
+		}
 	}
 
 	m_begun = false;
@@ -250,7 +264,7 @@ inline void CMeshBuilder::AdvanceVertex()
 		return;
 
 	m_pushedVert = false;
-	
+
 	if (!m_curVertex)
 		m_curVertex = m_verts;
 
@@ -262,7 +276,6 @@ inline void CMeshBuilder::AdvanceVertex()
 // advances index with current index
 inline int CMeshBuilder::AdvanceVertexIndex()
 {
-#if 0
 	if (!m_begun)
 		return -1;
 
@@ -275,34 +288,84 @@ inline int CMeshBuilder::AdvanceVertexIndex()
 
 	if (!m_curVertex)
 		m_curVertex = m_verts;
+	if (!m_curIndices)
+		m_curIndices = m_indices;
+
+	inputIdx = m_curIndices++;
+	const int curVertex = (m_curVertex-m_verts);
 
 	CopyVertex();
 
-	m_curVertex++;
-
 	*inputIdx = curVertex;
 	return curVertex;
-#else
-	return 0;
-#endif
+}
+
+inline int CMeshBuilder::StartPrim(int reserveIndices, uint16** outIndices, bool addStripBreak)
+{
+	if (!m_curVertex)
+		m_curVertex = m_verts;
+	if (!m_curIndices)
+		m_curIndices = m_indices;
+
+	if(addStripBreak)
+		AddStripBreak();
+
+	*outIndices = m_curIndices;
+	m_curIndices += reserveIndices;
+
+	return m_curVertex - m_verts;
+}
+
+inline void CMeshBuilder::AddStripBreak()
+{
+	if (m_primType != PRIM_TRIANGLE_STRIP)
+		return;
+
+	if (!m_curIndices)
+		return; // no problemo 
+
+	const int num_ind = m_curIndices - m_indices;
+
+	uint16 nIndicesCurr = 0;
+
+	// if it's a second, first I'll add last index (3 if first, and add first one from fourIndices)
+	if (num_ind > 0)
+	{
+		uint16 lastIdx = m_indices[num_ind - 1];
+		nIndicesCurr = lastIdx + 1;
+
+		// add two last indices to make degenerates
+		uint16 degenerate[2] = { lastIdx, nIndicesCurr };
+
+		memcpy(&m_indices[num_ind], degenerate, sizeof(uint16) * 2);
+		m_curIndices += 2;
+	}
 }
 
 // advances index with custom index
 inline int CMeshBuilder::AdvanceVertexIndex(uint16 index)
 {
-#if 0
 	if (!m_begun)
 		return -1;
 
 	if (index == 0xFFFF)
 	{
-		m_mesh->AddStripBreak();
+		AddStripBreak();
 		return -1;
 	}
 
 	uint16* inputIdx;
 
-	int curVertex = m_mesh->AllocateGeom(m_pushedVert ? 1 : 0, 1, &m_curVertex, &inputIdx, false);
+	if (!m_curVertex)
+		m_curVertex = m_verts;
+	if (!m_curIndices)
+		m_curIndices = m_indices;
+
+	inputIdx = m_curIndices;
+	const int curVertex = (m_curVertex - m_verts);
+	if (curVertex == -1)
+		return -1;
+
 	if (curVertex == -1)
 	{
 		m_pushedVert = false;
@@ -318,9 +381,6 @@ inline int CMeshBuilder::AdvanceVertexIndex(uint16 index)
 
 	*inputIdx = index;
 	return curVertex;
-#else
-	return 0;
-#endif
 }
 
 inline void CMeshBuilder::AdvanceVertexPtr()
@@ -359,9 +419,9 @@ inline void CMeshBuilder::Line3fv(const Vector3D& v1, const Vector3D& v2)
 // to set quad color use Color3*/Color4* operators
 inline void CMeshBuilder::Triangle2(const Vector2D& v1, const Vector2D& v2, const Vector2D& v3)
 {
+	uint16* indices = nullptr;
 	// TODO: alloc indices in size of 3
-	if (!m_curVertex)
-		m_curVertex = m_verts;
+	const int startIndex = StartPrim(3, &indices, true);
 
 	Position2fv(v1);
 	AdvanceVertexPtr();
@@ -371,11 +431,10 @@ inline void CMeshBuilder::Triangle2(const Vector2D& v1, const Vector2D& v2, cons
 
 	Position2fv(v3);
 	AdvanceVertexPtr();
-#if 0
+
 	indices[0] = startIndex;
 	indices[1] = startIndex + 1;
 	indices[2] = startIndex + 2;
-#endif
 }
 
 // Makes 2D quad
@@ -383,12 +442,10 @@ inline void CMeshBuilder::Triangle2(const Vector2D& v1, const Vector2D& v2, cons
 inline void CMeshBuilder::Quad2(const Vector2D& v_tl, const Vector2D& v_tr, const Vector2D& v_bl, const Vector2D& v_br)
 {
 	uint16* indices = nullptr;
-
-	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
+	const int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
 
 	// TODO: alloc indices in size of quadIndices
-	if (!m_curVertex)
-		m_curVertex = m_verts;
+	const int startIndex = StartPrim(3, &indices, true);
 
 	// top left 0
 	Position2fv(v_tl);
@@ -406,7 +463,6 @@ inline void CMeshBuilder::Quad2(const Vector2D& v_tl, const Vector2D& v_tr, cons
 	Position2fv(v_br);
 	AdvanceVertexPtr();
 
-#if 0
 	// make indices working
 	if (m_primType == PRIM_TRIANGLES)
 	{
@@ -425,7 +481,6 @@ inline void CMeshBuilder::Quad2(const Vector2D& v_tl, const Vector2D& v_tr, cons
 		indices[2] = startIndex + 2;
 		indices[3] = startIndex + 3;
 	}
-#endif
 }
 
 // Makes textured quad
@@ -434,12 +489,10 @@ inline void CMeshBuilder::TexturedQuad2(const Vector2D& v_tl, const Vector2D& v_
 	const Vector2D& t_tl, const Vector2D& t_tr, const Vector2D& t_bl, const Vector2D& t_br)
 {
 	uint16* indices = nullptr;
-
-	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
+	const int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
 
 	// TODO: alloc indices in size of quadIndices
-	if (!m_curVertex)
-		m_curVertex = m_verts;
+	const int startIndex = StartPrim(quadIndices, &indices, true);
 
 	// top left 0
 	Position2fv(v_tl);
@@ -461,55 +514,6 @@ inline void CMeshBuilder::TexturedQuad2(const Vector2D& v_tl, const Vector2D& v_
 	TexCoord2fv(t_br);
 	AdvanceVertexPtr();
 
-#if 0
-	// make indices working
-	if (primType == PRIM_TRIANGLES)
-	{
-		indices[0] = startIndex;
-		indices[1] = startIndex + 1;
-		indices[2] = startIndex + 2;
-
-		indices[3] = startIndex + 2;
-		indices[4] = startIndex + 1;
-		indices[5] = startIndex + 3;
-	}
-	else // more linear
-	{
-		indices[0] = startIndex;
-		indices[1] = startIndex + 1;
-		indices[2] = startIndex + 2;
-		indices[3] = startIndex + 3;
-	}
-#endif
-}
-
-// Makes textured quad
-// to set quad color use Color3*/Color4* operators
-inline void CMeshBuilder::Quad3(const Vector3D& v1, const Vector3D& v2, const Vector3D& v3, const Vector3D& v4)
-{
-	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
-
-	// TODO: alloc indices in size of quadIndices
-	if (!m_curVertex)
-		m_curVertex = m_verts;
-
-	// top left 0
-	Position3fv(v1);
-	AdvanceVertexPtr();
-
-	// top right 1
-	Position3fv(v2);
-	AdvanceVertexPtr();
-
-	// bottom left 2
-	Position3fv(v3);
-	AdvanceVertexPtr();
-
-	// bottom right 3
-	Position3fv(v4);
-	AdvanceVertexPtr();
-
-#if 0
 	// make indices working
 	if (m_primType == PRIM_TRIANGLES)
 	{
@@ -528,7 +532,52 @@ inline void CMeshBuilder::Quad3(const Vector3D& v1, const Vector3D& v2, const Ve
 		indices[2] = startIndex + 2;
 		indices[3] = startIndex + 3;
 	}
-#endif
+}
+
+// Makes textured quad
+// to set quad color use Color3*/Color4* operators
+inline void CMeshBuilder::Quad3(const Vector3D& v1, const Vector3D& v2, const Vector3D& v3, const Vector3D& v4)
+{
+	uint16* indices = nullptr;
+	const int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
+
+	// TODO: alloc indices in size of quadIndices
+	const int startIndex = StartPrim(quadIndices, &indices, true);
+
+	// top left 0
+	Position3fv(v1);
+	AdvanceVertexPtr();
+
+	// top right 1
+	Position3fv(v2);
+	AdvanceVertexPtr();
+
+	// bottom left 2
+	Position3fv(v3);
+	AdvanceVertexPtr();
+
+	// bottom right 3
+	Position3fv(v4);
+	AdvanceVertexPtr();
+
+	// make indices working
+	if (m_primType == PRIM_TRIANGLES)
+	{
+		indices[0] = startIndex;
+		indices[1] = startIndex + 1;
+		indices[2] = startIndex + 2;
+
+		indices[3] = startIndex + 2;
+		indices[4] = startIndex + 1;
+		indices[5] = startIndex + 3;
+	}
+	else // more linear
+	{
+		indices[0] = startIndex;
+		indices[1] = startIndex + 1;
+		indices[2] = startIndex + 2;
+		indices[3] = startIndex + 3;
+	}
 }
 
 // Makes textured quad
@@ -536,11 +585,11 @@ inline void CMeshBuilder::Quad3(const Vector3D& v1, const Vector3D& v2, const Ve
 inline void CMeshBuilder::TexturedQuad3(const Vector3D& v1, const Vector3D& v2, const Vector3D& v3, const Vector3D& v4,
 	const Vector2D& t1, const Vector2D& t2, const Vector2D& t3, const Vector2D& t4)
 {
-	int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
+	uint16* indices = nullptr;
+	const int quadIndices = (m_primType == PRIM_TRIANGLES) ? 6 : 4;
 
 	// TODO: alloc indices in size of quadIndices
-	if (!m_curVertex)
-		m_curVertex = m_verts;
+	const int startIndex = StartPrim(quadIndices, &indices, true);
 
 	// top left 0
 	Position3fv(v1);
@@ -562,7 +611,6 @@ inline void CMeshBuilder::TexturedQuad3(const Vector3D& v1, const Vector3D& v2, 
 	TexCoord2fv(t4);
 	AdvanceVertexPtr();
 
-#if 0
 	// make indices working
 	if (m_primType == PRIM_TRIANGLES)
 	{
@@ -581,7 +629,6 @@ inline void CMeshBuilder::TexturedQuad3(const Vector3D& v1, const Vector3D& v2, 
 		indices[2] = startIndex + 2;
 		indices[3] = startIndex + 3;
 	}
-#endif
 }
 
 inline void CMeshBuilder::CopyVertex()
