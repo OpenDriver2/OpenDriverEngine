@@ -19,8 +19,9 @@ local testGame = dofile("scripts/test_game.lua")
 local forceShowUI = false
 local testGameCamera = false					-- See: RenderUI
 
-local timeAccumulator = 0
+
 local fixed_timestep <const> = 1.0 / 30.0
+local timeAccumulator = 0.0
 
 --
 -- StepSim: performs physics fixed time step (callback)
@@ -28,8 +29,15 @@ local fixed_timestep <const> = 1.0 / 30.0
 function StepSim(dt)
 
 	timeAccumulator = timeAccumulator + dt
+
+	local numSteps = 0
 	
 	while timeAccumulator >= fixed_timestep do
+		if numSteps > 4 then
+			timeAccumulator = 0.0
+			break
+		end
+
 		timeAccumulator = timeAccumulator - fixed_timestep
 	
 		ControlMap()
@@ -52,10 +60,16 @@ function StepSim(dt)
 
 		--players:Update()
 		--players:CheckMiscFelonies()
+
+		numSteps = numSteps + 1
 	end
 
 	if testGameCamera then
 		testGame.UpdateCamera(dt)
+
+		-- take the main view position
+		FreeCamera.Position = camera.MainView.position
+		FreeCamera.Angles = camera.MainView.angles
 	end
 end
 

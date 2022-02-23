@@ -1966,21 +1966,21 @@ void CCar::DentCar()
 
 VECTOR_NOPAD CCar::GetInterpolatedCogPosition() const
 {
-	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
 
 	return ToFixedVector(lerp(FromFixedVector(m_prevCogPosition), FromFixedVector(GetCogPosition()), factor));
 }
 
 VECTOR_NOPAD CCar::GetInterpolatedPosition() const
 {
-	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
 
 	return ToFixedVector(lerp(FromFixedVector(m_prevPosition), FromFixedVector(GetPosition()), factor));
 }
 
 float CCar::GetInterpolatedDirection() const
 {
-	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
 
 	int shortest_angle = DIFF_ANGLES(m_prevDirection, m_hd.direction);
 
@@ -1989,7 +1989,7 @@ float CCar::GetInterpolatedDirection() const
 
 Matrix3x3 CCar::GetInterpolatedDrawMatrix() const
 {
-	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
 	return Matrix3x3(
 		lerp(m_prevDrawCarMatrix.rows[0].xyz(), m_drawCarMatrix.rows[0].xyz(), factor),
 		lerp(m_prevDrawCarMatrix.rows[1].xyz(), m_drawCarMatrix.rows[1].xyz(), factor),
@@ -1999,7 +1999,7 @@ Matrix3x3 CCar::GetInterpolatedDrawMatrix() const
 
 Matrix4x4 CCar::GetInterpolatedDrawMatrix4() const
 {
-	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
+	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
 	return Matrix4x4(
 		lerp(m_prevDrawCarMatrix.rows[0], m_drawCarMatrix.rows[0], factor),
 		lerp(m_prevDrawCarMatrix.rows[1], m_drawCarMatrix.rows[1], factor),
@@ -2105,15 +2105,8 @@ void CCar::SetAutobrake(const int8& value)
 
 void CCar::DrawCar()
 {
-	const float factor = m_owner->GetInterpTime() / Car_Fixed_Timestep;
-
 	// this potentially could warp matrix. PLEASE consider using quaternions in future
-	Matrix4x4 drawCarMat(
-		lerp(m_prevDrawCarMatrix.rows[0], m_drawCarMatrix.rows[0], factor),
-		lerp(m_prevDrawCarMatrix.rows[1], m_drawCarMatrix.rows[1], factor),
-		lerp(m_prevDrawCarMatrix.rows[2], m_drawCarMatrix.rows[2], factor),
-		lerp(m_prevDrawCarMatrix.rows[3], m_drawCarMatrix.rows[3], factor)
-	);
+	Matrix4x4 drawCarMat = GetInterpolatedDrawMatrix4();
 
 	// UNIMPEMENTED!!!
 	CRenderModel::SetupModelShader();
