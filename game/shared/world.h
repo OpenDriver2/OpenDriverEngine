@@ -9,6 +9,7 @@
 #include "routines/d2_types.h"
 
 class CTexturePage;
+struct TexDetailInfo_t;
 struct ModelRef_t;
 
 struct BUILDING_BOX
@@ -40,6 +41,8 @@ public:
 	static void				FreeHWTexturePage(CTexturePage* tpage);
 
 	static TextureID		GetHWTexture(int tpage, int pal);
+	static CTexturePage*	GetTPage(int tpage);
+	static TexDetailInfo_t*	FindTextureDetail(const char* name);
 
 	static void				InitHWTextures();
 	static void				InitHWModels();

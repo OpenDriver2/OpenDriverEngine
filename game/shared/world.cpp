@@ -231,6 +231,17 @@ TextureID CWorld::GetHWTexture(int tpage, int pal)
 	return g_hwTexturePages[tpage][pal];
 }
 
+CTexturePage* CWorld::GetTPage(int tpage)
+{
+	
+	return g_levTextures.GetTPage(tpage);
+}
+
+TexDetailInfo_t* CWorld::FindTextureDetail(const char* name)
+{
+	return g_levTextures.FindTextureDetail(name);
+}
+
 // Dummy texture initilization
 void CWorld::InitHWTextures()
 {
@@ -294,7 +305,11 @@ bool CWorld::LoadLevel(const char* fileName)
 	CDriverLevelLoader loader;
 	loader.Initialize(g_levInfo, &g_levTextures, &g_levModels, g_levMap);
 
-	return loader.Load(&stream);
+	bool result = loader.Load(&stream);
+
+	CRender_Cars::InitCarRender();
+
+	return result;
 }
 
 //-------------------------------------------------------
@@ -302,6 +317,8 @@ bool CWorld::LoadLevel(const char* fileName)
 //-------------------------------------------------------
 void CWorld::UnloadLevel()
 {
+	CRender_Cars::TerminateCarRender();
+
 	if (g_levMap)
 	{
 		MsgWarning("Freeing level data ...\n");
