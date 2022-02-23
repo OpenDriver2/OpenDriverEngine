@@ -19,6 +19,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = 6216, z = -222456, direction = 0},
 			playerCarId = 1,
+			musicType = 2,
 		}
 	},
 	["Havana"] = {
@@ -26,6 +27,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = -238668, z = -235595, direction = 1024},
 			playerCarId = 1,
+			musicType = 1,
 		}
 	},
 	["LasVegas"] = {
@@ -33,6 +35,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = 143285, z = 621193, direction = -2046},
 			playerCarId = 1,
+			musicType = 3,
 		}
 	},
 	["RioDeJaneiro"] = {
@@ -40,6 +43,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = 24453, z = -497793, direction = 1024},
 			playerCarId = 1,
+			musicType = 4,
 		}
 	},
 	----------- Driver 1 freeride startpos -------------
@@ -48,6 +52,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = -10415, z = -22025, direction = 0},
 			playerCarId = 5,
+			musicType = 1
 		}
 	},
 	["Training"] = {
@@ -55,6 +60,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = -6785, z = 75179, direction = 2048},
 			playerCarId = 5,
+			musicType = 0
 		}
 	},
 	["NewCastle"] = {
@@ -62,6 +68,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = 19687, z = -15361, direction = 0},
 			playerCarId = 5,
+			musicType = 2
 		}
 	},
 	["Miami"] = {
@@ -69,6 +76,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = 129853, z = 421288, direction = -1024},
 			playerCarId = 5,
+			musicType = 3
 		}
 	},
 	["SanFrancisco"] = {
@@ -76,6 +84,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = -454890, z = 202343, direction = 1024},
 			playerCarId = 5,
+			musicType = 5
 		}
 	},
 	["LosAngeles"] = {
@@ -83,6 +92,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = 376500, z = -212560, direction = 0},
 			playerCarId = 5,
+			musicType = 7
 		}
 	},
 	["NewYork"] = {
@@ -90,6 +100,7 @@ local PlayerStartInfo = {
 		{
 			startPos = POSITION_INFO {x = -138000, z = -358815, direction = -1024},
 			playerCarId = 5,
+			musicType = 0
 		}
 	},
 }
@@ -168,6 +179,8 @@ TestGame.Init = function(residentModel)
 			-- call base event function
 			evtCb(self, eventType, parameters)
 		end
+
+		Music.Start(CurrentCityInfo.gameId, cityStart.musicType + 1)
 		
 		-- plcar.replayStream:Rewind()
 		-- plcar.replayStream:Start()
