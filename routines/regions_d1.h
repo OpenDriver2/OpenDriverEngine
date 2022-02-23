@@ -73,6 +73,8 @@ public:
 
 protected:
 
+	void					GetSurfaceLocalCoords(const VECTOR_NOPAD& position, int& px, int& py) const;
+
 	ROAD_MAP_LUMP_DATA		m_roadMapLumpData;
 
 	CDriver1LevelRegion*	m_regions{ nullptr };					// map of regions

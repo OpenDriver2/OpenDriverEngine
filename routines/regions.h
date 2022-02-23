@@ -60,7 +60,7 @@ protected:
 	int						m_regionX{ -1 };
 	int						m_regionZ{ -1 };
 	int						m_regionNumber{ -1 };
-	int						m_regionBarrelNumber{ -1 };
+	int						m_regionBarrelNumber{ -1 };		// required for cell iterator slots
 	bool					m_loaded{ false };
 };
 

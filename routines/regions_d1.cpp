@@ -117,8 +117,8 @@ void CDriver1LevelRegion::LoadRoadHeightMapData(IVirtualStream* pFile)
 	uint* src = (uint*)roadMapData;
 	uint* pRoadMap = m_roadMap;
 	do {
-		int len = *src;
-		int value = src[1];
+		uint len = *src;
+		uint value = src[1];
 
 		src += 2;
 		i -= len;
@@ -216,6 +216,10 @@ void CDriver1LevelMap::LoadRoadMapLump(IVirtualStream* pFile)
 
 	m_roadMapLumpData.unitXMid = (width + 1) * 750;
 	m_roadMapLumpData.unitZMid = height * 750;
+
+	// from PC reversing
+	//m_roadMapLumpData.unitXMid = 1500 * width / 2;
+	//m_roadMapLumpData.unitZMid = 1500 * height / 2;
 }
 
 void CDriver1LevelMap::LoadRoadSurfaceLump(IVirtualStream* pFile, int size)
@@ -245,7 +249,7 @@ CBaseLevelRegion* CDriver1LevelMap::GetRegion(const XZPAIR& cell) const
 	const int region_x = cell.x / m_mapInfo.region_size;
 	const int region_z = cell.z / m_mapInfo.region_size;
 
-	return GetRegion(region_x + region_z * m_regions_across);;
+	return GetRegion(region_x + region_z * m_regions_across);
 }
 
 CBaseLevelRegion* CDriver1LevelMap::GetRegion(int regionIdx) const
@@ -291,12 +295,9 @@ void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 	}
 }
 
-extern sdPlane g_defaultPlane;
-
 int PointInTri2d(int tx, int ty, XYPAIR* verts)
 {
-#if 1
-	// D1 PC version
+	// from PC reversing
 	if ((verts[1].y - verts[0].y) * (tx - verts[0].x) - (verts[1].x - verts[0].x) * (ty - verts[0].y) < 0)
 		return 0;
 
@@ -304,35 +305,11 @@ int PointInTri2d(int tx, int ty, XYPAIR* verts)
 		return (verts[0].y - verts[2].y) * (tx - verts[2].x) - (verts[0].x - verts[2].x) * (ty - verts[2].y) >= 0;
 
 	return 0;
-#else
-	// D1 PSX version
-	int iVar1, iVar2, iVar3;
-	int iVar4, iVar5, iVar6;
-
-	iVar6 = verts[0].x;
-	iVar5 = verts[0].y;
-
-	iVar4 = verts[1].y;
-	iVar2 = verts[1].x;
-
-	iVar3 = verts[2].y;
-	iVar1 = verts[2].x;
-
-	if ((tx - iVar6) * (iVar4 - iVar5) - (ty - iVar5) * (iVar2 - iVar6) > -1)
-	{
-		if ((tx - iVar2) * (iVar3 - iVar4) - (ty - iVar4) * (iVar1 - iVar2) > -1)
-		{
-			return (uint)~((tx - iVar1) * (iVar5 - iVar3) - (ty - iVar3) * (iVar6 - iVar1)) >> 0x1f;
-		}
-	}
-	return 0;
-#endif
 }
 
 int PointInQuad2d(int tx, int ty, XYPAIR* verts)
 {
-#if 1
-	// D1 PC version
+	// from PC reversing
 	if ((tx - verts[0].x) * (verts[1].y - verts[0].y) -
 		(ty - verts[0].y) * (verts[1].x - verts[0].x) < 0)
 		return 0;
@@ -348,259 +325,229 @@ int PointInQuad2d(int tx, int ty, XYPAIR* verts)
 	if ((tx - verts[3].x) * (verts[0].y - verts[3].y) -
 		(ty - verts[3].y) * (verts[0].x - verts[3].x) < 0)
 		return 0;
-	else
-		return 1;
-#else
-	// D1 PSX version
-	int ret;
-	int bMaxX, bMaxY;
-	int _bMinX, _bMinY;
-	int bMinX, bMinY;
 
-	_bMinX = verts[0].x;
-	bMaxX = verts[2].x;
-
-	bMinX = _bMinX;
-
-	if (_bMinX < bMaxX)
-	{
-		bMinX = bMaxX;
-		bMaxX = _bMinX;
-	}
-
-	ret = 0;
-
-	if ((bMaxX <= tx) && (ret = 0, tx <= bMinX))
-	{
-		_bMinY = verts[0].y;
-		bMaxY = verts[2].y;
-
-		bMinY = _bMinY;
-
-		if (_bMinY < bMaxY)
-		{
-			bMinY = bMaxY;
-			bMaxY = _bMinY;
-		}
-
-		ret = 0;
-
-		if ((bMaxY <= ty) && (ret = 0, ty <= bMinY))
-		{
-			ret = 1;
-		}
-	}
-	return ret;
-#endif
+	return 1;
 }
 
 bool CDriver1LevelMap::GetRoadInfo(ROUTE_DATA& outData, const VECTOR_NOPAD& position) const
 {
-	const int double_region_size = m_mapInfo.region_size * 2;
+	const int road_region_size = m_mapInfo.cell_size / 1500 * m_mapInfo.region_size;
 
+	XZPAIR cpos;
+	cpos.x = (m_roadMapLumpData.unitXMid + position.vx) / 1500;
+	cpos.z = (m_roadMapLumpData.unitZMid - (position.vz - 750)) / 1500;
+
+	// from PC reversing
+	//cpos.x = (position_x + RoadMapUnitXMid + 750) / 1500;
+	//cpos.z = (RoadMapUnitZMid + 750 - position_z) / 1500;
+
+	if (cpos.x < 0 ||
+		cpos.z < 0 ||
+		cpos.x >= m_roadMapLumpData.width ||
+		cpos.z >= m_roadMapLumpData.height)
+	{
+		return false;
+	}
+
+	// weird hack. But it's actually working
+	VECTOR_NOPAD cposition = position;
+	cposition.vx += 750;
+	cposition.vz -= 750;
+
+	XZPAIR cell;
+	WorldPositionToCellXZ(cell, cposition);
+	CDriver1LevelRegion* region = (CDriver1LevelRegion*)GetRegion(cell);
+
+	if (!region || !region->m_roadMap)
+	{
+		return false;
+	}
+
+	const uint value = region->m_roadMap[(cpos.x % road_region_size) + 
+										 (cpos.z % road_region_size) * road_region_size];
+
+	outData.height = *(short*)&value;
+	outData.type = value >> 16 & 0x3ff;
+	outData.objectAngle = (value >> 30) * 1024;
+	outData.value = value;
+
+	return true;
+}
+
+static void RotatePoint(const ROUTE_DATA& routeData, int& px, int& py)
+{
+	// NOTE: if you uncommend PC reversing code, it breaks rotation
+	if ((routeData.objectAngle & 0x400) == 0)
+	{
+		int tmp = -px;
+		px = py;
+		py = tmp;
+	}
+
+	if ((routeData.objectAngle & 0x800) != 0)
+	{
+		px = -px;
+		py = -py;
+	}
+}
+
+static void RotateNormal(const ROUTE_DATA& routeData, int& nx, int& ny)
+{
+	// NOTE: if you uncommend PC reversing code, it breaks rotation
+	if ((routeData.objectAngle & 0x400) != 0)
+	{
+		int tmp = ny;
+		ny = -nx;
+		nx = tmp;
+	}
+
+	if ((routeData.objectAngle & 0x800) == 0)
+	{
+		nx = -nx;
+		ny = -ny;
+	}
+}
+
+void CDriver1LevelMap::GetSurfaceLocalCoords(const VECTOR_NOPAD& position, int& px, int& py) const
+{
 	XZPAIR cpos;
 	cpos.x = m_roadMapLumpData.unitXMid + position.vx;
 	cpos.z = m_roadMapLumpData.unitZMid - (position.vz - 750);
 
-	int cell_x = cpos.x / 1500;
-	int cell_z = cpos.z / 1500;
+	py = cpos.x % 1500 - 750;
+	px = cpos.z % 1500 - 750;
 
-	if (cell_x < m_roadMapLumpData.width && cell_z < m_roadMapLumpData.height)
+	// from PC reversing
+	//px = 750 - abs((position.vx + m_roadMapLumpData.unitXMid + 750) % 1500);
+	//py = 750 - abs((m_roadMapLumpData.unitZMid + 750 - position.vz) % 1500);
+}
+
+// on PSX San Francisco has a WEIRD hack
+static int GetHardcodedFriscoHeight(const VECTOR_NOPAD& position)
+{
+	if (position.vx > -345000 && position.vx < -328500 && 
+		position.vz < 267000 && position.vz > 250500)
 	{
-		int loc_x, loc_z;
-
-		// does it have any effect?
-		// cell_x % double_region_size;
-		// cell_z % double_region_size;
-		loc_x = ((cell_x & 127) + ((int)(cell_x & 0xffffff80) >> 4)) % double_region_size;
-		loc_z = ((cell_z & 127) + ((int)(cell_z & 0xffffff80) >> 4)) % double_region_size;
-
-		XZPAIR cell;
-		VECTOR_NOPAD cposition = position;
-
-		// weird hack. But it's actually working
-		cposition.vx += 750;
-		cposition.vz -= 750;
-
-		WorldPositionToCellXZ(cell, cposition);
-		CDriver1LevelRegion* region = (CDriver1LevelRegion*)GetRegion(cell);
-
-		if (region && region->m_roadMap)
-		{
-			uint value = region->m_roadMap[loc_x + loc_z * double_region_size];
-
-			outData.height = *(short*)&value;
-			outData.type = value >> 16 & 0x3ff;
-			outData.objectAngle = value >> 30;
-			outData.value = value;
-
-			return true;
-		}
+		return -1500;
 	}
 
-	return false;
+	return 0;
 }
 
 int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
 {
 	ROUTE_DATA routeData;
-	if (GetRoadInfo(routeData, position))
+	if (!GetRoadInfo(routeData, position))
 	{
-		// check collision
-		if (routeData.type < 900)
-		{
-			SURFACEINFO* si = m_surfacePtrs[routeData.type];
-
-			if (si)
-			{
-				XZPAIR cpos;
-				cpos.x = m_roadMapLumpData.unitXMid + position.vx;
-				cpos.z = m_roadMapLumpData.unitZMid - (position.vz - 750);
-
-				int py = cpos.x % 1500 - 750;
-				int px = cpos.z % 1500 - 750;
-
-				if ((routeData.value & 0x40000000) == 0)
-				{
-					int tmp = -px;
-					px = py;
-					py = tmp;
-				}
-
-				if ((int)routeData.value < 0)
-				{
-					px = -px;
-					py = -py;
-				}
-
-				for (int i = 0; i < si->numpolys; i++)
-				{
-					SIPOLY* poly = si->GetPoly(i);
-
-					int res = (poly->num_vertices == 4) ?
-						PointInQuad2d(px, py, poly->xz) :
-						PointInTri2d(px, py, poly->xz);
-
-					if (res != 0)
-					{
-						int normFac = px * poly->normals.a + py * poly->normals.c;
-
-						int _height = ((normFac / ONE) - poly->normals.d) - routeData.height;
-
-						return _height;
-					}
-				}
-			}
-		}
-
-		return -routeData.height;
+		return 0;
 	}
 
-	return 0;
+	int height = -routeData.height;
+
+	if (routeData.type < 900)
+	{
+		SURFACEINFO* si = m_surfacePtrs[routeData.type];
+
+		if (si)
+		{
+			int px, py;
+			GetSurfaceLocalCoords(position, px, py);
+			RotatePoint(routeData, px, py);
+
+			for (int i = 0; i < si->numpolys; i++)
+			{
+				SIPOLY* poly = si->GetPoly(i);
+
+				int res = (poly->num_vertices == 4) ?
+					PointInQuad2d(px, py, poly->xz) :
+					PointInTri2d(px, py, poly->xz);
+
+				if (res != 0)
+				{
+					int normFac = px * poly->normals.a + py * poly->normals.c;
+					height = ((normFac / ONE) - poly->normals.d) - routeData.height;
+					break;
+				}
+			}
+		} // si != nullptr
+	}
+
+	return height;
 }
 
 int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const
 {
 	// oh, there is a trouble with D1...
 	ROUTE_DATA routeData;
-	if (GetRoadInfo(routeData, position))
+	if (!GetRoadInfo(routeData, position))
 	{
-		outNormal.vx = 0;
-		outNormal.vy = 4096;
-		outNormal.vz = 0;
-
-		outPoint.vx = position.vx;
-		outPoint.vz = position.vz;
-		outPoint.vy = -routeData.height;
-
-		outPlane.surfaceType = 0;
-
-		// check collision
-		if (routeData.type < 900)
-		{
-			ModelRef_t* ref = m_models->GetModelByIndex(routeData.type);
-
-			if (ref && ref->baseInstance)
-				ref = ref->baseInstance;
-
-			MODEL* model = ref ? ref->model : nullptr;
-
-			SURFACEINFO* si = m_surfacePtrs[routeData.type];
-
-			if (si)
-			{
-				XZPAIR cpos;
-				cpos.x = m_roadMapLumpData.unitXMid + position.vx;
-				cpos.z = m_roadMapLumpData.unitZMid - (position.vz - 750);
-
-				int py = cpos.x % 1500 - 750;
-				int px = cpos.z % 1500 - 750;
-
-				if ((routeData.value & 0x40000000) == 0)
-				{
-					int tmp = -px;
-					px = py;
-					py = tmp;
-				}
-
-				if ((int)routeData.value < 0)
-				{
-					px = -px;
-					py = -py;
-				}
-
-				for (int i = 0; i < si->numpolys; i++)
-				{
-					SIPOLY* poly = si->GetPoly(i);
-
-					int res = (poly->num_vertices == 4) ?
-						PointInQuad2d(px, py, poly->xz) :
-						PointInTri2d(px, py, poly->xz);
-
-					if (res != 0)
-					{
-						int normFac = px * poly->normals.a + py * poly->normals.c;
-
-						int _height = ((normFac / ONE) - poly->normals.d) - routeData.height;
-
-						int n_vx = poly->normals.a;
-						int _n_vz = poly->normals.c;
-						int n_vy = poly->normals.b;
-
-						int n_vz = _n_vz;
-
-						if ((routeData.value & 0x40000000) != 0)
-						{
-							n_vz = -n_vx;
-							n_vx = _n_vz;
-						}
-
-						if ((routeData.value & 0x80000000) == 0)
-						{
-							n_vx = -n_vx;
-							n_vz = -n_vz;
-						}
-
-						outNormal.vx = n_vx;
-						outNormal.vy = n_vy;
-						outNormal.vz = n_vz;
-
-						outPoint.vy = _height;
-					}
-				}
-			} // si != null
-
-			if (model)
-			{
-				if (model->shape_flags & SHAPE_FLAG_WATER)
-					outPlane.surfaceType = (int)SurfaceType::Water;
-
-				if (model->flags2 & MODEL_FLAG_GRASS)
-					outPlane.surfaceType = (int)SurfaceType::Grass;
-			}
-		}
-
 		return 4096;
+	}
+
+	outNormal.vx = 0;
+	outNormal.vy = 4096;
+	outNormal.vz = 0;
+
+	outPoint.vx = position.vx;
+	outPoint.vz = position.vz;
+	outPoint.vy = -routeData.height;
+
+	outPlane.surfaceType = 0;
+
+	// check collision
+	if (routeData.type < 900)
+	{
+		SURFACEINFO* si = m_surfacePtrs[routeData.type];
+
+		if (si)
+		{
+			int px, py;
+			GetSurfaceLocalCoords(position, px, py);
+			RotatePoint(routeData, px, py);
+
+			for (int i = 0; i < si->numpolys; i++)
+			{
+				SIPOLY* poly = si->GetPoly(i);
+
+				int res = (poly->num_vertices == 4) ?
+					PointInQuad2d(px, py, poly->xz) :
+					PointInTri2d(px, py, poly->xz);
+
+				if (res != 0)
+				{
+					const int normFac = px * poly->normals.a + py * poly->normals.c;
+					const int height = ((normFac / ONE) - poly->normals.d) - routeData.height;
+
+					int n_vx = poly->normals.a;
+					int n_vz = poly->normals.c;
+					const int n_vy = poly->normals.b;
+
+					RotateNormal(routeData, n_vx, n_vz);
+
+					outNormal.vx = n_vx;
+					outNormal.vy = n_vy;
+					outNormal.vz = n_vz;
+
+					outPoint.vy = height;
+				}
+			}
+		} // si != null
+
+		ModelRef_t* ref = m_models->GetModelByIndex(routeData.type);
+
+		if (ref && ref->baseInstance)
+			ref = ref->baseInstance;
+
+		MODEL* model = ref ? ref->model : nullptr;
+
+		if (model)
+		{
+			if (model->shape_flags & SHAPE_FLAG_WATER)
+				outPlane.surfaceType = (int)SurfaceType::Water;
+
+			if (model->flags2 & MODEL_FLAG_GRASS)
+				outPlane.surfaceType = (int)SurfaceType::Grass;
+		}
 	}
 
 	return 4096;
@@ -625,7 +572,7 @@ CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, const XZP
 	const int region_cell_z = cell.z % m_mapInfo.region_size;
 
 	// FIXME: might be incorrect
-	int cell_index = region_cell_x + region_cell_z * m_mapInfo.region_size;
+	const int cell_index = region_cell_x + region_cell_z * m_mapInfo.region_size;
 
 	ushort cell_ptr = region->m_cellPointers[cell_index];
 
@@ -705,8 +652,6 @@ CELL_OBJECT* CDriver1LevelMap::GetNextCop(CELL_ITERATOR_D1* iterator) const
 			break;
 		}
 	} while (true);
-
-
 
 	return pco;
 }
