@@ -610,7 +610,7 @@ GrVAO* GR_CreateVAO(int numVertices, GrVertex* verts /*= nullptr*/, int dynamic 
 	return GR_CreateVAO(numVertices, 0, verts, nullptr, dynamic);
 }
 
-GrVAO* GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts /*= nullptr*/, int* indices /*= nullptr*/, int dynamic /*= 0*/)
+GrVAO* GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts /*= nullptr*/, uint16* indices /*= nullptr*/, int dynamic /*= 0*/)
 {
 	GLuint buffers[2] = { GL_NONE };
 	GLuint vertexArray;
@@ -636,7 +636,7 @@ GrVAO* GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts /*= nullptr
 		if(numIndices)
 		{
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * numIndices, indices, dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16) * numIndices, indices, dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 		}
 
 		glBindVertexArray(0);
@@ -657,9 +657,21 @@ GrVAO* GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts /*= nullptr
 
 void GR_UpdateVAO(GrVAO* vaoPtr, int numVertices, GrVertex* verts)
 {
+	GR_UpdateVAO(vaoPtr, numVertices, verts, 0, nullptr);
+}
+
+void GR_UpdateVAO(GrVAO* vaoPtr, int numVertices, GrVertex* verts, int numIndices, uint16* indices)
+{
 	glBindBuffer(GL_ARRAY_BUFFER, vaoPtr->buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GrVertex) * numVertices, verts, vaoPtr->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	if (numIndices && vaoPtr->buffers[1])
+	{
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vaoPtr->buffers[1]);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16) * numIndices, indices, vaoPtr->dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
 }
 
 void GR_SetVAO(GrVAO* vaoPtr)
@@ -697,5 +709,5 @@ void GR_DrawNonIndexed(GR_PrimitiveType primitivesType, int firstVertex, int num
 
 void GR_DrawIndexed(GR_PrimitiveType primitivesType, int firstIndex, int numIndices)
 {
-	glDrawElements(glPrimitiveType[primitivesType], numIndices, GL_UNSIGNED_INT, (void*)(intptr_t)(firstIndex*sizeof(int)));
+	glDrawElements(glPrimitiveType[primitivesType], numIndices, GL_UNSIGNED_SHORT, (void*)(intptr_t)(firstIndex*sizeof(uint16)));
 }

@@ -11,8 +11,8 @@ struct GrVAO;
 struct modelBatch_t
 {
 	int tpage;
-	int startIndex;
-	int numIndices;
+	uint16 startIndex;
+	uint16 numIndices;
 };
 
 struct vertexTuple_t

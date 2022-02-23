@@ -115,9 +115,10 @@ void		GR_DestroyTexture(TextureID texture);
 //--------------------------------------------------
 
 GrVAO*		GR_CreateVAO(int numVertices, GrVertex* verts = nullptr, int dynamic = 0);
-GrVAO*		GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts = nullptr, int* indices = nullptr, int dynamic = 0);
+GrVAO*		GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts = nullptr, uint16* indices = nullptr, int dynamic = 0);
 
 void		GR_UpdateVAO(GrVAO* vaoPtr, int numVertices, GrVertex* verts);
+void		GR_UpdateVAO(GrVAO* vaoPtr, int numVertices, GrVertex* verts, int numIndices, uint16* indices);
 
 void		GR_DestroyVAO(GrVAO* vaoPtr);
 

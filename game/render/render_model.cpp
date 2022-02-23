@@ -145,8 +145,7 @@ int CRenderModel::FindGrVertexIndex(const Array<vertexTuple_t>& whereFind, int f
 
 struct genBatch_t
 {
-	Array<int>				indices;
-	
+	Array<uint16> indices;
 	int tpage;
 };
 
@@ -386,16 +385,13 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 		}
 	}
 
-	Array<int> indices;
+	Array<uint16> indices;
 
 	// merge batches
 	for(usize i = 0; i < batches.size(); i++)
 	{	
-		//int startVertex = vertices.numElem();
-		int startIndex = indices.size();
+		uint16 startIndex = indices.size();
 		
-		//vertices.append(batches[i]->vertices);
-
 		for(usize j = 0; j < batches[i]->indices.size(); j++)
 			indices.append(batches[i]->indices[j]);
 
@@ -413,7 +409,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 	if (m_vao)
 		GR_DestroyVAO(m_vao);
 
-	m_vao = GR_CreateVAO(vertices.size(), indices.size(), (GrVertex*)vertices, (int*)indices, 0);
+	m_vao = GR_CreateVAO(vertices.size(), indices.size(), (GrVertex*)vertices, (uint16*)indices, 0);
 
 	if(!m_vao)
 	{
