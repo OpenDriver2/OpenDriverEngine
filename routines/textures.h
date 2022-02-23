@@ -41,6 +41,7 @@ struct TexDetailInfo_t
 	TEXINF			info;
 	TEXCLUT*		extraCLUTs[32];
 	int				numExtraCLUTs;
+	int				pageNum;
 	int				detailNum;			// index on texture page
 };
 
