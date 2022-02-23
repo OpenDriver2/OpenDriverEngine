@@ -64,6 +64,8 @@ void CWorld::Lua_Init(sol::state& lua)
 		lua.new_usertype<LevelRenderProps>(
 			LUADOC_T("LevelRenderProps"),
 
+			LUADOC_P("ambientColor"), &LevelRenderProps::ambientColor,
+			LUADOC_P("lightColor"), &LevelRenderProps::lightColor,
 			LUADOC_P("nightAmbientScale"), &LevelRenderProps::nightAmbientScale,
 			LUADOC_P("nightLightScale"), &LevelRenderProps::nightLightScale,
 			LUADOC_P("ambientScale"), &LevelRenderProps::ambientScale,

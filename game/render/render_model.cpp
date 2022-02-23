@@ -577,8 +577,8 @@ void CRenderModel::SetupLightingProperties(float ambientScale /*= 1.0f*/, float 
 	Vector3D lightVector = normalize(FromFixedVector(cellHeader.light_source));
 	float lightLevel = cellHeader.ambient_light_level / ONE_F;
 	
-	g_worldRenderProperties.ambientColor = ColorRGBA(0.95f, 0.9f, 1.0f, 0.8f * ambientScale * lightLevel);
-	g_worldRenderProperties.lightColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.8f * lightScale * lightLevel);
+	g_worldRenderProperties.ambientColor = ColorRGBA(g_levRenderProps.ambientColor, 0.8f * ambientScale * lightLevel);
+	g_worldRenderProperties.lightColor = ColorRGBA(g_levRenderProps.lightColor, 0.8f * lightScale * lightLevel);
 	g_worldRenderProperties.lightDir = lightVector * Vector3D(1,-1,1);
 }
 

@@ -49,6 +49,9 @@ struct LevelRenderProps
 
 struct LevelRenderProps
 {
+	ColorRGB ambientColor{ 0.95f, 0.9f, 1.0f };
+	ColorRGB lightColor{ 0.95f, 0.9f, 0.5f };
+
 	float nightAmbientScale{ 0.35f };
 	float nightLightScale{ 0.0f };
 
