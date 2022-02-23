@@ -139,7 +139,7 @@ void		GR_SetTexture(TextureID texture);
 void		GR_SetMatrix(GR_MatrixMode mode, const Matrix4x4& matrix);
 
 void		GR_SetPolygonOffset(float ofs);
-void		GR_SetDepth(int enable);
+void		GR_SetDepthMode(int test, int write);
 void		GR_SetCullMode(GR_CullMode cullMode);
 void		GR_SetBlendMode(GR_BlendMode blendMode);
 

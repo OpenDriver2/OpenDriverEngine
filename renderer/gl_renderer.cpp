@@ -26,7 +26,8 @@ int			g_windowWidth, g_windowHeight;
 int			g_swapInterval = 1;
 
 int			g_CurrentBlendMode = BM_NONE;
-int			g_CurrentDepthMode = 0;
+int			g_CurrentDepthTest = 0;
+int			g_CurrentDepthWrite = 0;
 int			g_CurrentCullMode = CULL_NONE;
 GrVAO*		g_CurrentVAO = nullptr;
 TextureID	g_lastBoundTexture = 0;
@@ -527,17 +528,23 @@ void GR_SetPolygonOffset(float ofs)
 	}
 }
 
-void GR_SetDepth(int enable)
+void GR_SetDepthMode(int test, int write)
 {
-	if (g_CurrentDepthMode == enable)
-		return;
+	if (g_CurrentDepthTest != test)
+	{
+		g_CurrentDepthTest = test;
 
-	g_CurrentDepthMode = enable;
+		if (test)
+			glEnable(GL_DEPTH_TEST);
+		else
+			glDisable(GL_DEPTH_TEST);
+	}
 
-	if (enable)
-		glEnable(GL_DEPTH_TEST);
-	else
-		glDisable(GL_DEPTH_TEST);
+	if (g_CurrentDepthWrite != write)
+	{
+		g_CurrentDepthWrite = write;
+		glDepthMask(write);
+	}
 }
 
 void GR_SetBlendMode(GR_BlendMode blendMode)

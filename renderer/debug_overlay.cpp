@@ -133,7 +133,7 @@ void CDebugOverlay::Draw()
 	
 	GR_SetCullMode(CULL_NONE);
 	GR_SetBlendMode(BM_SEMITRANS_ALPHA);
-	GR_SetDepth(0);
+	GR_SetDepthMode(0, 0);
 
 	GR_DrawNonIndexed(PRIM_LINES, 0, g_numLineVerts);
 

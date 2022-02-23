@@ -346,7 +346,7 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	CRenderModel::SetupModelShader();
 	CCamera::SetupViewAndMatrices(view, frustumVolume);
 
-	GR_SetDepth(1);
+	GR_SetDepthMode(1, 1);
 	GR_SetCullMode(CULL_FRONT);
 
 	// reset lighting

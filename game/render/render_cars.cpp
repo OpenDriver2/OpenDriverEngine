@@ -126,11 +126,15 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars)
 	TextureID carShadowPage = CWorld::GetHWTexture(carShadowDetail->pageNum, 0);
 	CRenderModel::SetupModelShader();
 	GR_SetBlendMode(BM_SUBTRACT);
+	GR_SetDepthMode(1, 0);
 	GR_SetTexture(carShadowPage);
 	GR_SetMatrix(MATRIX_WORLD, identity4());
 	GR_UpdateMatrixUniforms();
 	GR_SetCullMode(CULL_NONE);
 	carShadow.End();
+
+	// restore depth mode
+	GR_SetDepthMode(1, 1);
 }
 
 void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car)

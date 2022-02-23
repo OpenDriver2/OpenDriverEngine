@@ -426,7 +426,7 @@ void CSky::Draw(const CameraViewParams& view)
 
 	CCamera::SetupViewAndMatrices(_view, dummy);
 
-	GR_SetDepth(0);
+	GR_SetDepthMode(0, 0);
 	GR_SetCullMode(CULL_FRONT);
 
 	GR_SetTexture(g_skyTexture);
