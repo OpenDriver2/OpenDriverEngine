@@ -3,12 +3,32 @@
 
 /* TODO:
 	- Add car model rendering and denting stuff
-	- Add wheel model renderer
-
-
 */
 
+GrVAO* CRender_Cars::carShadowVAO = nullptr;
+TexDetailInfo_t* CRender_Cars::carShadowDetail = nullptr;
+Vector4D CRender_Cars::carShadowUV(0.0f);
 
+
+void CRender_Cars::InitCarRender()
+{
+	carShadowVAO = GR_CreateVAO(8192, nullptr, 0);
+	carShadowDetail = CWorld::FindTextureDetail("CARSHAD");
+	if (carShadowDetail) 
+	{
+		Vector2D shadowUV(carShadowDetail->info.x, carShadowDetail->info.y);
+		Vector2D shadowWH(carShadowDetail->info.width, carShadowDetail->info.height);
+		shadowUV += 1;
+		shadowWH -= 2;
+		carShadowUV = Vector4D(shadowUV / TEXPAGE_SIZE_Y, (shadowUV + shadowWH) / TEXPAGE_SIZE_Y);
+	}
+}
+
+void CRender_Cars::TerminateCarRender()
+{
+	GR_DestroyVAO(carShadowVAO);
+	carShadowVAO = nullptr;
+}
 
 void CRender_Cars::MangleWheelModel(MODEL* model)
 {
@@ -87,4 +107,64 @@ void CRender_Cars::MangleWheelModel(MODEL* model)
 	src[5].texture_set = 255;
 
 	model->num_polys = 6;
+}
+
+void CRender_Cars::DrawCars(Array<CCar*>& cars)
+{
+	CMeshBuilder carShadow(carShadowVAO);
+
+	carShadow.Begin(PRIM_TRIANGLE_STRIP);
+
+	for (usize i = 0; i < cars.size(); i++)
+	{
+		CCar* cp = cars[i];
+		cp->DrawCar();
+
+		AddCarShadow(carShadow, cp);
+	}
+
+	TextureID carShadowPage = CWorld::GetHWTexture(carShadowDetail->pageNum, 0);
+	CRenderModel::SetupModelShader();
+	GR_SetBlendMode(BM_SUBTRACT);
+	GR_SetTexture(carShadowPage);
+	GR_SetMatrix(MATRIX_WORLD, identity4());
+	GR_UpdateMatrixUniforms();
+	GR_SetCullMode(CULL_BACK);
+	carShadow.End();
+}
+
+void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car)
+{
+	if (!carShadowDetail || !carShadowVAO)
+		return;
+
+	const CarCosmetics& car_cos = car->GetCosmetics();
+
+	Matrix3x3 carMatrix = car->GetInterpolatedDrawMatrix();
+	VECTOR_NOPAD carPos = car->GetInterpolatedPosition();
+
+	//gte_SetRotMatrix(&car->GetMatrix());
+	//gte_SetTransMatrix(&car->GetMatrix());
+
+	meshBuilder.Color4f(0.6f, 0.6f, 0.6f, 0.35f);
+
+	Vector3D result[4];
+	for (int i = 0; i < 4; i++)
+	{
+		Vector3D pointPos = carMatrix * FromFixedVector(car_cos.cPoints[i]);
+		pointPos += FromFixedVector(carPos);
+
+		sdPlane surfacePtr;
+		VECTOR_NOPAD posFix, surfaceNormal;
+		CWorld::FindSurface(ToFixedVector(pointPos), surfaceNormal, posFix, surfacePtr);
+
+		posFix.vy += 4;
+		result[i] = FromFixedVector(posFix);
+	}
+
+	const Vector2D tl = carShadowUV.xy();
+	const Vector2D br = carShadowUV.zw();
+
+	meshBuilder.TexturedQuad3(result[0], result[1], result[2], result[3], 
+		tl, Vector2D(br.x, tl.y), Vector2D(tl.x, br.y), br);
 }

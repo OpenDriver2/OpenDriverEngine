@@ -1,5 +1,6 @@
 #include <sol/forward.hpp>
 
+// the class that allows to change value inside callbacks
 template <typename TType>
 class LuaPropertyRef
 {

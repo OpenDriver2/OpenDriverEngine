@@ -313,6 +313,8 @@ public:
 	const MATRIX&			GetMatrix() const;
 	const OrientedBox&		GetOrientedBox() const;
 
+	const CarCosmetics&		GetCosmetics() const;
+
 	//--------------
 	static void				Lua_Init(sol::state& lua);
 

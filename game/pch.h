@@ -35,6 +35,7 @@
 #include "math/Plane.h"
 
 #include "renderer/gl_renderer.h"
+#include "renderer/mesh_builder.h"
 #include "renderer/debug_overlay.h"
 
 #include "audio/IAudioSystem.h"
@@ -43,6 +44,7 @@
 #include "render/render_model.h"
 #include "render/render_level.h"
 #include "render/render_sky.h"
+#include "render/render_cars.h"
 
 #include "luabinding/luadocs.h"
 #include "luabinding/luarefvalue.h" 

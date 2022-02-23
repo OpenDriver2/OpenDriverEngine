@@ -791,15 +791,6 @@ void CManager_Cars::StepCars()
 	}
 }
 
-void CManager_Cars::DrawAllCars()
-{
-	for (usize i = 0; i < m_active_cars.size(); i++)
-	{
-		CCar* cp = m_active_cars[i];
-		cp->DrawCar();
-	}
-}
-
 double CManager_Cars::GetInterpTime() const
 {
 	const double ticks_to_ms = 1.0 / 1000000.0;
@@ -813,7 +804,7 @@ void CManager_Cars::Draw(const CameraViewParams& view)
 	else
 		CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
 
-	g_cars->DrawAllCars();
+	CRender_Cars::DrawCars(g_cars->m_active_cars);
 }
 
 void CManager_Cars::UpdateTime(int64 ticks)

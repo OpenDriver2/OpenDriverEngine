@@ -2060,6 +2060,11 @@ const OrientedBox& CCar::GetOrientedBox() const
 	return m_hd.oBox;
 }
 
+const CarCosmetics& CCar::GetCosmetics() const
+{
+	return m_cosmetics;
+}
+
 bool CCar::GetChangingGear() const
 {
 	return m_hd.changingGear;
@@ -2763,11 +2768,6 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	c1InfiniteMass = (cp->m_controlType == CONTROL_TYPE_CUTSCENE || m1 == 0x7fff);
 	c2InfiniteMass = (c1->m_controlType == CONTROL_TYPE_CUTSCENE || m2 == 0x7fff);
 
-#if 0
-	if (c1InfiniteMass || c2InfiniteMass)
-		strikeVel = strikeVel * 10 >> 2;
-#endif
-
 	// Lua interaction
 	if (m_carEventsLua.valid())
 	{
@@ -2802,6 +2802,10 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 		do2 = (m1 * 4096) / m2;
 		do1 = 4096;
 	}
+
+	// reduce strike velocity for infinite mass cars (ReD2 change)
+	if (c1InfiniteMass || c2InfiniteMass)
+		strikeVel = strikeVel * 10 >> 2;
 
 	CollisionResponse(cpDelta, other, strikeVel, do1, c1InfiniteMass, lever0, collResult);
 
@@ -2853,13 +2857,12 @@ void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, 
 	if (!infiniteMass)
 	{
 		int twistY, strength1;
-#if 0
+
 		if (m_controlType == CONTROL_TYPE_PURSUER_AI && other->m_controlType != CONTROL_TYPE_LEAD_AI && other->m_hndType != 0)
 			strength1 = (strikeVel * (7 - gCopDifficultyLevel)) / 8;
-		else if (cp->m_controlType == CONTROL_TYPE_LEAD_AI && other->m_hndType != 0)
+		else if (m_controlType == CONTROL_TYPE_LEAD_AI && other->m_hndType != 0)
 			strength1 = (strikeVel * 5) / 8;
 		else
-#endif
 			strength1 = strikeVel;
 
 

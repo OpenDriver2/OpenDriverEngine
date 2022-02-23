@@ -39,8 +39,6 @@ public:
 
 	double					GetInterpTime() const;
 
-	void					DrawAllCars();
-
 	static void				Draw(const struct CameraViewParams& view);
 	static void				UpdateTime(int64 ticks);
 
