@@ -114,11 +114,16 @@ void CReplayData::Lua_Init(sol::state& lua)
 		LUADOC_TYPE();
 		lua.new_usertype<CReplayStream>(
 			LUADOC_T("CReplayStream"),
+			LUADOC_P("Reset"), &CReplayStream::Reset,
+			LUADOC_P("Cleanup"), &CReplayStream::Cleanup,
+			LUADOC_P("Clone"), &CReplayStream::Clone,
+
+			LUADOC_P("Play", "Updates playback. Returns false if out of tape"), &CReplayStream::Play,
+			LUADOC_P("Record", "Records controls if there is difference. Returns false if out of tape"), &CReplayStream::Record,
+
 			LUADOC_P("sourceParams"), sol::property(&CReplayStream::GetSourceParams),
 			LUADOC_P("isEmpty"), sol::property(&CReplayStream::IsEmpty),
-			LUADOC_P("isAtEnd"), sol::property(&CReplayStream::IsAtEnd),
-			LUADOC_P("Reset"), &CReplayStream::Reset,
-			LUADOC_P("Cleanup"), &CReplayStream::Cleanup
+			LUADOC_P("isAtEnd"), sol::property(&CReplayStream::IsAtEnd)
 		);
 	}
 }
@@ -181,6 +186,7 @@ void CReplayStream::Initialize(int bufferSize)
 {
 	m_initialPadRecordBuffer = (PADRECORD*)Memory::alloc(bufferSize * sizeof(PADRECORD));
 	m_padRecordBufferEnd = m_initialPadRecordBuffer + bufferSize;
+	m_startStep = CWorld::StepCount;
 	Reset();
 }
 
@@ -191,6 +197,19 @@ void CReplayStream::Cleanup()
 	m_length = 0;
 	m_padCount = 0;
 	Reset();
+}
+
+CReplayStream* CReplayStream::Clone() const
+{
+	const int bufferSize = m_padRecordBuffer - m_initialPadRecordBuffer;
+
+	CReplayStream* cloned = new CReplayStream();
+	cloned->Initialize(bufferSize);
+
+	if(m_initialPadRecordBuffer)
+		memcpy(cloned->m_initialPadRecordBuffer, m_initialPadRecordBuffer, bufferSize * sizeof(PADRECORD));
+
+	return cloned;
 }
 
 // reset stream position
@@ -265,7 +284,7 @@ bool CReplayStream::Record(CPlayer::InputData& inoutInputs)
 	uint t0 = (t1 & 15) << 8 | inoutPad & 0xF0FC;
 
 	bool ret = Put(t0);
-	m_length = CWorld::StepCount;
+	m_length = CWorld::StepCount - m_startStep;
 
 	t1 = (t0 >> 8) & 15;
 
@@ -319,7 +338,7 @@ bool CReplayStream::Put(uint t0)
 
 	padbuf = m_padRecordBuffer;
 
-	if (CWorld::StepCount != 0 && padbuf->run != 0xEE)
+	if ((CWorld::StepCount - m_startStep) != 0 && padbuf->run != 0xEE)
 	{
 		if (padbuf->pad == ((t0 >> 8) & 255) &&
 			padbuf->analogue == (t0 & 255) &&

@@ -55,6 +55,8 @@ public:
 	void					Initialize(int bufferSize);
 	void					Cleanup();
 
+	CReplayStream*			Clone() const;
+
 	STREAM_SOURCE&			GetSourceParams()  { return m_sourceType; }
 
 	bool					IsEmpty() const { return m_padRecordBuffer == m_initialPadRecordBuffer; }
@@ -64,7 +66,7 @@ public:
 	// Updates playback. Returns false if out of tape
 	bool					Play(CPlayer::InputData& outInputs);
 
-	// Records a controls if there is difference. Returns false if out of tape
+	// Records controls if there is difference. Returns false if out of tape
 	bool					Record(CPlayer::InputData& inoutInputs);
 
 protected:
@@ -78,6 +80,7 @@ protected:
 	uchar					m_playbackrun{ 0 };
 	int						m_length{ 0 };			// CWorld::StepCnt
 	int						m_padCount{ 0 };
+	int						m_startStep{ 0 };
 };
 
 class CReplayData
