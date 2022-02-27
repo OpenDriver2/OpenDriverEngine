@@ -66,8 +66,12 @@ public:
 	static void				Update();
 
 	static CPlayer*			GetLocalPlayer();
-
 	static CPlayer*			GetPlayerByCar(CCar* car);
+
+	static CPlayer*			CreatePlayer();
+	static void				RemovePlayer(CPlayer* player);
+
+	static void				RemoveAllPlayers();
 
 	static void				Net_Init();
 	static void				Net_Finalize();
@@ -82,6 +86,7 @@ public:
 
 protected:
 	static CPlayer			LocalPlayer;
+	static Array<CPlayer*>	Players;
 };
 
 #endif // PLAYERS_H

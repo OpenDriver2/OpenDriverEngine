@@ -398,23 +398,23 @@ void CCar::Lua_Init(sol::state& lua)
 			& CCar::Destroy,
 
 			LUADOC_P("controlType", "Car control type ID"),
-			& CCar::m_controlType,
+			&CCar::m_controlType,
 
 			LUADOC_P("cosmetics", "Car configuration"),
-			& CCar::m_cosmetics,
+			&CCar::m_cosmetics,
 
 			// inputs
 			LUADOC_P("thrust", "controls"),
-			& CCar::m_thrust,
+			&CCar::m_thrust,
 
 			LUADOC_P("wheelAngle", "controls"),
-			& CCar::m_wheel_angle,
+			&CCar::m_wheel_angle,
 
 			LUADOC_P("handbrake", "controls"),
-			& CCar::m_handbrake,
+			&CCar::m_handbrake,
 
 			LUADOC_P("wheelspin", "controls"),
-			& CCar::m_wheelspin,
+			&CCar::m_wheelspin,
 
 			LUADOC_P("autobrake", "controls"),
 			sol::property(&CCar::GetAutobrake, &CCar::SetAutobrake),

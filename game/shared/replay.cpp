@@ -114,12 +114,12 @@ void CReplayData::Lua_Init(sol::state& lua)
 		LUADOC_TYPE();
 		lua.new_usertype<CReplayStream>(
 			LUADOC_T("CReplayStream"),
-			LUADOC_P("Reset"), &CReplayStream::Reset,
-			LUADOC_P("Cleanup"), &CReplayStream::Cleanup,
-			LUADOC_P("Clone"), &CReplayStream::Clone,
+			LUADOC_M("Reset"), &CReplayStream::Reset,
+			LUADOC_M("Cleanup"), &CReplayStream::Cleanup,
+			LUADOC_M("Clone"), &CReplayStream::Clone,
 
-			LUADOC_P("Play", "Updates playback. Returns false if out of tape"), &CReplayStream::Play,
-			LUADOC_P("Record", "Records controls if there is difference. Returns false if out of tape"), &CReplayStream::Record,
+			LUADOC_M("Play", "Updates playback. Returns false if out of tape"), &CReplayStream::Play,
+			LUADOC_M("Record", "Records controls if there is difference. Returns false if out of tape"), &CReplayStream::Record,
 
 			LUADOC_P("sourceParams"), sol::property(&CReplayStream::GetSourceParams),
 			LUADOC_P("isEmpty"), sol::property(&CReplayStream::IsEmpty),

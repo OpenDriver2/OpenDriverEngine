@@ -57,7 +57,7 @@ void CPlayer::Lua_Init(sol::state& lua)
 			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
 
 			LUADOC_P("playbackStream", "replay playback stream (may be null)"),
-			sol::readonly_property(& CPlayer::m_playbackStream),
+			sol::readonly_property(&CPlayer::m_playbackStream),
 
 			LUADOC_P("recordStream", "replay recording stream (if null - no recording is done)"),
 			sol::readonly_property(&CPlayer::m_recordStream)
@@ -396,18 +396,39 @@ void CPlayer::ProcessCarPad()
 //-------------------------------------------------------------
 
 CPlayer	CManager_Players::LocalPlayer;
+Array<CPlayer*>	CManager_Players::Players;
 
 void CManager_Players::Lua_Init(sol::state& lua)
 {
 	CPlayer::Lua_Init(lua);
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
-
+	LUADOC_GLOBAL();
 	{
-		LUADOC_NAMESPACE("Players");
-		auto world = engine["Players"].get_or_create<sol::table>();
-		world["localPlayer"] = &LocalPlayer;
+		LUADOC_TYPE("Players");
+		auto players = engine["Players"].get_or_create<sol::table>();
+
+		players[LUADOC_P("localPlayer")] 
+			= &LocalPlayer;
+
+		players[LUADOC_M("GetPlayerByCar")]
+			= &GetPlayerByCar;
+
+		players[LUADOC_M("CreatePlayer")]
+			= &CreatePlayer;
+
+		players[LUADOC_M("RemovePlayer")]
+			= &RemovePlayer;
+
+		players[LUADOC_M("RemoveAllPlayers")]
+			= &RemoveAllPlayers;
+
+		players[LUADOC_M("Update")]
+			= &Update;
 	}
+
+	// make local player default
+	Players.append(&LocalPlayer);
 }
 
 void CManager_Players::Update()
@@ -422,10 +443,40 @@ CPlayer* CManager_Players::GetLocalPlayer()
 
 CPlayer* CManager_Players::GetPlayerByCar(CCar* car)
 {
-	if (LocalPlayer.GetCurrentCar() == car)
-		return GetLocalPlayer();
+	for (int i = 0; i < Players.size(); ++i)
+	{
+		if (Players[i]->GetCurrentCar() == car)
+			return Players[i];
+	}
 
 	return nullptr;
+}
+
+CPlayer* CManager_Players::CreatePlayer()
+{
+	CPlayer* newPlayer = new CPlayer();
+	return Players.append(newPlayer);
+}
+
+void CManager_Players::RemovePlayer(CPlayer* player)
+{
+	auto& found = Players.find(player);
+	if (found != Players.end())
+	{
+		delete player;
+		Players.remove(found);
+	}
+}
+
+void CManager_Players::RemoveAllPlayers()
+{
+	for (int i = 0; i < Players.size(); ++i)
+	{
+		if(Players[i] != &LocalPlayer)
+			delete Players[i];
+	}
+	Players.clear();
+	Players.append(&LocalPlayer);
 }
 
 void CManager_Players::Net_Init()
