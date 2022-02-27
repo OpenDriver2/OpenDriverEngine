@@ -331,7 +331,7 @@ bool CWorld::LoadLevel(const char* fileName)
 void CWorld::UnloadLevel()
 {
 	CRender_Cars::TerminateCarRender();
-
+	CManager_Players::RemoveAllPlayers();
 	if (g_levMap)
 	{
 		MsgWarning("Freeing level data ...\n");

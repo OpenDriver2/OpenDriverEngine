@@ -233,7 +233,7 @@ struct LEAD_CAR
 	char takeDamage;
 };
 
-enum ECarControlType
+enum ECarControlType : int
 {
 	CONTROL_TYPE_NONE = 0,				// car is not in the world
 	CONTROL_TYPE_PLAYER = 1,			// controlled by player pads
@@ -391,7 +391,7 @@ protected:
 
 	uint8				m_hndType{ 0 };
 
-	uint8				m_controlType{ 0 };
+	ECarControlType		m_controlType{ CONTROL_TYPE_NONE };
 	uint8				m_controlFlags{ 0 };
 
 	int8				m_id{ -1 };

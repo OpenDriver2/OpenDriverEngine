@@ -57,10 +57,16 @@ void CPlayer::Lua_Init(sol::state& lua)
 			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
 
 			LUADOC_P("playbackStream", "replay playback stream (may be null)"),
-			sol::property([](const CPlayer& ply) { return (CReplayStream*)&ply.m_playbackStream; }),
+			sol::property([](const CPlayer& ply) { 
+				CReplayStream& ptr = *ply.m_playbackStream;
+				return &ptr;
+			}),
 
 			LUADOC_P("recordStream", "replay recording stream (if null - no recording is done)"),
-			sol::property([](const CPlayer& ply) { return (CReplayStream*)&ply.m_recordStream; })
+			sol::property([](const CPlayer& ply) {
+				CReplayStream& ptr = *ply.m_recordStream;
+				return &ptr;
+			})
 		);
 	}
 }

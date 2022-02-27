@@ -221,7 +221,7 @@ void CManager_Cars::UnloadAllModels()
 	m_carModels.clear();
 }
 
-CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo)
+CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, ECarControlType control, int modelId, int palette, POSITION_INFO& positionInfo)
 {
 	// not valid request
 	if (control == CONTROL_TYPE_NONE)
@@ -341,7 +341,8 @@ void CManager_Cars::UpdateControl()
 			continue;
 		}
 
-		if (cp->m_controlType == CONTROL_TYPE_PLAYER)
+		if (cp->m_controlType == CONTROL_TYPE_PLAYER ||
+			cp->m_controlType == CONTROL_TYPE_CUTSCENE)
 		{
 			CPlayer* player = CManager_Players::GetPlayerByCar(cp);
 

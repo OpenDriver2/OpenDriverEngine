@@ -121,6 +121,9 @@ TestGame.UpdateCamera = function(dt)
 end
 
 TestGame.Terminate = function()
+	-- all other players except local player are removed
+	players.RemoveAllPlayers()
+
 	-- destroy old car
 	local car = players.localPlayer.currentCar
 	if car ~= nil then
@@ -139,13 +142,10 @@ TestGame.StartReplay = function()
 	local residentModel = replaySourceParams.model
 	local modelIdx = cars:LoadModel(residentModel)
 
-	-- destroy car
-	TestGame.Terminate()
-
 	-- create new car
 	local palette = replaySourceParams.palette
 	local cosmetics = cityCosmetics[residentModel + 1]
-	local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+	local plcar = cars:Create(CarCosmetics(cosmetics), CarControlType.Cutscene, modelIdx, palette, positionInfo)
 
 	local evtCb = plcar.eventCallback
 	plcar.eventCallback = function(self, eventType, parameters)
@@ -161,8 +161,12 @@ TestGame.StartReplay = function()
 	end
 
 	-- re-init stream for replay
-	players.localPlayer:InitReplay(replayStream)
-	players.localPlayer.currentCar = plcar
+	local newPlayer = players.CreatePlayer()
+
+	-- replay stream has to be clonned.
+	-- as soon as player is going to be removed, the replay stream will be freed.
+	newPlayer:InitReplay(replayStream:Clone())
+	newPlayer.currentCar = plcar
 end
 
 
@@ -202,7 +206,7 @@ TestGame.Init = function(residentModel)
 
 		local palette = math.random(0, 5)
 		local cosmetics = cityCosmetics[residentModel + 1]
-		local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+		local plcar = cars:Create(CarCosmetics(cosmetics), CarControlType.Player, modelIdx, palette, positionInfo)
 
 		local evtCb = plcar.eventCallback
 		plcar.eventCallback = function(self, eventType, parameters)

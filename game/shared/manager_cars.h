@@ -8,6 +8,8 @@ class CCar;
 class CDriverLevelModels;
 struct CarCosmetics;
 struct ModelRef_t;
+class ISoundSource;
+enum ECarControlType : int;
 
 struct POSITION_INFO
 {
@@ -15,7 +17,7 @@ struct POSITION_INFO
 	int direction;
 };
 
-class ISoundSource;
+
 
 class CManager_Cars
 {
@@ -27,7 +29,7 @@ public:
 
 	void					UnloadAllModels();
 
-	CCar*					Create(const CarCosmetics& cosmetic, int control, int modelId, int palette, POSITION_INFO& positionInfo);
+	CCar*					Create(const CarCosmetics& cosmetic, ECarControlType control, int modelId, int palette, POSITION_INFO& positionInfo);
 
 	void					RemoveAll();
 	void					Remove(CCar* car);

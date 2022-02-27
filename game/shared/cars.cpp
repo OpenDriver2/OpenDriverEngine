@@ -389,6 +389,19 @@ void CCar::Lua_Init(sol::state& lua)
 	}
 
 	{
+		LUADOC_TYPE();
+		LUA_BEGIN_ENUM(ECarControlType);
+		lua.new_enum<ECarControlType>(LUADOC_T("CarControlType"),{ 
+			LUA_ENUM(CONTROL_TYPE_NONE, "None"),
+			LUA_ENUM(CONTROL_TYPE_PLAYER, "Player", "controlled by player inputs"),
+			LUA_ENUM(CONTROL_TYPE_CIV_AI, "CivAI", "Civilian car. May be a passive cop car with CONTROL_FLAG_COP flag."),
+			LUA_ENUM(CONTROL_TYPE_PURSUER_AI, "PursuerAI", "Police pursuer car. Always chases player"),
+			LUA_ENUM(CONTROL_TYPE_LEAD_AI, "LeadAI", "FreeRoamer AI"),
+			LUA_ENUM(CONTROL_TYPE_CUTSCENE, "Cutscene", "Pretty same as player car but controllled by cutscene. Can be a chase car."),
+		});
+	}
+
+	{
 		MAKE_PROPERTY_REF(lua, CCar*);
 		LUADOC_TYPE();
 		lua.new_usertype<CCar>(

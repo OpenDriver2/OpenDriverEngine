@@ -39,3 +39,6 @@ public:
 #define LUADOC_P(name, ...)				LUADOC_PROP(name, __VA_ARGS__)
 #define LUADOC_M(name, ...)				LUADOC_MEMBER(name, __VA_ARGS__)
 #define LUADOC_T(name, ...)				_t.Init(name, __VA_ARGS__)
+
+#define LUA_BEGIN_ENUM(name)			using ENUM = name
+#define LUA_ENUM(e, name, ...)			{ LUADOC_PROP(name, __VA_ARGS__), ENUM::##e }
