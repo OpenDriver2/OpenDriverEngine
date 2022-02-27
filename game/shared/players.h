@@ -29,7 +29,7 @@ public:
 		int horn { 0 };
 	};
 
-	~CPlayer();
+	virtual ~CPlayer();
 
 	void					Net_Init();
 	void					Net_Finalize();
@@ -49,11 +49,11 @@ public:
 	static void				Lua_Init(sol::state& lua);
 
 protected:
-	InputData				m_currentInputs;
-	CCar*					m_currentCar{ nullptr };
-	CReplayStream*			m_playbackStream{ nullptr };
-	CReplayStream*			m_recordStream{ nullptr };
-	EPlayerControlType		m_controlType{ PlayerControl_Local };
+	InputData						m_currentInputs;
+	CCar*							m_currentCar{ nullptr };
+	RefCount::Ptr<CReplayStream>	m_playbackStream;
+	RefCount::Ptr<CReplayStream>	m_recordStream;
+	EPlayerControlType				m_controlType{ PlayerControl_Local };
 };
 
 //---------------------------------------------------------------------------------

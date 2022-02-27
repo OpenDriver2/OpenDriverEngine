@@ -115,7 +115,6 @@ void CReplayData::Lua_Init(sol::state& lua)
 		lua.new_usertype<CReplayStream>(
 			LUADOC_T("CReplayStream"),
 			LUADOC_M("Reset"), &CReplayStream::Reset,
-			LUADOC_M("Cleanup"), &CReplayStream::Cleanup,
 			LUADOC_M("Clone"), &CReplayStream::Clone,
 
 			LUADOC_M("Play", "Updates playback. Returns false if out of tape"), &CReplayStream::Play,
@@ -177,20 +176,16 @@ void UnpackInput(CPlayer::InputData& outInputs, uint pad, char steer, char type)
 	}
 }
 
-CReplayStream::~CReplayStream()
+CReplayStream::CReplayStream(int bufferSize)
 {
-	Cleanup();
-}
-
-void CReplayStream::Initialize(int bufferSize)
-{
+	memset(&m_sourceType, 0, sizeof(m_sourceType));
 	m_initialPadRecordBuffer = (PADRECORD*)Memory::alloc(bufferSize * sizeof(PADRECORD));
 	m_padRecordBufferEnd = m_initialPadRecordBuffer + bufferSize;
 	m_startStep = CWorld::StepCount;
 	Reset();
 }
 
-void CReplayStream::Cleanup()
+CReplayStream::~CReplayStream()
 {
 	Memory::free(m_initialPadRecordBuffer);
 	m_initialPadRecordBuffer = nullptr;
@@ -203,8 +198,7 @@ CReplayStream* CReplayStream::Clone() const
 {
 	const int bufferSize = m_padRecordBuffer - m_initialPadRecordBuffer;
 
-	CReplayStream* cloned = new CReplayStream();
-	cloned->Initialize(bufferSize);
+	CReplayStream* cloned = new CReplayStream(bufferSize);
 
 	if(m_initialPadRecordBuffer)
 		memcpy(cloned->m_initialPadRecordBuffer, m_initialPadRecordBuffer, bufferSize * sizeof(PADRECORD));

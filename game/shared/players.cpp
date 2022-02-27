@@ -57,44 +57,43 @@ void CPlayer::Lua_Init(sol::state& lua)
 			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
 
 			LUADOC_P("playbackStream", "replay playback stream (may be null)"),
-			sol::readonly_property(&CPlayer::m_playbackStream),
+			sol::property([](const CPlayer& ply) { return (CReplayStream*)&ply.m_playbackStream; }),
 
 			LUADOC_P("recordStream", "replay recording stream (if null - no recording is done)"),
-			sol::readonly_property(&CPlayer::m_recordStream)
+			sol::property([](const CPlayer& ply) { return (CReplayStream*)&ply.m_recordStream; })
 		);
 	}
 }
 
 CPlayer::~CPlayer()
 {
-	delete m_recordStream;
 }
 
 void CPlayer::Net_Init()
 {
-
 }
 
 void CPlayer::Net_Finalize()
 {
-
 }
 
 void CPlayer::InitReplay(CReplayStream* sourceStream /*= nullptr*/)
 {
-	m_playbackStream = sourceStream;
-
-	if (m_playbackStream)
+	if (sourceStream)
 	{
-		m_playbackStream->Reset();
+		sourceStream->Reset();
 	}
 	else 
 	{
-		if (!m_recordStream)
-			m_recordStream = new CReplayStream();
+		CReplayStream* ptr = &*m_recordStream;
 
-		m_recordStream->Initialize(REPLAY_STEAM_MAX_LENGTH);
+		if (!m_recordStream)
+		{
+			m_recordStream = new CReplayStream(REPLAY_STEAM_MAX_LENGTH);
+		}
 	}
+
+	m_playbackStream = sourceStream;
 }
 
 EPlayerControlType CPlayer::GetControlType() const
@@ -108,7 +107,8 @@ void CPlayer::SetCurrentCar(CCar* newCar)
 	{
 		STREAM_SOURCE& streamSrc = m_recordStream->GetSourceParams();
 		streamSrc.type = newCar ? 1 : 0;
-		if (newCar) {
+		if (newCar) 
+		{
 			streamSrc.model = newCar->m_ap.model;
 			streamSrc.palette = newCar->m_ap.palette;
 			streamSrc.controlType = newCar->m_controlType;
@@ -443,7 +443,7 @@ CPlayer* CManager_Players::GetLocalPlayer()
 
 CPlayer* CManager_Players::GetPlayerByCar(CCar* car)
 {
-	for (int i = 0; i < Players.size(); ++i)
+	for (usize i = 0; i < Players.size(); ++i)
 	{
 		if (Players[i]->GetCurrentCar() == car)
 			return Players[i];
@@ -470,7 +470,7 @@ void CManager_Players::RemovePlayer(CPlayer* player)
 
 void CManager_Players::RemoveAllPlayers()
 {
-	for (int i = 0; i < Players.size(); ++i)
+	for (usize i = 0; i < Players.size(); ++i)
 	{
 		if(Players[i] != &LocalPlayer)
 			delete Players[i];

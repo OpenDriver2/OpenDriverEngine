@@ -15,6 +15,7 @@
 #include <nstd/Directory.hpp>
 #include <nstd/Mutex.hpp>
 #include <nstd/Thread.hpp>
+#include <nstd/RefCount.hpp>
 
 #include "routines/d2_types.h"
 #include "routines/models.h"

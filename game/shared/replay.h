@@ -46,14 +46,13 @@ struct STREAM_SOURCE
 
 struct PADRECORD;
 
-class CReplayStream
+class CReplayStream : public RefCount::Object
 {
 public:
 	CReplayStream() = default;
-	~CReplayStream();
+	CReplayStream(int bufferSize);
 
-	void					Initialize(int bufferSize);
-	void					Cleanup();
+	~CReplayStream();
 
 	CReplayStream*			Clone() const;
 
