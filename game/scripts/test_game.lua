@@ -129,6 +129,43 @@ TestGame.Terminate = function()
 	end
 end
 
+TestGame.StartReplay = function()
+
+	local cityCosmetics = dofile(CurrentCityInfo.cosmetics)
+	local replayStream = players.localPlayer.recordStream
+	local replaySourceParams = replayStream.sourceParams
+
+	local positionInfo = POSITION_INFO(replaySourceParams.position, replaySourceParams.rotation)
+	local residentModel = replaySourceParams.model
+	local modelIdx = cars:LoadModel(residentModel)
+
+	-- destroy car
+	TestGame.Terminate()
+
+	-- create new car
+	local palette = replaySourceParams.palette
+	local cosmetics = cityCosmetics[residentModel + 1]
+	local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
+
+	local evtCb = plcar.eventCallback
+	plcar.eventCallback = function(self, eventType, parameters)
+		--MsgInfo("Got player event ", eventType)
+		
+		-- this will scale up collision verocity and response is modified
+		if eventType == "CarsCollision" then
+			parameters.strikeVel.value = parameters.strikeVel.value // 2
+		end
+		
+		-- call base event function
+		evtCb(self, eventType, parameters)
+	end
+
+	-- re-init stream for replay
+	players.localPlayer:InitReplay(replayStream)
+	players.localPlayer.currentCar = plcar
+end
+
+
 TestGame.Init = function(residentModel)
 
 	-- terminate old game
@@ -161,12 +198,10 @@ TestGame.Init = function(residentModel)
 	local modelIdx = cars:LoadModel(residentModel)
 	
 	if modelIdx ~= -1 then
-		local palette = math.random(0, 5)
-		
 		world.SpoolRegions(positionInfo.position, 1)
-		
-		local cosmetics = cityCosmetics[residentModel + 1]
 
+		local palette = math.random(0, 5)
+		local cosmetics = cityCosmetics[residentModel + 1]
 		local plcar = cars:Create(CarCosmetics(cosmetics), 1 --[[ CONTROL_TYPE_PLAYER ]], modelIdx, palette, positionInfo)
 
 		local evtCb = plcar.eventCallback

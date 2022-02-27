@@ -399,6 +399,13 @@ function RenderUI()
 			ImGui.EndMenu()
 		end
 
+		if world.IsLevelLoaded() and ImGui.BeginMenu("Replay") then
+			if ImGui.MenuItem("Start replay") then
+				testGame.StartReplay()
+			end
+			ImGui.EndMenu()
+		end
+
 		ImGui.EndMainMenuBar();
 	end
 end
