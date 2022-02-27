@@ -81,12 +81,18 @@ public:
 	static void				ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
 
 	//------------------------------------------
+	// game steps
+	static void				EndStep();
+	static void				ResetStep();
+	static int				StepCount;		// aka CameraCnt
+
+	//------------------------------------------
 
 	static void				Lua_Init(sol::state& lua);
-
 protected:
 
-	static Array<CELL_OBJECT>		m_CellObjects;
+	static Array<CELL_OBJECT>	m_CellObjects;
+
 };
 
 int ViewerMain();

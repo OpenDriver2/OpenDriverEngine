@@ -82,6 +82,7 @@ void LuaInit(sol::state& lua)
 	CWorld::Lua_Init(lua);
 	CSky::Lua_Init(lua);
 	CCamera::Lua_Init(lua);
+	CReplayData::Lua_Init(lua);
 
 	// this should come last always
 	CLuaDocumentation::Lua_Init(lua);

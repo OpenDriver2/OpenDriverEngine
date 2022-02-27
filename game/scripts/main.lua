@@ -62,6 +62,9 @@ function StepSim(dt)
 		--players:CheckMiscFelonies()
 
 		numSteps = numSteps + 1
+
+		-- advance game frame, replay time, etc
+		world.EndStep()
 	end
 
 	if testGameCamera then

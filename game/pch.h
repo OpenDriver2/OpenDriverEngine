@@ -55,3 +55,4 @@
 #include "shared/players.h"
 #include "shared/bcoll3d.h"
 #include "shared/bcollide.h"
+#include "shared/replay.h"

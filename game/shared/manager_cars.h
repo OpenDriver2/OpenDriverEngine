@@ -60,6 +60,7 @@ protected:
 	Array<ModelRef_t*>		m_carModels;	// TEMPORARY; Will use different container!
 	int64					m_lastUpdateTime{ 0 };
 	int64					m_curUpdateTime{ 0 };
+	int						m_lastWorldStep{ -1 };
 
 	sol::function			m_soundSourceGetCbLua;
 	sol::function			m_carEventsLua;

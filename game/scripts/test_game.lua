@@ -124,8 +124,8 @@ TestGame.Terminate = function()
 	-- destroy old car
 	local car = players.localPlayer.currentCar
 	if car ~= nil then
-		car:Destroy()
 		players.localPlayer.currentCar = nil
+		car:Destroy()
 	end
 end
 
@@ -146,6 +146,8 @@ TestGame.Init = function(residentModel)
 	EnableModel("cone_tastic2", false)
 	EnableModel("cone_tastic3", false)
 	EnableModel("cone_tastic4", false)
+
+	world.ResetStep()
 
 	-- add test car
 	-- create car cosmetics from table
@@ -179,13 +181,11 @@ TestGame.Init = function(residentModel)
 			-- call base event function
 			evtCb(self, eventType, parameters)
 		end
+		
+		players.localPlayer:InitReplay(nil)
+		players.localPlayer.currentCar = plcar
 
 		Music.Start(CurrentCityInfo.gameId, cityStart.musicType + 1)
-		
-		-- plcar.replayStream:Rewind()
-		-- plcar.replayStream:Start()
-
-		players.localPlayer.currentCar = plcar
 	end
 end
 

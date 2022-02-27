@@ -10,6 +10,7 @@ CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
 Array<CELL_OBJECT>		CWorld::m_CellObjects;
+int						CWorld::StepCount = 0;
 
 Matrix4x4	g_objectMatrix[64];
 MATRIX		g_objectMatrixFixed[64];
@@ -56,6 +57,15 @@ void CWorld::Lua_Init(sol::state& lua)
 
 		world[LUADOC_M("PurgeCellObjects", "purges list of recently added objects by PushCellObject")]
 			= &PurgeCellObjects;
+
+		world[LUADOC_M("EndStep", "finalizes the game step, incrementing step count by 1.")]
+			= &EndStep;
+
+		world[LUADOC_M("ResetStep", "resets world step count")]
+			= &ResetStep;
+
+		world[LUADOC_M("StepCount", "world step count")]
+			= &StepCount;
 	}
 
 	// level properties
@@ -310,6 +320,7 @@ bool CWorld::LoadLevel(const char* fileName)
 	bool result = loader.Load(&stream);
 
 	CRender_Cars::InitCarRender();
+	ResetStep();
 
 	return result;
 }
@@ -652,4 +663,14 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func, C
 			pco = levMapDriver1->GetNextCop(&ci);
 		}
 	}
+}
+
+void CWorld::EndStep()
+{
+	StepCount++;
+}
+
+void CWorld::ResetStep()
+{
+	StepCount = 0;
 }

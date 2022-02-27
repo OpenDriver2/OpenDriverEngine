@@ -4,6 +4,7 @@
 #include <sol/forward.hpp>
 
 class CCar;
+class CReplayStream;
 
 enum EPlayerControlType
 {
@@ -17,33 +18,41 @@ class CPlayer
 public:
 	struct InputData
 	{
+		// TODO: pedestrian mapping
 		bool accel { false };
 		bool brake { false };
 		bool wheelspin { false };
 		bool handbrake { false };
 		bool fastSteer { false };
+		bool useAnalogue { false };
 		int steering { 0 };
 		int horn { 0 };
 	};
 
+	~CPlayer();
+
 	void					Net_Init();
 	void					Net_Finalize();
+
+	void					InitReplay(CReplayStream* sourceStream = nullptr);
 
 	EPlayerControlType		GetControlType() const;
 
 	void					SetCurrentCar(CCar* newCar);
 	CCar*					GetCurrentCar() const;
+	
+	// TODO: pedestrian
 
 	void					UpdateControls(const InputData& input);
-
 	void					ProcessCarPad();
 
 	static void				Lua_Init(sol::state& lua);
 
 protected:
-
 	InputData				m_currentInputs;
 	CCar*					m_currentCar{ nullptr };
+	CReplayStream*			m_playbackStream{ nullptr };
+	CReplayStream*			m_recordStream{ nullptr };
 	EPlayerControlType		m_controlType{ PlayerControl_Local };
 };
 

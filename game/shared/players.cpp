@@ -1,6 +1,8 @@
 #include "game/pch.h"
 #include "players.h"
 
+const int REPLAY_STEAM_MAX_LENGTH = 8000;
+
 void CPlayer::Lua_Init(sol::state& lua)
 {
 	LUADOC_GLOBAL();
@@ -19,6 +21,7 @@ void CPlayer::Lua_Init(sol::state& lua)
 					in.handbrake = table["handbrake"];
 					in.fastSteer = table["fastSteer"];
 					in.steering = table["steering"];
+					in.useAnalogue = table["useAnalogue"];
 					in.horn = table["horn"];
 
 					return in;
@@ -30,6 +33,8 @@ void CPlayer::Lua_Init(sol::state& lua)
 			LUADOC_P("handbrake"),  &InputData::handbrake,
 			LUADOC_P("fastSteer"),  &InputData::fastSteer,
 			LUADOC_P("steering"), &InputData::steering,
+			LUADOC_P("useAnalogue"), &InputData::useAnalogue,
+					
 			LUADOC_P("horn"), &InputData::horn
 		);
 	}
@@ -39,16 +44,30 @@ void CPlayer::Lua_Init(sol::state& lua)
 		lua.new_usertype<CPlayer>(
 			LUADOC_T("CPlayer"),
 
-			LUADOC_P("currentCar", "get/set player control buttons"), 
+			LUADOC_P("InitReplay", "<inputStream?: CReplayStream> initializes replay stream. If inputStream is null, only recording is initiated"),
+			&CPlayer::InitReplay,
+
+			LUADOC_P("currentCar", "get/set player car. If replay is initialized empty, it will be initialized"), 
 			sol::property(&CPlayer::GetCurrentCar, &CPlayer::SetCurrentCar),
 
 			LUADOC_P("controlType"), 
 			sol::property(&CPlayer::m_controlType),
 
 			LUADOC_P("input", "get/set player control buttons"), 
-			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls)
+			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
+
+			LUADOC_P("playbackStream", "replay playback stream (may be null)"),
+			sol::property(&CPlayer::m_playbackStream),
+
+			LUADOC_P("recordStream", "replay recording stream (if null - no recording is done)"),
+			sol::property(&CPlayer::m_recordStream)
 		);
 	}
+}
+
+CPlayer::~CPlayer()
+{
+	delete m_recordStream;
 }
 
 void CPlayer::Net_Init()
@@ -61,6 +80,23 @@ void CPlayer::Net_Finalize()
 
 }
 
+void CPlayer::InitReplay(CReplayStream* sourceStream /*= nullptr*/)
+{
+	m_playbackStream = sourceStream;
+
+	if (m_playbackStream)
+	{
+		m_playbackStream->Reset();
+	}
+	else 
+	{
+		if (!m_recordStream)
+			m_recordStream = new CReplayStream();
+
+		m_recordStream->Initialize(REPLAY_STEAM_MAX_LENGTH);
+	}
+}
+
 EPlayerControlType CPlayer::GetControlType() const
 {
 	return m_controlType;
@@ -68,6 +104,24 @@ EPlayerControlType CPlayer::GetControlType() const
 
 void CPlayer::SetCurrentCar(CCar* newCar)
 {
+	if (m_recordStream && m_recordStream->IsEmpty())
+	{
+		STREAM_SOURCE& streamSrc = m_recordStream->GetSourceParams();
+		streamSrc.type = newCar ? 1 : 0;
+		if (newCar) {
+			streamSrc.model = newCar->m_ap.model;
+			streamSrc.palette = newCar->m_ap.palette;
+			streamSrc.controlType = newCar->m_controlType;
+			streamSrc.flags = 0;
+			streamSrc.rotation = newCar->m_hd.direction;
+			streamSrc.position = newCar->GetPosition();
+			streamSrc.totaldamage = newCar->m_totalDamage;
+			for (int i = 0; i < 6; i++) {
+				streamSrc.damage[i] = newCar->m_ap.damage[i];
+			}
+		}
+	}
+
 	m_currentCar = newCar;
 }
 
@@ -83,10 +137,16 @@ void CPlayer::UpdateControls(const InputData& input)
 
 void CPlayer::ProcessCarPad()
 {
-	bool use_analogue = false; // TODO: from InputData
-	int analog_angle;
 	//PED_MODEL_TYPES whoExit;
 	//whoExit = TANNER_MODEL;
+
+	// first in priority is playback stream, next is record
+	if (m_playbackStream)
+		m_playbackStream->Play(m_currentInputs);
+	else if (m_recordStream)
+		m_recordStream->Record(m_currentInputs);
+
+	bool use_analogue = m_currentInputs.useAnalogue;
 
 #if 0
 	// Handle player car controls...
@@ -213,6 +273,7 @@ void CPlayer::ProcessCarPad()
 	else
 	{
 		int int_steer = m_currentInputs.steering;
+		int analog_angle;
 
 		if (m_currentInputs.fastSteer)
 		{

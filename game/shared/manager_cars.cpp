@@ -1,9 +1,6 @@
 #include "game/pch.h"
 #include "manager_cars.h"
 
-// TODO: move it
-int	CameraCnt = 0;
-
 extern CBaseLevelMap* g_levMap;
 
 static CManager_Cars s_carManagerInstance;
@@ -350,6 +347,7 @@ void CManager_Cars::UpdateControl()
 				player->ProcessCarPad();
 		}
 
+
 #if 0
 		// Update player inputs
 		switch (cp->m_controlType)
@@ -434,6 +432,19 @@ void CManager_Cars::GlobalTimeStep()
 	LONGVECTOR4 AV;
 	int carsDentedThisFrame;
 	short* felony;
+
+	if (m_lastWorldStep == CWorld::StepCount) 
+	{
+		MsgError("CWorld.EndStep was not called!\n");
+		return;
+	}
+
+	if (CWorld::StepCount - m_lastWorldStep >= 2) 
+	{
+		MsgError("CWorld.EndStep was called multiple times!\n");
+	}
+
+	m_lastWorldStep = CWorld::StepCount;
 
 	// global timestep is a starting point for interpolation
 	m_lastUpdateTime = m_curUpdateTime;// Time::microTicks();
@@ -643,7 +654,7 @@ void CManager_Cars::GlobalTimeStep()
 
 		cp->UpdateCarDrawMatrix();
 #if 0
-		if (cp->m_ap.needsDenting != 0 && ((CameraCnt + i & 3U) == 0 || carsDentedThisFrame < 5))
+		if (cp->m_ap.needsDenting != 0 && ((CWorld::StepCount + i & 3U) == 0 || carsDentedThisFrame < 5))
 		{
 			cp->DentCar();
 
@@ -769,7 +780,7 @@ void CManager_Cars::DoScenaryCollisions()
 		if (cp->m_controlType == CONTROL_TYPE_CIV_AI ||
 			cp->m_controlType == CONTROL_TYPE_PURSUER_AI && cp->m_ai.p.dying > 85)
 		{
-			if (cp->m_totalDamage != 0 && (cp->m_hd.speed > 10 || (cp->m_id + CameraCnt & 3) == 0))
+			if (cp->m_totalDamage != 0 && (cp->m_hd.speed > 10 || (cp->m_id + CWorld::StepCount & 3) == 0))
 			{
 				CheckScenaryCollisions(cp);
 			}
