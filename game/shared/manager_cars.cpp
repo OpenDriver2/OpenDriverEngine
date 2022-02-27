@@ -21,6 +21,9 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 					[](const int& x, const int& y, const int& z, const int& direction) {
 						return POSITION_INFO{ VECTOR_NOPAD{x, y, z}, direction };
 					},
+					[](const VECTOR_NOPAD& position, const int& direction) {
+						return POSITION_INFO{ position, direction };
+					},
 					[](const sol::table& table) {
 						return POSITION_INFO{ VECTOR_NOPAD{ table["x"], table["y"].get_or(0), table["z"] }, table["direction"].get_or(0) };
 					},

@@ -51,16 +51,16 @@ void CPlayer::Lua_Init(sol::state& lua)
 			sol::property(&CPlayer::GetCurrentCar, &CPlayer::SetCurrentCar),
 
 			LUADOC_P("controlType"), 
-			sol::property(&CPlayer::m_controlType),
+			&CPlayer::m_controlType,
 
 			LUADOC_P("input", "get/set player control buttons"), 
 			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
 
 			LUADOC_P("playbackStream", "replay playback stream (may be null)"),
-			sol::property(&CPlayer::m_playbackStream),
+			sol::readonly_property(& CPlayer::m_playbackStream),
 
 			LUADOC_P("recordStream", "replay recording stream (if null - no recording is done)"),
-			sol::property(&CPlayer::m_recordStream)
+			sol::readonly_property(&CPlayer::m_recordStream)
 		);
 	}
 }
