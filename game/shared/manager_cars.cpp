@@ -236,15 +236,14 @@ CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, int control, int model
 	cp->m_wasOnGround = 1;
 
 	cp->m_id = m_carIdCnt++;
+	cp->m_model = m_carModels[modelId];
 
-	cp->m_ap.model = modelId;
+	cp->m_ap.model = cp->m_model->index;
 	cp->m_ap.palette = palette;
 	cp->m_lowDetail = -1;
 	cp->m_ap.qy = 0;
 	cp->m_ap.qw = 0;
 	cp->m_cosmetics = cosmetic;
-
-	cp->m_model = m_carModels[modelId];
 
 	tmpStart.vx = positionInfo.position.vx;
 	tmpStart.vy = positionInfo.position.vy;
