@@ -120,6 +120,8 @@ void CRender_Cars::MangleWheelModel(MODEL* model)
 
 void CRender_Cars::DrawCars(Array<CCar*>& cars)
 {
+	if (!carShadowDetail)
+		return;
 	CMeshBuilder carShadow(carShadowVAO);
 
 	carShadow.Begin(PRIM_TRIANGLE_STRIP);
