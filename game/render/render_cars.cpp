@@ -30,6 +30,7 @@ void CRender_Cars::TerminateCarRender()
 	carShadowVAO = nullptr;
 }
 
+
 void CRender_Cars::MangleWheelModel(MODEL* model)
 {
 	UV_INFO tmpUV2;
@@ -101,10 +102,18 @@ void CRender_Cars::MangleWheelModel(MODEL* model)
 	src[5].v0 = 20;
 
 	// make untextured
+	src[2].id = 21;
+	src[3].id = 21;
+	src[4].id = 21;
+	src[5].id = 21;
 	src[2].texture_set = 255;
 	src[3].texture_set = 255;
 	src[4].texture_set = 255;
 	src[5].texture_set = 255;
+	src[2].color = CVECTOR{0};
+	src[3].color = CVECTOR{0};
+	src[4].color = CVECTOR{0};
+	src[5].color = CVECTOR{0};
 
 	model->num_polys = 6;
 }

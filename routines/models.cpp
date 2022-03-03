@@ -349,7 +349,9 @@ void SwapValues(T& a, T& b)
 int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 {
 	memset(out, 0, sizeof(dpoly_t));
-	int ptype = forceType == -1 ? (*polyList & 0x1f) : forceType;
+	int polyType = forceType == -1 ? *polyList : forceType;
+	int ptype = polyType & 31;
+	int extFlags = (polyType >> 5) & 7;
 
 	out->page = 0xFF;
 	out->detail = 0xFF;
