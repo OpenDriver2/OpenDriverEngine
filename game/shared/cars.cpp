@@ -1977,32 +1977,34 @@ void CCar::DentCar()
 	// UNIMPEMENTED!!!
 }
 
+float CCar::GetLerpValue() const
+{
+	const float factor = 0.5f + clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
+	return factor;
+}
+
 VECTOR_NOPAD CCar::GetInterpolatedCogPosition() const
 {
-	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
+	
 
-	return ToFixedVector(lerp(FromFixedVector(m_prevCogPosition), FromFixedVector(GetCogPosition()), factor));
+	return ToFixedVector(lerp(FromFixedVector(m_prevCogPosition), FromFixedVector(GetCogPosition()), GetLerpValue()));
 }
 
 VECTOR_NOPAD CCar::GetInterpolatedPosition() const
 {
-	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
-
-	return ToFixedVector(lerp(FromFixedVector(m_prevPosition), FromFixedVector(GetPosition()), factor));
+	return ToFixedVector(lerp(FromFixedVector(m_prevPosition), FromFixedVector(GetPosition()), GetLerpValue()));
 }
 
 float CCar::GetInterpolatedDirection() const
 {
-	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
-
 	int shortest_angle = DIFF_ANGLES(m_prevDirection, m_hd.direction);
 
-	return float(m_prevDirection) + float(shortest_angle) * factor;
+	return float(m_prevDirection) + float(shortest_angle) * GetLerpValue();
 }
 
 Matrix3x3 CCar::GetInterpolatedDrawMatrix() const
 {
-	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
+	const float factor = GetLerpValue();
 	return Matrix3x3(
 		lerp(m_prevDrawCarMatrix.rows[0].xyz(), m_drawCarMatrix.rows[0].xyz(), factor),
 		lerp(m_prevDrawCarMatrix.rows[1].xyz(), m_drawCarMatrix.rows[1].xyz(), factor),
@@ -2012,7 +2014,7 @@ Matrix3x3 CCar::GetInterpolatedDrawMatrix() const
 
 Matrix4x4 CCar::GetInterpolatedDrawMatrix4() const
 {
-	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
+	const float factor = GetLerpValue();
 	return Matrix4x4(
 		lerp(m_prevDrawCarMatrix.rows[0], m_drawCarMatrix.rows[0], factor),
 		lerp(m_prevDrawCarMatrix.rows[1], m_drawCarMatrix.rows[1], factor),

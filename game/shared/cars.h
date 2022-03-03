@@ -294,6 +294,8 @@ public:
 	bool					CarCarCollision(CCar* other, int RKstep);
 
 	// utility functions (mostly for Lua)
+	float					GetLerpValue() const;
+
 	VECTOR_NOPAD			GetInterpolatedCogPosition() const;
 	VECTOR_NOPAD			GetInterpolatedPosition() const;
 	float					GetInterpolatedDirection() const;
