@@ -113,7 +113,7 @@ void CRender_Level::DrawCellObject(
 	// compute world matrix
 	{
 		Matrix4x4 objectMatrix;
-
+		
 		if (model->shape_flags & SHAPE_FLAG_SPRITE)
 			objectMatrix = rotateY4(DEG2RAD(cameraAngleY));
 		else
@@ -125,7 +125,8 @@ void CRender_Level::DrawCellObject(
 		GR_UpdateMatrixUniforms();
 	}
 	
-	const float modelLightLevel = ref->lightingLevel;
+	const bool ignoreLightingLevel = (model->shape_flags & SHAPE_FLAG_SPRITE) && (co.yang & 63) == 63;
+	const float modelLightLevel = ignoreLightingLevel ? 1.0f : ref->lightingLevel;
 
 	// apply lighting
 	if ((isGround || !buildingLighting) && RenderProps.nightMode)

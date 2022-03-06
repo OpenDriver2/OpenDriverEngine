@@ -194,9 +194,9 @@ function ChangeCity(newCityName, newCityType, newWeather)
 	
 	-- TODO: City lighting presets for each mode
 	if levRenderProps.nightMode then
-		levRenderProps.nightAmbientScale = 0.8 * (CurrentCityInfo.brightnessScale or 1)
+		levRenderProps.nightAmbientScale = 0.5 * (CurrentCityInfo.brightnessScale or 1)
 		levRenderProps.nightLightScale = 0
-		levRenderProps.ambientScale = 3
+		levRenderProps.ambientScale = 2
 		levRenderProps.lightScale = 0
 	else
 		levRenderProps.ambientScale = 1.0 * (CurrentCityInfo.brightnessScale or 1)
