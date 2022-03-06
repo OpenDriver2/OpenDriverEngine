@@ -454,7 +454,7 @@ void CDriver2LevelRegion::UnpackAllCellObjects()
 
 		while (pco)
 		{
-			int num = ci.pcd->num & 0x3fff;
+			ushort num = ci.pcd->num & 16383;
 
 			if (num >= numStraddlers)
 			{
@@ -557,14 +557,14 @@ PACKED_CELL_OBJECT* CDriver2LevelRegion::StartIterator(CELL_ITERATOR_D2* iterato
 
 	if (celld->num & 0x4000) // if we immediately got to the typed list
 	{
-		iterator->listType = celld->num & 0x3fff;
+		iterator->listType = celld->num & 16383;
 		celld++; // get to the start
 	}
 
-	PACKED_CELL_OBJECT* ppco = GetPackedCellObject(celld->num & 0x3fff);
+	PACKED_CELL_OBJECT* ppco = GetPackedCellObject(celld->num & 16383);
 	iterator->pcd = celld;
 
-	iterator->co = GetCellObject(celld->num & 0x3fff);
+	iterator->co = GetCellObject(celld->num & 16383);
 
 	if (ppco->value == 0xffff && (ppco->pos.vy & 1))
 		ppco = owner->GetNextPackedCop(iterator);
@@ -940,24 +940,26 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetFirstPackedCop(CELL_ITERATOR_D2* iterat
 
 	if (celld->num & 0x4000) // if we immediately got to the typed list
 	{
-		iterator->listType = celld->num & 0x3fff;
+		iterator->listType = celld->num & 16383;
 		celld++; // get to the start
 	}
 
-	PACKED_CELL_OBJECT* ppco = region->GetPackedCellObject(celld->num & 0x3fff);
-	iterator->co = region->GetCellObject(celld->num & 0x3fff);
+	PACKED_CELL_OBJECT* ppco = region->GetPackedCellObject(celld->num & 16383);
+	iterator->co = region->GetCellObject(celld->num & 16383);
 
 	iterator->pcd = celld;
 
 	if (ppco->value == 0xffff && (ppco->pos.vy & 1))
+	{
 		ppco = GetNextPackedCop(iterator);
+	}
 	else if (iterator->cache)
 	{
 		CELL_ITERATOR_CACHE* cache = iterator->cache;
-		ushort num = celld->num;
-		uint value = 1 << (num & 7) & 0xffff;
+		ushort num = celld->num & 16383;
+		uint value = 1 << (num & 7);
 
-		if ((cache->computedValues[(num & 0x3fff) >> 3] & value))
+		if ((cache->computedValues[num / 8] & value))
 		{
 			ppco = GetNextPackedCop(iterator);
 			iterator->ppco = ppco;
@@ -965,7 +967,7 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetFirstPackedCop(CELL_ITERATOR_D2* iterat
 			return ppco;
 		}
 
-		cache->computedValues[(num & 0x3fff) >> 3] |= value;
+		cache->computedValues[num / 8] |= value;
 	}
 
 	iterator->ppco = ppco;
@@ -999,24 +1001,25 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetNextPackedCop(CELL_ITERATOR_D2* iterato
 
 			iterator->pcd = celld;
 
-			ppco = reg->GetPackedCellObject(celld->num & 0x3fff);
-			co = reg->GetCellObject(celld->num & 0x3fff);
+			ppco = reg->GetPackedCellObject(celld->num & 16383);
+			co = reg->GetCellObject(celld->num & 16383);
 		} while (ppco->value == 0xffff && (ppco->pos.vy & 1));
 
-		if (!iterator->cache)
-			break;
-
-		ushort num = celld->num;
-
-		CELL_ITERATOR_CACHE* cache = iterator->cache;
-
-		uint value = 1 << (num & 7) & 0xffff;
-
-		if ((cache->computedValues[(num & 0x3fff) >> 3] & value) == 0)
+		if (iterator->cache)
 		{
-			cache->computedValues[(num & 0x3fff) >> 3] |= value;
-			break;
+			CELL_ITERATOR_CACHE* cache = iterator->cache;
+			ushort num = celld->num & 16383;
+			uint value = 1 << (num & 7);
+
+			if ((cache->computedValues[num / 8] & value) == 0)
+			{
+				cache->computedValues[num / 8] |= value;
+				break;
+			}
 		}
+		else
+			break;
+
 	} while (true);
 
 	iterator->ppco = ppco;

@@ -584,15 +584,15 @@ CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, const XZP
 	
 	iterator->pcd = pcd;
 
-	CELL_OBJECT* pco = region->GetCellObject(pcd->num & 0x3fff);
+	CELL_OBJECT* pco = region->GetCellObject(pcd->num & 16383);
 
 	if (iterator->cache)
 	{
 		CELL_ITERATOR_CACHE* cache = iterator->cache;
-		ushort num = pcd->num;
-		uint value = 1 << (num & 7) & 0xffff;
+		ushort num = pcd->num & 16383;
+		uint value = 1 << (num & 7);
 
-		if ((cache->computedValues[(num & 0x3fff) >> 3] & value))
+		if ((cache->computedValues[num / 8] & value))
 		{
 			pco = GetNextCop(iterator);
 			iterator->pco = pco;
@@ -600,7 +600,7 @@ CELL_OBJECT* CDriver1LevelMap::GetFirstCop(CELL_ITERATOR_D1* iterator, const XZP
 			return pco;
 		}
 
-		cache->computedValues[(num & 0x3fff) >> 3] |= value;
+		cache->computedValues[num / 8] |= value;
 	}
 
 	iterator->pco = pco;
@@ -633,24 +633,26 @@ CELL_OBJECT* CDriver1LevelMap::GetNextCop(CELL_ITERATOR_D1* iterator) const
 
 			iterator->pcd = pcd;
 
-			pco = region->GetCellObject(pcd->num & 0x3fff);
+			pco = region->GetCellObject(pcd->num & 16383);
 			iterator->pco = pco;
 		} while (pco->pos.vx == -1 && pco->pos.vy == -1 && pco->pos.vz == -1 && pco->type == 0xffff);
 
-		if (!iterator->cache)
-			break;
-
-		ushort num = pcd->num;
-
-		CELL_ITERATOR_CACHE* cache = iterator->cache;
-
-		uint value = 1 << (num & 7) & 0xffff;
-
-		if ((cache->computedValues[(num & 0x3fff) >> 3] & value) == 0)
+		if (iterator->cache)
 		{
-			cache->computedValues[(num & 0x3fff) >> 3] |= value;
-			break;
+			ushort num = pcd->num & 16383;
+			CELL_ITERATOR_CACHE* cache = iterator->cache;
+
+			uint value = 1 << (num & 7);
+
+			if ((cache->computedValues[num / 8] & value) == 0)
+			{
+				cache->computedValues[num / 8] |= value;
+				break;
+			}
 		}
+		else
+			break;
+
 	} while (true);
 
 	return pco;

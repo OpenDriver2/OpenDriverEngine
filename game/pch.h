@@ -8,6 +8,9 @@
 
 #include <nstd/Memory.hpp>
 #include <nstd/Array.hpp>
+#include <nstd/HashSet.hpp>
+#include <nstd/HashMap.hpp>
+#include <nstd/Map.hpp>
 #include <nstd/Time.hpp>
 #include <nstd/String.hpp>
 #include <nstd/Math.hpp>

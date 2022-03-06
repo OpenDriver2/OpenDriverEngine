@@ -1,6 +1,5 @@
 #include "game/pch.h"
 #include "render_level.h"
-#pragma optimize("", off)
 
 // extern some vars
 extern CDriverLevelModels		g_levModels;
@@ -21,7 +20,7 @@ void CRender_Level::TerminateRender()
 }
 
 int g_cellsDrawDistance = 441 * 10;
-float g_maxShadowDistance = 6.0f;
+float g_maxShadowDistance = 12.0f;
 
 //-----------------------------------------------------------------
 
@@ -59,6 +58,7 @@ ModelRef_t* GetModelCheckLods(int index, float distSqr)
 int g_drawnCells;
 int g_drawnModels;
 int g_drawnPolygons;
+int g_drawnRegions;
 
 void CRender_Level::DrawCellObject(
 	const CELL_OBJECT& co,
@@ -199,6 +199,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 	g_drawnCells = 0;
 	g_drawnModels = 0;
 	g_drawnPolygons = 0;
+	g_drawnRegions = 0;
 
 	CBaseLevelMap* levMap = g_levMap;
 
@@ -235,7 +236,8 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 	XZPAIR icell;
 
 	CELL_ITERATOR_CACHE iteratorCache;
-	CBaseLevelRegion* currentRegion = nullptr;
+	HashSet<int> drawnRegions;
+	int prevRegion = -1;
 
 	// walk through all cells
 	while (i >= 0)
@@ -247,11 +249,16 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 			icell.z > -1 && icell.z < levMap->GetCellsDown())
 		{
 			g_drawnCells++;
-			CBaseLevelRegion* reg = g_levMap->GetRegion(icell);
+			const int regionIdx = g_levMap->GetRegionIndex(icell);
 
-			if (currentRegion != reg)
+			// BUG: cell iterator is prone to duplication
+			// due to very high drawn cell count it gets overflown
+			if (g_drawnCells > 441 && regionIdx != prevRegion)
 				memset(&iteratorCache, 0, sizeof(iteratorCache));
-			currentRegion = reg;
+
+			if(regionIdx != prevRegion)
+				drawnRegions.append(regionIdx);
+			prevRegion = regionIdx;
 
 			CWorld::ForEachCellObjectAt(icell, [&cameraPos, &frustrumVolume, &numObjects, &numObjectShadows](int listType, CELL_OBJECT* co) {
 				if (listType != -1 && !RenderProps.displayAllCellLevels)
