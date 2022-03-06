@@ -125,7 +125,7 @@ void CWorld::Lua_Init(sol::state& lua)
 		);
 	}
 
-	engine["LevelRenderProps"] = &g_levRenderProps;
+	engine["LevelRenderProps"] = &CRender_Level::RenderProps;
 }
 
 //-----------------------------------------------------------------
@@ -319,7 +319,8 @@ bool CWorld::LoadLevel(const char* fileName)
 
 	bool result = loader.Load(&stream);
 
-	CRender_Cars::InitCarRender();
+	CRender_Cars::InitRender();
+	CRender_Level::InitRender();
 	ResetStep();
 
 	return result;
@@ -330,7 +331,8 @@ bool CWorld::LoadLevel(const char* fileName)
 //-------------------------------------------------------
 void CWorld::UnloadLevel()
 {
-	CRender_Cars::TerminateCarRender();
+	CRender_Cars::TerminateRender();
+	CRender_Level::TerminateRender();
 	CManager_Players::RemoveAllPlayers();
 	if (g_levMap)
 	{
@@ -367,11 +369,11 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 
 	bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 	
-	DrawMap(view.position, view.angles.y, frustumVolume);
+	CRender_Level::DrawMap(view.position, view.angles.y, frustumVolume);
 
 	for (usize i = 0; i < m_CellObjects.size(); i++)
 	{
-		DrawCellObject(m_CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
+		CRender_Level::DrawCellObject(m_CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
 	}
 }
 
@@ -487,7 +489,7 @@ int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, V
 
 //-------------------------------------------------------------
 
-void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxCollisionFn func, void* object)
+void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const BoxCollisionFn& func, void* object)
 {
 	if (!func)
 		return;
@@ -621,7 +623,7 @@ void CWorld::PurgeCellObjects()
 	m_CellObjects.clear();
 }
 
-void CWorld::ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func, CELL_ITERATOR_CACHE* iteratorCache /*= nullptr*/)
+void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, CELL_ITERATOR_CACHE* iteratorCache /*= nullptr*/)
 {
 	CBaseLevelMap* levMap = g_levMap;
 	bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;

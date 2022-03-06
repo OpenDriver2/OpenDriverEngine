@@ -813,10 +813,10 @@ double CManager_Cars::GetInterpTime() const
 
 void CManager_Cars::Draw(const CameraViewParams& view)
 {
-	if (g_levRenderProps.nightMode)
-		CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
+	if (CRender_Level::RenderProps.nightMode)
+		CRenderModel::SetupLightingProperties(CRender_Level::RenderProps.nightAmbientScale, CRender_Level::RenderProps.nightLightScale);
 	else
-		CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
+		CRenderModel::SetupLightingProperties(CRender_Level::RenderProps.ambientScale, CRender_Level::RenderProps.lightScale);
 
 	CRender_Cars::DrawCars(g_cars->m_active_cars);
 }

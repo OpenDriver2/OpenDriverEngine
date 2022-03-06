@@ -21,8 +21,12 @@ struct BUILDING_BOX
 };
 
 
-typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
-typedef bool (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
+//typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
+//typedef bool (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
+
+// TODO: replace std::function with custom impl with allocator support
+using CellObjectIterateFn = std::function<bool(int listType, CELL_OBJECT* co)>;
+using BoxCollisionFn = std::function<bool(BUILDING_BOX& box, CELL_OBJECT* co, void* object)>;
 
 extern Matrix4x4 g_objectMatrix[64];
 extern MATRIX g_objectMatrixFixed[64];
@@ -68,7 +72,7 @@ public:
 
 	//------------------------------------------
 	// objects and collision
-	static void				QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, BoxCollisionFn func, void* object);
+	static void				QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const BoxCollisionFn& func, void* object);
 
 	// push event cell object
 	// any collision checks afterwards will have an effect with it
@@ -78,7 +82,7 @@ public:
 	static void				PurgeCellObjects();
 
 	// iterates through all cell objects at specific cell on map
-	static void				ForEachCellObjectAt(const XZPAIR& cell, CellObjectIterateFn func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
+	static void				ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
 
 	//------------------------------------------
 	// game steps

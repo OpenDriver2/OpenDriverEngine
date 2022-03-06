@@ -7,8 +7,8 @@ struct TexDetailInfo_t;
 class CRender_Cars
 {
 public:
-	static void		InitCarRender();
-	static void		TerminateCarRender();
+	static void		InitRender();
+	static void		TerminateRender();
 
 	static void		MangleWheelModel(struct MODEL* model);
 
@@ -16,9 +16,9 @@ public:
 
 private:
 	static void				AddCarShadow(CMeshBuilder& meshBuilder, CCar* car);
-	static GrVAO*			carShadowVAO;
-	static Vector4D			carShadowUV;
-	static TexDetailInfo_t* carShadowDetail;
+	static GrVAO*			ShadowVAO;
+	static Vector4D			ShadowUV;
+	static TexDetailInfo_t* ShadowDetail;
 };
 
 #endif // RENDER_CARS_H

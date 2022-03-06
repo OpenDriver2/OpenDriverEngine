@@ -1,33 +1,33 @@
 #include "game/pch.h"
 #include "render_cars.h"
-#pragma optimize("", off)
+
 /* TODO:
 	- Add car model rendering and denting stuff
 */
 
-GrVAO* CRender_Cars::carShadowVAO = nullptr;
-TexDetailInfo_t* CRender_Cars::carShadowDetail = nullptr;
-Vector4D CRender_Cars::carShadowUV(0.0f);
+GrVAO* CRender_Cars::ShadowVAO = nullptr;
+TexDetailInfo_t* CRender_Cars::ShadowDetail = nullptr;
+Vector4D CRender_Cars::ShadowUV(0.0f);
 
 
-void CRender_Cars::InitCarRender()
+void CRender_Cars::InitRender()
 {
-	carShadowVAO = GR_CreateVAO(8192, 8192);
-	carShadowDetail = CWorld::FindTextureDetail("CARSHAD");
-	if (carShadowDetail) 
+	ShadowVAO = GR_CreateVAO(8192, 8192);
+	ShadowDetail = CWorld::FindTextureDetail("CARSHAD");
+	if (ShadowDetail) 
 	{
-		Vector2D shadowUV(carShadowDetail->info.x, carShadowDetail->info.y);
-		Vector2D shadowWH(carShadowDetail->info.width, carShadowDetail->info.height);
+		Vector2D shadowUV(ShadowDetail->info.x, ShadowDetail->info.y);
+		Vector2D shadowWH(ShadowDetail->info.width, ShadowDetail->info.height);
 		shadowUV += 1;
 		shadowWH -= 2;
-		carShadowUV = Vector4D(shadowUV / TEXPAGE_SIZE_Y, (shadowUV + shadowWH) / TEXPAGE_SIZE_Y);
+		ShadowUV = Vector4D(shadowUV / TEXPAGE_SIZE_Y, (shadowUV + shadowWH) / TEXPAGE_SIZE_Y);
 	}
 }
 
-void CRender_Cars::TerminateCarRender()
+void CRender_Cars::TerminateRender()
 {
-	GR_DestroyVAO(carShadowVAO);
-	carShadowVAO = nullptr;
+	GR_DestroyVAO(ShadowVAO);
+	ShadowVAO = nullptr;
 }
 
 
@@ -120,9 +120,9 @@ void CRender_Cars::MangleWheelModel(MODEL* model)
 
 void CRender_Cars::DrawCars(Array<CCar*>& cars)
 {
-	if (!carShadowDetail)
+	if (!ShadowDetail)
 		return;
-	CMeshBuilder carShadow(carShadowVAO);
+	CMeshBuilder carShadow(ShadowVAO);
 
 	carShadow.Begin(PRIM_TRIANGLE_STRIP);
 
@@ -134,8 +134,9 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars)
 		AddCarShadow(carShadow, cp);
 	}
 
-	TextureID carShadowPage = CWorld::GetHWTexture(carShadowDetail->pageNum, 0);
+	TextureID carShadowPage = CWorld::GetHWTexture(ShadowDetail->pageNum, 0);
 	CRenderModel::SetupModelShader();
+	GR_SetPolygonOffset(10.5f);
 	GR_SetBlendMode(BM_SUBTRACT);
 	GR_SetDepthMode(1, 0);
 	GR_SetTexture(carShadowPage);
@@ -144,14 +145,18 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars)
 	GR_SetCullMode(CULL_NONE);
 	carShadow.End();
 
-	// restore depth mode
+	// restore render states
 	GR_SetDepthMode(1, 1);
+	GR_SetPolygonOffset(0.0f);
 }
+
 
 void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car)
 {
-	if (!carShadowDetail || !carShadowVAO)
+	if (!ShadowDetail || !ShadowVAO)
 		return;
+
+	// TODO: car distance from camera checl
 
 	const CarCosmetics& car_cos = car->GetCosmetics();
 
@@ -159,22 +164,22 @@ void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car)
 
 	meshBuilder.Color4f(0.6f, 0.6f, 0.6f, 0.35f);
 
-	Vector3D result[4];
+	Vector3D verts[4];
+	Vector2D uvs[4];
 	for (int i = 0; i < 4; i++)
-	{
-		Vector3D pointPos = (drawCarMat * Vector4D(FromFixedVector(car_cos.cPoints[i]), 1.0f)).xyz();
+		verts[i] = (drawCarMat * Vector4D(FromFixedVector(car_cos.cPoints[i]), 1.0f)).xyz();;
 
-		sdPlane surfacePtr;
-		VECTOR_NOPAD posFix, surfaceNormal;
-		CWorld::FindSurface(ToFixedVector(pointPos), surfaceNormal, posFix, surfacePtr);
+	const Vector2D tl = ShadowUV.xy();
+	const Vector2D br = ShadowUV.zw();
 
-		posFix.vy += 8;
-		result[i] = FromFixedVector(posFix);
-	}
+	uvs[0] = tl;
+	uvs[1] = Vector2D(br.x, tl.y);
+	uvs[2] = Vector2D(tl.x, br.y);
+	uvs[3] = br;
 
-	const Vector2D tl = carShadowUV.xy();
-	const Vector2D br = carShadowUV.zw();
 
-	meshBuilder.TexturedQuad3(result[0], result[1], result[2], result[3], 
-		tl, Vector2D(br.x, tl.y), Vector2D(tl.x, br.y), br);
+	//meshBuilder.TexturedQuad3(verts[0], verts[1], verts[2], verts[3],
+	//	uvs[0], uvs[1], uvs[2], uvs[3]);
+
+	CRender_Util::TesselatedShadowQuad(meshBuilder, verts, uvs);
 }

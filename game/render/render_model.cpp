@@ -27,7 +27,7 @@
 	"		vec4 color = texture2D(s_texture, v_texcoord.xy);\n"\
 	"		if(color.a <= 0.5f) discard;\n"\
 	"		color.rgb *= v_color.rgb;\n"\
-	"		lighting = vec4(color.rgb * u_ambientColor.rgb * u_ambientColor.a, color.a);\n"\
+	"		lighting = vec4(color.rgb * u_ambientColor.rgb * u_ambientColor.a, color.a * v_color.a);\n"\
 	"		lighting.rgb += u_lightColor.rgb * u_lightColor.a * color.rgb * max(1.0 - dot(v_normal, u_lightDir), 0);\n"\
 	"		fragColor = lighting;\n"\
 	"	}\n"
@@ -577,8 +577,8 @@ void CRenderModel::SetupLightingProperties(float ambientScale /*= 1.0f*/, float 
 	Vector3D lightVector = normalize(FromFixedVector(cellHeader.light_source));
 	float lightLevel = cellHeader.ambient_light_level / ONE_F;
 	
-	g_worldRenderProperties.ambientColor = ColorRGBA(g_levRenderProps.ambientColor, 0.8f * ambientScale * lightLevel);
-	g_worldRenderProperties.lightColor = ColorRGBA(g_levRenderProps.lightColor, 0.8f * lightScale * lightLevel);
+	g_worldRenderProperties.ambientColor = ColorRGBA(CRender_Level::RenderProps.ambientColor, 0.8f * ambientScale * lightLevel);
+	g_worldRenderProperties.lightColor = ColorRGBA(CRender_Level::RenderProps.lightColor, 0.8f * lightScale * lightLevel);
 	g_worldRenderProperties.lightDir = lightVector * Vector3D(1,-1,1);
 }
 

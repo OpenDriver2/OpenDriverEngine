@@ -46,6 +46,7 @@
 #include "render/render_level.h"
 #include "render/render_sky.h"
 #include "render/render_cars.h"
+#include "render/render_util.h"
 
 #include "luabinding/luadocs.h"
 #include "luabinding/luarefvalue.h" 

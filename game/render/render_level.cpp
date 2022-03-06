@@ -1,19 +1,27 @@
 #include "game/pch.h"
 #include "render_level.h"
+#pragma optimize("", off)
 
 // extern some vars
-extern String					g_levname;
-
-extern OUT_CITYLUMP_INFO		g_levInfo;
-extern CDriverLevelTextures		g_levTextures;
 extern CDriverLevelModels		g_levModels;
 extern CBaseLevelMap*			g_levMap;
 
-extern FILE* g_levFile;
+LevelRenderProps CRender_Level::RenderProps;
+GrVAO* CRender_Level::ShadowVAO = nullptr;
 
-LevelRenderProps g_levRenderProps;
+void CRender_Level::InitRender()
+{
+	ShadowVAO = GR_CreateVAO(128, 128);
+}
+
+void CRender_Level::TerminateRender()
+{
+	GR_DestroyVAO(ShadowVAO);
+	ShadowVAO = nullptr;
+}
 
 int g_cellsDrawDistance = 441 * 10;
+float g_maxShadowDistance = 6.0f;
 
 //-----------------------------------------------------------------
 
@@ -28,7 +36,7 @@ ModelRef_t* GetModelCheckLods(int index, float distSqr)
 {
 	ModelRef_t* baseRef = g_levModels.GetModelByIndex(index);
 
-	if (g_levRenderProps.noLod)
+	if (CRender_Level::RenderProps.noLod)
 		return baseRef;
 
 	ModelRef_t* retRef = baseRef;
@@ -52,7 +60,34 @@ int g_drawnCells;
 int g_drawnModels;
 int g_drawnPolygons;
 
-void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume, bool buildingLighting)
+void CRender_Level::DrawCellObject(
+	const CELL_OBJECT& co,
+	const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume,
+	bool buildingLighting)
+{
+	Vector3D absCellPosition = FromFixedVector(co.pos);
+	absCellPosition.y *= -1.0f;
+
+	const float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
+
+	ModelRef_t* ref = GetModelCheckLods(co.type, distanceFromCamera);
+	if (!ref->model || !ref->enabled)
+		return;
+
+	const MODEL* model = ref->model;
+	// check if it is in view
+	const float boundSphere = model->bounding_sphere * RENDER_SCALING * 2.0f;
+	if (!frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
+		return;
+
+	DrawCellObject(co, absCellPosition, ref, cameraAngleY, buildingLighting);
+}
+
+
+void CRender_Level::DrawCellObject(
+	const CELL_OBJECT& co, const Vector3D& position, const ModelRef_t* ref, 
+	float cameraAngleY,
+	bool buildingLighting)
 {
 	if (co.type >= MAX_MODELS)
 	{
@@ -60,31 +95,12 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 		return;
 	}
 
-	Vector3D absCellPosition = FromFixedVector(co.pos);
-	absCellPosition.y *= -1.0f;
-
-	const float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
-
-	ModelRef_t* ref = GetModelCheckLods(co.type, distanceFromCamera);
-
-	if (!ref->model)
-		return;
-
-	if(!ref->enabled)
-		return;
-
-	MODEL* model = ref->model;
-
 	CRenderModel* renderModel = (CRenderModel*)ref->userData;
 
 	if (!renderModel)
 		return;
 
-	// check if it is in view
-	const float boundSphere = model->bounding_sphere * RENDER_SCALING * 2.0f;
-
-	if (!frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
-		return;
+	const MODEL* model = ref->model;
 
 	bool isGround = false;
 
@@ -103,32 +119,82 @@ void DrawCellObject(const CELL_OBJECT& co, const Vector3D& cameraPos, float came
 		else
 			objectMatrix = g_objectMatrix[co.yang];
 
-		objectMatrix.setTranslationTransposed(absCellPosition);
+		objectMatrix.setTranslationTransposed(position);
 
 		GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 		GR_UpdateMatrixUniforms();
 	}
 
 	// apply lighting
-	if ((isGround || !buildingLighting) && g_levRenderProps.nightMode)
-		CRenderModel::SetupLightingProperties(g_levRenderProps.nightAmbientScale, g_levRenderProps.nightLightScale);
+	if ((isGround || !buildingLighting) && RenderProps.nightMode)
+		CRenderModel::SetupLightingProperties(RenderProps.nightAmbientScale, RenderProps.nightLightScale);
 	else
-		CRenderModel::SetupLightingProperties(g_levRenderProps.ambientScale, g_levRenderProps.lightScale);
+		CRenderModel::SetupLightingProperties(RenderProps.ambientScale, RenderProps.lightScale);
 
 	renderModel->Draw();
 
 	g_drawnModels++;
 	g_drawnPolygons += ref->model->num_polys;
+}
 
-	// debug
-	if (g_levRenderProps.displayCollisionBoxes)
-		CRenderModel::DrawModelCollisionBox(ref, co.pos, co.yang);
+void CRender_Level::DrawObjectShadow(CMeshBuilder& shadowMesh, const Matrix3x3& shadowMat, const ModelRef_t* ref, const Vector3D& position, float distance)
+{
+	const bool highDetail = distance < 2.0f;
+	const float shadowAlpha = 1.0 - clamp(pow(distance / g_maxShadowDistance, 2.0f), 0.0f, 1.0f);
+
+	MODEL* model = ref->model;
+	if (ref->baseInstance)
+		model = ref->baseInstance->model;
+
+	dpoly_t dec_face;
+	int face_ofs = 0;
+	for (int i = 0; i < model->num_polys; ++i)
+	{
+		face_ofs += decode_poly(model->pPolyAt(face_ofs), &dec_face);
+
+		assert(dec_face.flags & FACE_IS_QUAD);
+
+		Vector3D verts[4];
+		Vector2D uvs[4];
+		for (int i = 0; i < 4; i++)
+		{
+			Vector3D vec = shadowMat * FromFixedVector(*model->pVertex(dec_face.vindices[i]));
+			vec.y *= -1.0f;
+			verts[i] = position + vec + vec3_up;
+
+			UV_INFO uv = *(UV_INFO*)dec_face.uv[i];
+			uvs[i].x = ((float)uv.u + 0.5f) / TEXPAGE_SIZE_Y;
+			uvs[i].y = ((float)uv.v + 0.5f) / TEXPAGE_SIZE_Y;
+		}
+
+		// TODO: batching!!!
+		shadowMesh.Begin(PRIM_TRIANGLE_STRIP);
+		shadowMesh.Color4f(0.0f, 0.0f, 0.0f, shadowAlpha * 0.4f);
+
+		if (highDetail)
+		{
+			swap(verts[3], verts[2]);
+			swap(uvs[3], uvs[2]);
+			CRender_Util::TesselatedShadowQuad(shadowMesh, verts, uvs);
+		}
+		else
+		{
+			for (int i = 0; i < 4; i++)
+				verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 10) / ONE_F;
+
+			shadowMesh.TexturedQuad3(verts[0], verts[1], verts[3], verts[2], uvs[0], uvs[1], uvs[3], uvs[2]);
+		}
+
+		TextureID shadowPage = CWorld::GetHWTexture(dec_face.page, 0);
+		GR_SetTexture(shadowPage);
+		shadowMesh.End();
+	}
 }
 
 //-------------------------------------------------------
 // Draws the map of Driver 1 or Driver 2
 //-------------------------------------------------------
-void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume)
+void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume)
 {
 	g_drawnCells = 0;
 	g_drawnModels = 0;
@@ -136,16 +202,30 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 
 	CBaseLevelMap* levMap = g_levMap;
 
-	bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
+	const bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 
 	VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
 
 	XZPAIR cell;
 	levMap->WorldPositionToCellXZ(cell, cameraPosition);
 
+	// drawing state
 	static Array<CELL_OBJECT*> drawObjects;
-	drawObjects.reserve(g_cellsDrawDistance * 2);
-	drawObjects.clear();
+	static Array<Vector3D> drawObjectPositions;
+	static Array<ModelRef_t*> drawObjectModel;
+	static Array<float> drawObjectDistance;
+	static Array<int> shadowObjectIds;
+	int numObjects = 0;
+	int numObjectShadows = 0;
+	{
+		const int maxObjectsPerCell = 64;
+		const int totalObjects = g_cellsDrawDistance * maxObjectsPerCell;
+		drawObjects.reserve(totalObjects);
+		drawObjectPositions.reserve(totalObjects);
+		drawObjectModel.reserve(totalObjects);
+		drawObjectDistance.reserve(totalObjects);
+		shadowObjectIds.reserve(totalObjects);
+	}
 
 	int i = g_cellsDrawDistance;
 	int vloop = 0;
@@ -173,42 +253,55 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 				memset(&iteratorCache, 0, sizeof(iteratorCache));
 			currentRegion = reg;
 
-			CWorld::ForEachCellObjectAt(icell, [](int listType, CELL_OBJECT* co) {
-				if (listType != -1 && !g_levRenderProps.displayAllCellLevels)
+			CWorld::ForEachCellObjectAt(icell, [&cameraPos, &frustrumVolume, &numObjects, &numObjectShadows](int listType, CELL_OBJECT* co) {
+				if (listType != -1 && !RenderProps.displayAllCellLevels)
 					return false;
 
-				drawObjects.append(co);
+				Vector3D absCellPosition = FromFixedVector(co->pos);
+				absCellPosition.y *= -1.0f;
+				
+				const float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
+				
+				ModelRef_t* ref = GetModelCheckLods(co->type, distanceFromCamera);
+				if (!ref->model || !ref->enabled)
+					return true;
+				
+				const MODEL* model = ref->model;
+
+				// check if it is in view
+				const float boundSphere = model->bounding_sphere * RENDER_SCALING * 2.0f;
+				if (!frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
+					return true;
+
+				if (distanceFromCamera < g_maxShadowDistance && (model->shape_flags & SHAPE_FLAG_SPRITE))
+					shadowObjectIds[numObjectShadows++] = numObjects;
+
+				// add
+				drawObjects[numObjects] = co;
+				drawObjectPositions[numObjects] = absCellPosition;
+				drawObjectDistance[numObjects] = distanceFromCamera;
+				drawObjectModel[numObjects] = ref;
+				numObjects++;
+
 				return true;
 			}, &iteratorCache);
 		}
 
 		if (dir == 0)
 		{
-			hloop++;
-
-			if (hloop + vloop == 1)
-				dir = 1;
+			dir = (++hloop + vloop == 1) ? 1 : dir;
 		}
 		else if (dir == 1)
 		{
-			vloop++;
-
-			if (hloop == vloop)
-				dir = 2;
+			dir = (hloop == ++vloop) ? 2 : dir;
 		}
 		else if (dir == 2)
 		{
-			hloop--;
-
-			if (hloop + vloop == 0)
-				dir = 3;
+			dir = (--hloop + vloop == 0) ? 3 : dir;
 		}
 		else
 		{
-			vloop--;
-
-			if (hloop == vloop)
-				dir = 0;
+			dir = (hloop == --vloop) ? 0 : dir;
 		}
 
 		i--;
@@ -218,8 +311,43 @@ void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustr
 	CRenderModel::SetupModelShader();
 
 	// draw object list
-	for (uint i = 0; i < drawObjects.size(); i++)
+	for (int i = 0; i < numObjects; i++)
 	{
-		DrawCellObject(*drawObjects[i], cameraPos, cameraAngleY, frustrumVolume, driver2Map);
+		DrawCellObject(*drawObjects[i], drawObjectPositions[i], drawObjectModel[i], cameraAngleY, driver2Map);
+
+		// debug
+		if (RenderProps.displayCollisionBoxes)
+			CRenderModel::DrawModelCollisionBox(drawObjectModel[i], drawObjects[i]->pos, drawObjects[i]->yang);
+	}
+
+	if (ShadowVAO)
+	{
+		// compulte shadow matrix
+		const OUT_CELL_FILE_HEADER& cellHeader = g_levMap->GetMapInfo();
+		Vector3D lightVector = normalize(FromFixedVector(cellHeader.light_source));
+
+		const float shadowAngle = DEG2RAD(90.0f) + atan2f(lightVector.z, lightVector.x);
+		Matrix3x3 shadowMat = rotateY3(shadowAngle) * rotateX3(DEG2RAD(90.0f));
+
+		CRenderModel::SetupModelShader();
+		GR_SetPolygonOffset(10.5f);
+		GR_SetBlendMode(BM_SEMITRANS_ALPHA);
+		GR_SetDepthMode(1, 0);
+
+		GR_SetMatrix(MATRIX_WORLD, identity4());
+		GR_UpdateMatrixUniforms();
+		GR_SetCullMode(CULL_NONE);
+
+		CMeshBuilder shadowMesh(ShadowVAO, 1024);
+		for (int i = 0; i < numObjectShadows; i++)
+		{
+			const int objIdx = shadowObjectIds[i];
+			DrawObjectShadow(shadowMesh, shadowMat, drawObjectModel[objIdx], drawObjectPositions[objIdx], drawObjectDistance[objIdx]);
+		}
+
+		// restore render states
+		GR_SetDepthMode(1, 1);
+		GR_SetPolygonOffset(0.0f);
+		GR_SetBlendMode(BM_NONE);
 	}
 }
