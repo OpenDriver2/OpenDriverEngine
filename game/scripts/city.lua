@@ -62,7 +62,7 @@ CityHardcoding.MakeTreesAtNight = function()
 	end
 	for i=0,1535 do
 		local modelRef = world.GetModelByIndex(i)
-		if modelRef ~= nil then
+		if modelRef ~= nil and i ~= 945 and i ~= 497 then
 			if(modelRef.shapeFlags & ShapeFlags.Sprite) > 0 and (modelRef.modelFlags & ModelFlags.Tree) > 0 then
 				modelRef.lightingLevel = 0.34
 			end

@@ -101,7 +101,10 @@ function ControlMap()
 	-- spool regions from player car position
 	if players.localPlayer.currentCar ~= nil then
 		local spoolPos = players.localPlayer.currentCar.position
-		world.SpoolRegions(spoolPos, 1)
+		local anySpooled = world.SpoolRegions(spoolPos, 1)
+		if anySpooled > 0 then
+			CityHardcoding.MakeTreesAtNight()
+		end
 	end
 end
 
@@ -119,7 +122,10 @@ function GameLoop(dt)
 		})
 			
 		local spoolPos = fix.ToFixedVector(camera.MainView.position)
-		world.SpoolRegions(spoolPos, 1)
+		local anySpooled = world.SpoolRegions(spoolPos, 1)
+		if anySpooled > 0 then
+			CityHardcoding.MakeTreesAtNight()
+		end
 	end
 		
 	StepSim( dt )
@@ -227,8 +233,7 @@ function ChangeCity(newCityName, newCityType, newWeather)
 			LoadSoundbank("permanent", SBK_Permanent)
 		
 			eventModels.InitEventModels()
-			CityHardcoding.MakeTreesAtNight()
-		
+
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 					
 			SetUpdateFunc("GameLoop", GameLoop)
@@ -332,6 +337,7 @@ function RenderUI()
 		
 			if ImGui.MenuItem("Spool all regions") then
 				world.SpoolAllRegions();
+				CityHardcoding.MakeTreesAtNight()
 			end
 			
 			if ImGui.MenuItem("Unload") then

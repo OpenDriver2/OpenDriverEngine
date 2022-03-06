@@ -53,8 +53,8 @@ public:
 	void					LoadRoadMapLump(IVirtualStream* pFile); // or NewProcessRoadMapLump in D1 & D2
 	void					LoadRoadSurfaceLump(IVirtualStream* pFile, int size);
 
-	void					SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell) override;
-	void					SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx) override;
+	bool					SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell) override;
+	bool					SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx) override;
 
 	CBaseLevelRegion*		GetRegion(const XZPAIR& cell) const override;
 	CBaseLevelRegion*		GetRegion(int regionIdx) const override;

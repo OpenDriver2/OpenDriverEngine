@@ -421,10 +421,10 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	}
 }
 
-void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
+int CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 {
 	if (!IsLevelLoaded())
-		return;
+		return 0;
 
 	CFileStream stream(g_levFile, false);
 
@@ -441,13 +441,14 @@ void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 	XZPAIR cell;
 	g_levMap->WorldPositionToCellXZ(cell, position);
 
-	int midRegion = g_levMap->GetRegionIndex(cell);
+	const int midRegion = g_levMap->GetRegionIndex(cell);
 
 	// convert index to XZ
 	XZPAIR region;
 	region.x = midRegion % regionsAcross;
 	region.z = (midRegion - region.x) / regionsAcross;
 
+	int numSpooled = 0;
 	for (int z = -radius; z <= radius; z++)
 	{
 		for (int x = -radius; x <= radius; x++)
@@ -460,10 +461,14 @@ void CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 			if (iregion.x >= 0 && iregion.x < regionsAcross &&
 				iregion.z >= 0 && iregion.z < regionsDown)
 			{
-				g_levMap->SpoolRegion(spoolContext, iregion.x + iregion.z * regionsAcross);
+				if (g_levMap->SpoolRegion(spoolContext, iregion.x + iregion.z * regionsAcross))
+				{
+					numSpooled++;
+				}
 			}
 		}
 	}
+	return numSpooled;
 }
 
 bool CWorld::IsLevelLoaded()

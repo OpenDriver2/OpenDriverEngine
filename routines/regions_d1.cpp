@@ -263,7 +263,7 @@ CBaseLevelRegion* CDriver1LevelMap::GetRegion(int regionIdx) const
 	return &m_regions[regionIdx];
 }
 
-void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell)
+bool CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell)
 {
 	CDriver1LevelRegion* region = (CDriver1LevelRegion*)GetRegion(cell);
 
@@ -273,13 +273,15 @@ void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell)
 		{
 			region->LoadRegionData(ctx);
 			region->LoadAreaData(ctx);
+			return true;
 		}
 		else
 			region->m_loaded = true;
 	}
+	return false;
 }
 
-void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
+bool CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 {
 	CDriver1LevelRegion* region = (CDriver1LevelRegion*)GetRegion(regionIdx);
 
@@ -289,10 +291,12 @@ void CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 		{
 			region->LoadRegionData(ctx);
 			region->LoadAreaData(ctx);
+			return true;
 		}
 		else
 			region->m_loaded = true;
 	}
+	return false;
 }
 
 int PointInTri2d(int tx, int ty, XYPAIR* verts)

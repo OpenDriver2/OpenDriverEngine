@@ -697,7 +697,7 @@ CBaseLevelRegion* CDriver2LevelMap::GetRegion(int regionIdx) const
 	return &m_regions[regionIdx];
 }
 
-void CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell)
+bool CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell)
 {
 	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
 
@@ -707,13 +707,15 @@ void CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell)
 		{
 			region->LoadRegionData(ctx);
 			region->LoadAreaData(ctx);
+			return true;
 		}
 		else
 			region->m_loaded = true;
 	}
+	return false;
 }
 
-void CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
+bool CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 {
 	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(regionIdx);
 
@@ -723,10 +725,12 @@ void CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 		{
 			region->LoadRegionData(ctx);
 			region->LoadAreaData(ctx);
+			return true;
 		}
 		else
 			region->m_loaded = true;
 	}
+	return false;
 }
 
 int CDriver2LevelMap::MapHeight(const VECTOR_NOPAD& position) const
