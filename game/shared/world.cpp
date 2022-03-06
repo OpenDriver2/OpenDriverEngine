@@ -99,8 +99,52 @@ void CWorld::Lua_Init(sol::state& lua)
 			LUADOC_P("index"), &ModelRef_t::index,
 			LUADOC_P("highDetailId"), &ModelRef_t::highDetailId,
 			LUADOC_P("lowDetailId"), &ModelRef_t::lowDetailId,
-			LUADOC_P("enabled"), &ModelRef_t::enabled
+			LUADOC_P("enabled"), &ModelRef_t::enabled,
+			LUADOC_P("lightingLevel"), &ModelRef_t::lightingLevel,
+			LUADOC_P("shapeFlags"), sol::property([](const ModelRef_t& thisRef) {
+				return thisRef.model ? thisRef.model->shape_flags : 0;
+			}),
+			LUADOC_P("modelFlags"), sol::property([](const ModelRef_t& thisRef) {
+				return thisRef.model ? thisRef.model->flags2 : 0;
+			})
 		);
+	}
+
+	{
+		LUADOC_TYPE();
+		LUA_BEGIN_ENUM(ModelFlags2);
+		lua.new_enum<ModelFlags2>(LUADOC_T("ModelFlags"), {
+			LUA_ENUM(MODEL_FLAG_MEDIAN, "Median"),
+			LUA_ENUM(MODEL_FLAG_JUNC, "Junction"),
+			LUA_ENUM(MODEL_FLAG_ALLEY, "Alley"),
+			LUA_ENUM(MODEL_FLAG_INDOORS, "Indoors"),
+			LUA_ENUM(MODEL_FLAG_CHAIR, "Chair"),
+			LUA_ENUM(MODEL_FLAG_BARRIER, "Barrier"),
+			LUA_ENUM(MODEL_FLAG_SMASHABLE, "Smashable"),
+			LUA_ENUM(MODEL_FLAG_LAMP, "Lamp"),
+			LUA_ENUM(MODEL_FLAG_TREE, "Tree"),
+			LUA_ENUM(MODEL_FLAG_GRASS, "Grass"),
+			LUA_ENUM(MODEL_FLAG_PATH, "Path"),
+		});
+	}
+
+	{
+		LUADOC_TYPE();
+		LUA_BEGIN_ENUM(ModelShapeFlags);
+		lua.new_enum<ModelShapeFlags>(LUADOC_T("ShapeFlags"), {
+			LUA_ENUM(SHAPE_FLAG_LITPOLY, "LitPoly"),
+			LUA_ENUM(SHAPE_FLAG_BSPDATA, "BSPData"),
+			LUA_ENUM(SHAPE_FLAG_TRANS, "Trans"),
+			LUA_ENUM(SHAPE_FLAG_NOCOLLIDE, "NoCollide"),
+			LUA_ENUM(SHAPE_FLAG_WATER, "Water"),
+			LUA_ENUM(SHAPE_FLAG_AMBIENT2, "Ambient2"),
+			LUA_ENUM(SHAPE_FLAG_AMBIENT1, "Ambient1"),
+			LUA_ENUM(SHAPE_FLAG_TILE, "Tile"),
+			LUA_ENUM(SHAPE_FLAG_SHADOW, "Shadow"),
+			LUA_ENUM(SHAPE_FLAG_ALPHA, "Alpha"),
+			LUA_ENUM(SHAPE_FLAG_ROAD, "Road"),
+			LUA_ENUM(SHAPE_FLAG_SPRITE, "Sprite"),
+		});
 	}
 
 	// level properties

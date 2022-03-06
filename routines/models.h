@@ -58,6 +58,8 @@ struct ModelRef_t
 
 	ushort		highDetailId{ 0xffff };
 	ushort		lowDetailId{ 0xffff };
+
+	float		lightingLevel{ 1.0f };
 	
 	void*		userData{ nullptr }; // might contain a hardware model pointer
 

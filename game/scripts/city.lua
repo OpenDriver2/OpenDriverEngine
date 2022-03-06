@@ -1,6 +1,8 @@
 -----------------------------------------
--- Driver 2 city list
+-- City definitions
 -----------------------------------------
+
+local world = engine.World						-- collision and rendering world
 
 CityType = {
 	Day = 1,
@@ -45,6 +47,28 @@ LightPresets =
 		skyColor	 = vec.vec3(1,1,1)
 	}
 }
+
+CityHardcoding = {}
+
+CityHardcoding.MakeTreesAtNight = function()
+	if CurrentCityInfo.gameId == 1 then -- D1 don't need this
+		return
+	end
+	if CurrentCityInfo.number == 0 then -- Chicago trees are already lit
+		return
+	end
+	if CurrentCityType ~= CityType.Night and CurrentCityType ~= CityType.MPNight then
+		return
+	end
+	for i=0,1535 do
+		local modelRef = world.GetModelByIndex(i)
+		if modelRef ~= nil then
+			if(modelRef.shapeFlags & ShapeFlags.Sprite) > 0 and (modelRef.modelFlags & ModelFlags.Tree) > 0 then
+				modelRef.lightingLevel = 0.34
+			end
+		end
+	end
+end
 
 function IsMultiplayerCity(typeVal)
 	return typeVal >= CityType.MPDay

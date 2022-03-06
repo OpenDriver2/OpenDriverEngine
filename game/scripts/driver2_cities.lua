@@ -108,7 +108,7 @@ return {
 		gameId 		= 2,		-- Game Index. This is Driver 2
 
 		skyPath		= "DRIVER2/DATA/SKY3.RAW",
-		brightnessScale = 1.1,
+		brightnessScale = 1.0,
 
 		-- lev path for all city types
 		levPath		= {

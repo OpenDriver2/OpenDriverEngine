@@ -124,12 +124,14 @@ void CRender_Level::DrawCellObject(
 		GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 		GR_UpdateMatrixUniforms();
 	}
+	
+	const float modelLightLevel = ref->lightingLevel;
 
 	// apply lighting
 	if ((isGround || !buildingLighting) && RenderProps.nightMode)
-		CRenderModel::SetupLightingProperties(RenderProps.nightAmbientScale, RenderProps.nightLightScale);
+		CRenderModel::SetupLightingProperties(RenderProps.nightAmbientScale * modelLightLevel, RenderProps.nightLightScale * modelLightLevel);
 	else
-		CRenderModel::SetupLightingProperties(RenderProps.ambientScale, RenderProps.lightScale);
+		CRenderModel::SetupLightingProperties(RenderProps.ambientScale * modelLightLevel, RenderProps.lightScale * modelLightLevel);
 
 	renderModel->Draw();
 

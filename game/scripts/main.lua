@@ -227,6 +227,7 @@ function ChangeCity(newCityName, newCityType, newWeather)
 			LoadSoundbank("permanent", SBK_Permanent)
 		
 			eventModels.InitEventModels()
+			CityHardcoding.MakeTreesAtNight()
 		
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
 					
