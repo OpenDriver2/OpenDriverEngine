@@ -540,9 +540,17 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 	}
 
 	// add event cell objects to list
-	// TODO: check distance!
-	for(usize i = 0; i < m_CellObjects.size(); i++)
-		collisionObjects.append(&m_CellObjects[i]);
+	for (usize i = 0; i < m_CellObjects.size(); i++)
+	{
+		CELL_OBJECT& co = m_CellObjects[i];
+		const int dx = co.pos.vx - queryPos.vx >> 4;
+		const int dz = co.pos.vz - queryPos.vz >> 4;
+
+		if (abs(dx) > 100 || abs(dz) > 100)
+			continue;
+
+		collisionObjects.append(&co);
+	}
 
 	// check collisions
 	for (usize i = 0; i < collisionObjects.size(); i++)
@@ -557,16 +565,16 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 		if (!ref)
 			continue;
 
-		MODEL* model = ref->model;
+		const MODEL* model = ref->model;
 
 		if (!model)
 			return;
 
-		int numCollisionBoxes = model->GetCollisionBoxCount();
+		const int numCollisionBoxes = model->GetCollisionBoxCount();
 
-		int dx = co->pos.vx - queryPos.vx;
-		int dz = co->pos.vz - queryPos.vz;
-		int yang = -co->yang & 63;
+		const int dx = co->pos.vx - queryPos.vx;
+		const int dz = co->pos.vz - queryPos.vz;
+		const int yang = -co->yang & 63;
 
 		int sphereSq = model->bounding_sphere + queryDist;
 
@@ -575,11 +583,10 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 
 		for (int j = 0; j < numCollisionBoxes; j++)
 		{
-			COLLISION_PACKET* collide = model->pCollisionBox(j);
+			const COLLISION_PACKET* collide = model->pCollisionBox(j);
 
 			BUILDING_BOX bbox;
 			// box 'rotated' by matrix
-			// [A] FIXME: replace add+shift by division
 			bbox.pos.vx = co->pos.vx + FIXEDH(collide->xpos * g_objectMatrixFixed[yang].m[0][0] + collide->zpos * g_objectMatrixFixed[yang].m[2][0]);
 			bbox.pos.vy = co->pos.vy + collide->ypos;
 			bbox.pos.vz = co->pos.vz + FIXEDH(collide->xpos * g_objectMatrixFixed[yang].m[0][2] + collide->zpos * g_objectMatrixFixed[yang].m[2][2]);

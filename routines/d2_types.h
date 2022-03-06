@@ -270,7 +270,7 @@ struct MODEL
 		return (char *)((ubyte *)this + poly_block + ofs);
 	}
 
-	int GetCollisionBoxCount()
+	int GetCollisionBoxCount() const
 	{
 		if(collision_block > 0)
 			return *(int*)((ubyte*)this + collision_block);
@@ -278,7 +278,7 @@ struct MODEL
 		return 0;
 	}
 
-	COLLISION_PACKET* pCollisionBox(int i)
+	COLLISION_PACKET* pCollisionBox(int i) const
 	{
 		return (COLLISION_PACKET*)((ubyte*)this + collision_block + sizeof(int)) + i;
 	}
