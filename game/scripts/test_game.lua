@@ -225,7 +225,7 @@ TestGame.Init = function(residentModel)
 		players.localPlayer.currentCar = plcar
 		local maxMusic = #cityStart.musicType
 		Music.Init(CurrentCityInfo.gameId, cityStart.musicType[(CurrentSkyType % maxMusic) + 1] + 1)
-		Music.FunkUpDaBGMTunez(true)
+		Music.FunkUpDaBGMTunez(false)
 	end
 end
 

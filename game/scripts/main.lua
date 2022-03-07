@@ -141,11 +141,11 @@ function StartTest()
 	levRenderProps.noLod = true
 	ResetFreeCamera()
 
-	CityEvents.OnLoaded = function()
+	CityEvents.OnLoaded = AddCallback(function()
 		LoadSoundbank("permanent", SBK_Permanent)
 		eventModels.InitEventModels()
 		SetUpdateFunc("GameLoop", GameLoop)
-	end
+	end, CityEvents.OnLoaded)
 
 	CityEvents.OnUnloading = function()
 		testGame.Terminate()

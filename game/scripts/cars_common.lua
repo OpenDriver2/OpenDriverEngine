@@ -51,12 +51,6 @@ cars.soundSourceGetCallback = function(soundType)
 	return sbk_perm[soundType]
 end
 
--- attach to event sink TODO: event manager with subscribers etc
-cars.eventCallback = function(caller, eventType, parameters)
-	--Msg("Got event '", eventType, "' from ", tostring(caller))
-	--util.printObject(parameters)
-end
-
 return {
 	HandlingType = {
 		defaultHandling,

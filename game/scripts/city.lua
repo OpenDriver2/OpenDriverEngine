@@ -107,15 +107,15 @@ CurrentCityType = CityType.Day
 CurrentSkyType = SkyType.Day
 
 CityEvents = {
-	OnLoading = function() end,
-	OnLoaded = function() end,
+	OnLoading = AddCallback(function() end),
+	OnLoaded = AddCallback(function() end),
 
-	OnUnloading = function() end,
-	OnUnloaded = function() end,
+	OnUnloading = AddCallback(function() end),
+	OnUnloaded = AddCallback(function() end),
 
-	OnRegionsSpooled = function() 
+	OnRegionsSpooled = AddCallback(function() 
 		CityHardcoding.MakeTreesAtNight()
-	end
+	end)
 }
 
 --

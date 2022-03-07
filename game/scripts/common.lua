@@ -4,6 +4,73 @@
 
 dofile "scripts/orderedPairs.lua"
 
+local callbackCallableMeta = {
+	__call = function(self, ...)
+		local chain = self
+		while chain ~= nil do
+			chain.func(...)
+			chain = chain.next
+		end
+	end
+}
+
+-- usage:
+--		cb = AddCallback(func1)
+--		cb()	-- call order: func1()
+--		cb = AddCallback(func2, cb)
+--		cb()	-- call order: func1() func2()
+--		...
+--		cb = AddCallback(funcN, cb)
+--		cb()	-- call order: func1() func2() ... funcN()
+function AddCallback(callback, addTo)
+	local link = { func = callback, next = nil }
+	if addTo == nil then
+		setmetatable(link, callbackCallableMeta)
+		return link
+	end
+
+	-- go to tail, add new link
+	local chain = addTo
+	while chain.next ~= nil do
+		chain = chain.next
+	end 
+	chain.next = link
+
+	-- add quick lookup of parent link
+	addTo[callback] = chain
+	return addTo
+end
+
+-- removes callback from link.
+function RemoveCallback(callback, removeFrom)
+	if removeFrom == nil then
+		return
+	end
+
+	-- if head is removed, re-create chain
+	if removeFrom.func == callback then
+		local newChain = AddCallback(removeFrom.next.func)
+
+		local chain = removeFrom.next
+		while chain ~= nil do
+			AddCallback(chain.func, newChain)
+			chain = chain.next
+		end
+		return newChain
+	end
+
+	-- get the parent chain link
+	local parent = removeFrom[callback]
+	-- unlink
+	parent.next = parent.next.next
+
+	return removeFrom
+end
+
+math.xor = function(a,b)
+	return (a | b) & ~(a | b)
+end
+
 util = {}
 
 -- cond ? a : b
