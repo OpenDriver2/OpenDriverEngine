@@ -80,3 +80,27 @@ SBK_Permanent = {
 	-- set new parameters and as result it will play
 	audioSource.params = sparams
 ]]
+
+--
+-- StartStaticSound3D : plays static sound
+-- 		@sound: 		sound source sample
+--		@position:		vec.vec3
+--
+function StartStaticSound3D(sound, position, volume, pitch)
+	-- create audio source
+	local audioSource = audio:CreateSource()
+	audioSource:Setup(0, sound)
+
+	local sparams = audioSource.params
+	sparams.position = position
+	sparams.state = SoundState.Playing
+	sparams.releaseOnStop = true
+	sparams.volume = volume or 1.0
+	sparams.pitch = pitch or 1.0
+	
+	audioSource.params = sparams
+end
+
+function VolumeDbToPerc(db)
+	return (10000 + db) / 10000
+end
