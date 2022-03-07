@@ -202,7 +202,7 @@ TestGame.Init = function(residentModel)
 	local modelIdx = cars:LoadModel(residentModel)
 	
 	if modelIdx ~= -1 then
-		world.SpoolRegions(positionInfo.position, 1)
+		SpoolRegions(positionInfo.position)
 
 		local palette = math.random(0, 5)
 		local cosmetics = cityCosmetics[residentModel + 1]
@@ -224,7 +224,8 @@ TestGame.Init = function(residentModel)
 		players.localPlayer:InitReplay(nil)
 		players.localPlayer.currentCar = plcar
 		local maxMusic = #cityStart.musicType
-		Music.Start(CurrentCityInfo.gameId, cityStart.musicType[(CurrentSkyType % maxMusic) + 1] + 1 )
+		Music.Init(CurrentCityInfo.gameId, cityStart.musicType[(CurrentSkyType % maxMusic) + 1] + 1)
+		Music.FunkUpDaBGMTunez(true)
 	end
 end
 

@@ -76,18 +76,34 @@ local GameMusic = {
 
 Music = {}
 
-local CurrentMusicBank = nil
+local CurrentMusicBankSamples = nil
 local CurrentMusicSource = nil
 
-function Music.Start(gameId, musicId)
-	ReleaseSoundbank("music")
-	CurrentMusicBank = LoadSoundbank("music", GameMusic[gameId][musicId])
+local CurrentMusicBank = nil
 
+function Music.Init(gameId, musicId)
+	local newBank = GameMusic[gameId][musicId]
+	if CurrentMusicBank ~= newBank then
+		ReleaseSoundbank("music")
+		CurrentMusicBankSamples = LoadSoundbank("music", newBank)
+		CurrentMusicBank = newBank
+	end
+end
+
+function Music.FunkUpDaBGMTunez(funk)
+	if funk == nil then
+		funk = false
+	end
 	-- create audio source
 	if CurrentMusicSource == nil then
 		CurrentMusicSource = audio:CreateSource()
 	end
-	CurrentMusicSource:Setup(0, CurrentMusicBank.Drive)
+	local sample = if_then_else(funk, CurrentMusicBankSamples.Chase, CurrentMusicBankSamples.Drive)
+	if sample == nil then
+		MsgError("Can't start music, no sample!")
+	end
+
+	CurrentMusicSource:Setup(0, sample)
 
 	local sparams = CurrentMusicSource.params
 	

@@ -10,7 +10,6 @@ local players = engine.Players					-- local players
 local cars = engine.Cars						-- cars, handling
 --local peds = engine.Pedestrians				-- pedestrians and motion capture system
 local world = engine.World						-- collision and rendering world
-local sky = engine.Sky							-- Sky renderer
 local levRenderProps = engine.LevelRenderProps	-- Level render properties (mode, lighting, etc)
 local camera = engine.Camera
 local eventModels = dofile("scripts/test_eventmodels.lua")
@@ -101,10 +100,7 @@ function ControlMap()
 	-- spool regions from player car position
 	if players.localPlayer.currentCar ~= nil then
 		local spoolPos = players.localPlayer.currentCar.position
-		local anySpooled = world.SpoolRegions(spoolPos, 1)
-		if anySpooled > 0 then
-			CityHardcoding.MakeTreesAtNight()
-		end
+		SpoolRegions(spoolPos)
 	end
 end
 
@@ -122,126 +118,10 @@ function GameLoop(dt)
 		})
 			
 		local spoolPos = fix.ToFixedVector(camera.MainView.position)
-		local anySpooled = world.SpoolRegions(spoolPos, 1)
-		if anySpooled > 0 then
-			CityHardcoding.MakeTreesAtNight()
-		end
+		SpoolRegions(spoolPos)
 	end
 		
 	StepSim( dt )
-end
-
-CurrentCityName = nil
-CurrentCityInfo = nil
-CurrentCityType = nil
-CurrentSkyType = nil
-
---
--- ChangeCity : level changer
--- 		@newCityName: 	new city name according to CityInfo table keys
---		@newCityType: 	city type (Night, MPDay etc)
---		@newWeather:	weather and sky to use
---
-function ChangeCity(newCityName, newCityType, newWeather)
-
-	local newCity = CurrentCityInfo
-	if newCityName ~= nil then
-		newCity = CityInfo[newCityName]
-	end
-
-	-- sky is night? make level night!
-	if newWeather == SkyType.Night then
-	
-		if IsMultiplayerCity(newCityType) then
-			newCityType = CityType.MPNight
-		else
-			newCityType = CityType.Night
-		end
-		
-	else
-	
-		if IsMultiplayerCity(newCityType) then
-			newCityType = CityType.MPDay
-		else
-			newCityType = CityType.Day
-		end
-		
-	end
-	
-	local triggerLoading = false
-	
-	if  CurrentCityInfo ~= newCity or 
-		CurrentCityType ~= newCityType or
-		world.IsLevelLoaded() == false then
-
-		MsgInfo("NewLevel!\n")
-		
-		triggerLoading = true
-	end
-	
-	if newCityName ~= nil then
-		CurrentCityName = newCityName
-	end
-	CurrentCityInfo = newCity
-	CurrentCityType = newCityType
-	CurrentSkyType = if_then_else(newCity.forceNight, SkyType.Night, newWeather)
-	
-	if newCity.levPath == nil then
-		return
-	end
-
-	levRenderProps.nightMode = newCity.forceNight or (CurrentCityType == CityType.Night)
-	
-	-- TODO: City lighting presets for each mode
-	if levRenderProps.nightMode then
-		levRenderProps.nightAmbientScale = 0.5 * (CurrentCityInfo.brightnessScale or 1)
-		levRenderProps.nightLightScale = 0
-		levRenderProps.ambientScale = 2
-		levRenderProps.lightScale = 0
-	else
-		levRenderProps.ambientScale = 1.0 * (CurrentCityInfo.brightnessScale or 1)
-		levRenderProps.lightScale = 1.25 * (CurrentCityInfo.brightnessScale or 1)
-	end
-
-	levRenderProps.ambientColor = LightPresets[CurrentSkyType].ambientColor
-	levRenderProps.lightColor = LightPresets[CurrentSkyType].lightColor
-	
-	if triggerLoading then
-		
-		-- TODO: call a callback instead of this
-		testGame.Terminate()		
-		ResetFreeCamera()
-		
-		cars:UnloadAllModels()
-		world.UnloadLevel()
-		
-		-- pick the LEV file from the table
-		local levPath
-		if type(CurrentCityInfo.levPath) == "table" then
-			levPath = CurrentCityInfo.levPath[CurrentCityType]
-		else
-			levPath = CurrentCityInfo.levPath
-		end
-		
-		if world.LoadLevel(levPath) then
-		
-			-- try load all 13 car models
-			for i = 0,12 do
-				cars:LoadModel(i)
-			end
-		
-			LoadSoundbank("permanent", SBK_Permanent)
-		
-			eventModels.InitEventModels()
-
-			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
-					
-			SetUpdateFunc("GameLoop", GameLoop)
-		end
-	else
-		-- reload sky only
-		sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
-	end
 end
 
 --------------------------------------------------------------------------
@@ -259,20 +139,21 @@ end
 function StartTest()
 	-- permanently disable lods
 	levRenderProps.noLod = true
-
-	CurrentCityInfo = {}
-	CurrentCityType = CityType.Day
-	CurrentSkyType = SkyType.Day
-
-	
 	ResetFreeCamera()
-	
-	--ChangeCity(CityInfo["Chicago"], CityType.Day, SkyType.Day)
+
+	CityEvents.OnLoaded = function()
+		LoadSoundbank("permanent", SBK_Permanent)
+		eventModels.InitEventModels()
+		SetUpdateFunc("GameLoop", GameLoop)
+	end
+
+	CityEvents.OnUnloading = function()
+		testGame.Terminate()
+	end
 end
 
 function StopTest()
-	cars:UnloadAllModels()
-	world.UnloadLevel()
+	UnloadCity()
 	SetUpdateFunc("GameLoop", nil)
 end
 
@@ -336,8 +217,7 @@ function RenderUI()
 			ImGui.Separator()
 		
 			if ImGui.MenuItem("Spool all regions") then
-				world.SpoolAllRegions();
-				CityHardcoding.MakeTreesAtNight()
+				SpoolRegions()
 			end
 			
 			if ImGui.MenuItem("Unload") then
