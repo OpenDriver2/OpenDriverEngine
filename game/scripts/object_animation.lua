@@ -50,9 +50,6 @@ local SmashableSounds = {
 }
 
 local Smashables = {}
-
----------------------------------------------------------
-
 local function InitSmashables()
     Smashables = {}
     for i,v in ipairs(KnownSmashables) do
@@ -73,9 +70,6 @@ local KnownCyclingPals = {
         { "REDRVR", 0, 0, 6, 10, 2, 11, 15, 2 },
         { "NAVPIR34", 0, 0, 0, 6, 0, 7, 13, 0 },
     },
-    Havana = {
-        { "DOOR11", 0, 0, 1, 7, 2, 8, 14, 3 },
-    },
     LasVegas = {
         { "DTSYN01", 0, 0, 0, 3, 0, 4, 14, 0 },
         { "DTSYN02", 0, 0, 0, 15, 0, -1, -1, 0 },
@@ -90,9 +84,6 @@ local KnownCyclingPals = {
         { "CYCLE-03", 0, 0, 0, 6, 7, 7, 13, 7 },
         { "CYCLE-04", 0, 0, 0, 6, 15, 7, 13, 15 }
     },
-    RioDeJaneiro = {
-        { "FWING11", 0, 0, 1, 7, 2, 8, 14, 3 },
-    }
 }
 local CyclingPals = {}
 local CycleTimer = 0
@@ -131,7 +122,16 @@ local function ColourCycle()
     CycleTimer = CycleTimer + 1
 end
 AddCallback(ColourCycle, CityEvents.OnStep)
+-------------------------------------------------------------------
 
+KnownAnimatedObjects = {
+    -- internal_id, model_num, name, LitPoly
+    Chicago = {
+        
+    }    
+}
+
+-------------------------------------------------------------------
 
 --
 -- OnHitSmashable : callback for smashable hit
@@ -144,12 +144,16 @@ AddCallback(ColourCycle, CityEvents.OnStep)
 --                .strikeVel :      ref(int) - the hit velocity
 --
 
+local SmashedObjects = {}
+
 CarEventCallbacks["HitSmashable"] = function(car, eventData)
 
-    local doSound = ((eventData.model.shapeFlags & ShapeFlags.Trans) == 0)
+    local cellObjType = eventData.cellObject.type
+    local cellObjPos = fix.FromFixedVector(eventData.cellObject.pos)
 
+    local doSound = ((eventData.model.shapeFlags & ShapeFlags.Trans) == 0)
     if doSound then
-        local sobj = Smashables[eventData.cellObject.type]
+        local sobj = Smashables[cellObjType]
         if sobj == nil then
             sobj = KnownSmashables[1]
         end
@@ -164,4 +168,54 @@ CarEventCallbacks["HitSmashable"] = function(car, eventData)
     
         StartStaticSound3D(sbk_perm[soundName], fix.FromFixedVector(position), VolumeDbToPerc(volume), pitch / fix.ONE)
     end
+
+    local yang = eventData.cellObject.yang
+    local cellRotationRad = -yang / 64.0 * math.pi * 2.0;
+    cellObjPos.y = -cellObjPos.y
+
+    -- compute smashable velocity
+    local velocity = fix.FromFixedVector(eventData.velocity.value)
+
+    velocity.y = math.abs(velocity.x) + math.abs(velocity.z)
+
+    local rot_speed = 0
+	if (math.random(0,3) & 1) == 0 then
+		rot_speed = -velocity.y * 65.0
+	else
+		rot_speed = velocity.y * 65.0
+    end
+
+    if velocity.y > 0.045 then
+        velocity.y = 0.045
+    end
+
+    velocity.y = velocity.y * 11
+
+    -- add smashed object
+    table.insert(SmashedObjects, {
+        position = cellObjPos,
+        angles = vec.vec3(0.0,cellRotationRad,0.0),
+        model = cellObjType,
+
+        origPosY = cellObjPos.y,
+        velocity = velocity,
+        rot_speed = rot_speed,
+    })
+end
+
+function MoveSmashables(dt)
+    local newSmashedObjects = {}
+    for i,dam in ipairs(SmashedObjects) do
+        -- move
+        if dam.position.y > dam.origPosY-0.015 then
+            dam.position = dam.position + dam.velocity * vec.vec3(dt)
+            dam.velocity.y = dam.velocity.y - 3.0 * dt;
+            dam.angles = dam.angles + vec.vec3(dam.rot_speed * dt) * vec.vec3(0.35, 3.0, 0.35)
+            table.insert(newSmashedObjects, dam)
+        end
+
+        -- add to renderer
+        world.AddDrawable(DRAWABLE(dam))
+    end
+    SmashedObjects = newSmashedObjects
 end

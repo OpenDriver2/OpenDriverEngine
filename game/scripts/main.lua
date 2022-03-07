@@ -66,6 +66,9 @@ function StepSim(dt)
 		world.EndStep()
 		CityEvents.OnStep()
 	end
+	
+	-- move and draw smashables
+	MoveSmashables(dt)
 
 	if testGameCamera then
 		testGame.UpdateCamera(dt)
