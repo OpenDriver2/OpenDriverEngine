@@ -137,6 +137,8 @@ void CDebugOverlay::Draw()
 
 	GR_DrawNonIndexed(PRIM_LINES, 0, g_numLineVerts);
 
+	GR_SetDepthMode(1, 1);
+
 	g_numLineVerts = 0;
 	g_lineTransform = identity3();
 }
