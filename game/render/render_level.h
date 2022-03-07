@@ -2,6 +2,7 @@
 #define RENDERLEVEL_H
 
 class Volume;
+struct DRAWABLE;
 
 struct LevelRenderProps
 {
@@ -24,7 +25,6 @@ struct LevelRenderProps
 	bool displayAllCellLevels{ true };	// TODO: transform to list of drawn cells
 };
 
-
 class CRender_Level
 {
 public:
@@ -34,6 +34,8 @@ public:
 	static void	TerminateRender();
 
 	static void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume);
+
+	static void DrawObject(const DRAWABLE& drawable, const Vector3D& cameraPos, const Volume& frustrumVolume, bool buildingLighting);
 
 	static void DrawCellObject(
 		const CELL_OBJECT& co, 

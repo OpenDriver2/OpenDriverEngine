@@ -20,6 +20,12 @@ struct BUILDING_BOX
 	ModelRef_t* modelRef;
 };
 
+struct DRAWABLE
+{
+	Vector3D position;
+	Vector3D angles;
+	int model;
+};
 
 //typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
 //typedef bool (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
@@ -83,6 +89,9 @@ public:
 	// purges list of recently added objects by PushCellObject
 	static void				PurgeCellObjects();
 
+	// adds a drawable object for one draw frame
+	static void				AddDrawable(const DRAWABLE& drawable);
+
 	// iterates through all cell objects at specific cell on map
 	static void				ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
 
@@ -98,7 +107,7 @@ public:
 protected:
 
 	static Array<CELL_OBJECT>	m_CellObjects;
-
+	static Array<DRAWABLE>		m_Drawables;
 };
 
 int ViewerMain();

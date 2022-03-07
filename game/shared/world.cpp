@@ -10,6 +10,7 @@ CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
 Array<CELL_OBJECT>		CWorld::m_CellObjects;
+Array<DRAWABLE>			CWorld::m_Drawables;
 int						CWorld::StepCount = 0;
 
 Matrix4x4	g_objectMatrix[64];
@@ -61,6 +62,9 @@ void CWorld::Lua_Init(sol::state& lua)
 		world[LUADOC_M("PurgeCellObjects", "purges list of recently added objects by PushCellObject")]
 			= &PurgeCellObjects;
 
+		world[LUADOC_M("AddDrawable", "add a DRAWABLE object. No collisions will be made with it")]
+			= &AddDrawable;
+
 		world[LUADOC_M("EndStep", "finalizes the game step, incrementing step count by 1.")]
 			= &EndStep;
 
@@ -69,6 +73,24 @@ void CWorld::Lua_Init(sol::state& lua)
 
 		world[LUADOC_M("StepCount", "world step count")]
 			= []() {return StepCount; };
+	}
+
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<DRAWABLE>(
+			LUADOC_T("DRAWABLE"),
+			sol::call_constructor, sol::factories(
+				[](const Vector3D& position, const Vector3D& angles, const int& model) {
+					return DRAWABLE{ position, angles, model };
+				},
+				[](const sol::table& table) {
+					return DRAWABLE{ (Vector3D&)table["position"], (Vector3D&)table["angles"], table["model"] };
+				},
+				[]() { return DRAWABLE{ 0 }; }),
+			LUADOC_P("position"), &DRAWABLE::position,
+			LUADOC_P("angles"), &DRAWABLE::angles,
+			LUADOC_P("model"), &DRAWABLE::model
+		);
 	}
 
 	// level properties
@@ -451,6 +473,12 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	{
 		CRender_Level::DrawCellObject(m_CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
 	}
+
+	for (usize i = 0; i < m_Drawables.size(); i++)
+	{
+		CRender_Level::DrawObject(m_Drawables[i], view.position, frustumVolume, driver2Map);
+	}
+	m_Drawables.clear();
 }
 
 int CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
@@ -709,6 +737,12 @@ int CWorld::PushCellObject(const CELL_OBJECT& object)
 void CWorld::PurgeCellObjects()
 {
 	m_CellObjects.clear();
+}
+
+// adds a drawable object for one draw frame
+void CWorld::AddDrawable(const DRAWABLE& drawable)
+{
+	m_Drawables.append(drawable);
 }
 
 void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, CELL_ITERATOR_CACHE* iteratorCache /*= nullptr*/)

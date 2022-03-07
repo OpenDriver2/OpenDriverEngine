@@ -60,6 +60,55 @@ int g_drawnModels;
 int g_drawnPolygons;
 int g_drawnRegions;
 
+void CRender_Level::DrawObject(const DRAWABLE& drawable, const Vector3D& cameraPos, const Volume& frustrumVolume, bool buildingLighting)
+{
+	if (drawable.model >= MAX_MODELS)
+		return;
+
+	const float distanceFromCamera = lengthSqr(drawable.position - cameraPos);
+
+	ModelRef_t* ref = GetModelCheckLods(drawable.model, distanceFromCamera);
+	if (!ref->model || !ref->enabled)
+		return;
+
+	const MODEL* model = ref->model;
+	// check if it is in view
+	const float boundSphere = model->bounding_sphere * RENDER_SCALING * 2.0f;
+	if (!frustrumVolume.IsSphereInside(drawable.position, boundSphere))
+		return;
+
+	CRenderModel* renderModel = (CRenderModel*)ref->userData;
+
+	if (!renderModel)
+		return;
+
+	bool isGround = false;
+
+	if ((model->shape_flags & (SHAPE_FLAG_WATER | SHAPE_FLAG_TILE)) ||
+		(model->flags2 & (MODEL_FLAG_PATH | MODEL_FLAG_GRASS)))
+	{
+		isGround = true;
+	}
+
+	Matrix4x4 objectMatrix = translate(drawable.position) * rotateXYZ4(drawable.angles.x, drawable.angles.y, drawable.angles.z);
+
+	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
+	GR_UpdateMatrixUniforms();
+
+	const float modelLightLevel = ref->lightingLevel;
+
+	// apply lighting
+	if ((isGround || !buildingLighting) && RenderProps.nightMode)
+		CRenderModel::SetupLightingProperties(RenderProps.nightAmbientScale * modelLightLevel, RenderProps.nightLightScale * modelLightLevel);
+	else
+		CRenderModel::SetupLightingProperties(RenderProps.ambientScale * modelLightLevel, RenderProps.lightScale * modelLightLevel);
+
+	renderModel->Draw();
+
+	g_drawnModels++;
+	g_drawnPolygons += ref->model->num_polys;
+}
+
 void CRender_Level::DrawCellObject(
 	const CELL_OBJECT& co,
 	const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume,
