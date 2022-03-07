@@ -730,9 +730,8 @@ void CAudioSourceAL::GetParams(Params& params)
 
 void CAudioSourceAL::Setup(int typeId, ISoundSource* sample, UpdateCallback fnCallback /*= nullptr*/, void* callbackObject /*= nullptr*/)
 {
+	Release();
 	InitSource();
-
-	EmptyBuffers();
 
 	m_callbackObject = callbackObject;
 	m_callback = fnCallback;

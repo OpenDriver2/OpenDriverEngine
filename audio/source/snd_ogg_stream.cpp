@@ -14,6 +14,8 @@
 
 bool CSoundSource_OggStream::Load(const char* filename)
 {
+	m_filename = String::fromCString(filename);
+
 	// Open for binary reading
 	FILE* fp = fopen(filename, "rb");
 
