@@ -208,36 +208,21 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	if (bitmap.data == nullptr)
 		return;
 
+	// alloc 4 channels
 	const int imgSize = TEXPAGE_SIZE * 4;
 	uint* color_data = (uint*)Memory::alloc(imgSize);
 
 	memset(color_data, 0, imgSize);
-
-	for (int y = 0; y < TEXPAGE_SIZE_Y; y++)
-	{
-		for (int x = 0; x < TEXPAGE_SIZE_Y; x++)
-		{
-			ubyte clindex = bitmap.data[y * TEXPAGE_SIZE_X + (x >> 1)];
-
-			if (0 != (x & 1))
-				clindex >>= 4;
-
-			clindex &= 15;
-
-			const int ypos = (TEXPAGE_SIZE_Y - y - 1) * TEXPAGE_SIZE_Y;
-			color_data[ypos + x] = clindex * 32;
-		}
-	}
 
 	const int numDetails = tpage->GetDetailCount();
 	for (int i = 0; i < numDetails; i++)
 		tpage->ConvertIndexedTextureToRGBA(color_data, i, &bitmap.clut[i], false, false);
 
 	const int tpageId = tpage->GetId();
-	TextureID& texture = g_hwTexturePages[tpageId][0];
 
 	if (g_hwTexturePagesDirty[tpageId] & 1)
 	{
+		TextureID& texture = g_hwTexturePages[tpageId][0];
 		// create new or update
 		if (texture == g_whiteTexture)
 			texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
@@ -248,34 +233,31 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	}
 
 	// also load different palettes
-	int numPalettes = 0;
-	for (int pal = 0; pal < 16; pal++)
+	for (int pal = 1; pal < 16; pal++)
 	{
 		bool anyMatched = false;
 
-		for (int j = 0; j < numDetails; j++)
+		for (int i = 0; i < numDetails; i++)
 		{
-			TexDetailInfo_t* detail = tpage->GetTextureDetail(j);
+			const int extraPal = pal - 1;
+			TexDetailInfo_t* detail = tpage->GetTextureDetail(i);
 
-			if (detail->extraCLUTs[pal])
+			if (detail->extraCLUTs[extraPal])
 			{
-				tpage->ConvertIndexedTextureToRGBA(color_data, j, detail->extraCLUTs[pal], false, false);
+				tpage->ConvertIndexedTextureToRGBA(color_data, i, detail->extraCLUTs[extraPal], false, false);
 				anyMatched = true;
 			}
 		}
 
-		if (anyMatched)
+		if (anyMatched && (g_hwTexturePagesDirty[tpageId] & (1 << pal)))
 		{
-			const int palette = ++numPalettes;
-			if (g_hwTexturePagesDirty[tpageId] & (1 << palette))
-			{
-				TextureID& texture = g_hwTexturePages[tpageId][palette];
-				if (texture == g_whiteTexture)
-					texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-				else
-					GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-				g_hwTexturePagesDirty[tpageId] &= ~(1 << palette);
-			}
+			TextureID& texture = g_hwTexturePages[tpageId][pal];
+			if (texture == g_whiteTexture)
+				texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+			else
+				GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+
+			g_hwTexturePagesDirty[tpageId] &= ~(1 << pal);
 		}
 	}
 	

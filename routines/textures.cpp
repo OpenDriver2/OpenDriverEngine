@@ -94,21 +94,15 @@ void CTexturePage::ConvertIndexedTextureToRGBA(uint* dest_color_data, int detail
 	if (clut == nullptr)
 		clut = &bitmap.clut[detail];
 
-	TEXINF& texInfo = m_details[detail].info;
+	const TEXINF& texInfo = m_details[detail].info;
 
-	int ox = texInfo.x;
-	int oy = texInfo.y;
-	int w = texInfo.width;
-	int h = texInfo.height;
+	const int ox = texInfo.x;
+	const int oy = texInfo.y;
+	const int w = texInfo.width ? texInfo.width : TEXPAGE_SIZE_Y;	// 0 means full size
+	const int h = texInfo.height ? texInfo.height : TEXPAGE_SIZE_Y;
 
-	if (w == 0)
-		w = TEXPAGE_SIZE_Y;
-
-	if (h == 0)
-		h = TEXPAGE_SIZE_Y;
-
-	int tp_wx = ox + w;
-	int tp_hy = oy + h;
+	const int tp_wx = ox + w;
+	const int tp_hy = oy + h;
 
 	for (int y = oy; y < tp_hy; y++)
 	{
@@ -119,10 +113,10 @@ void CTexturePage::ConvertIndexedTextureToRGBA(uint* dest_color_data, int detail
 			if (0 != (x & 1))
 				clindex >>= 4;
 
-			clindex &= 0xF;
+			clindex &= 15;
 
 			// flip texture by Y
-			int ypos = (TEXPAGE_SIZE_Y - y - 1) * TEXPAGE_SIZE_Y;
+			const int ypos = (TEXPAGE_SIZE_Y - y - 1) * TEXPAGE_SIZE_Y;
 
 			if(outputBGR)
 			{
