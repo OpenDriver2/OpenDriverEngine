@@ -12,10 +12,10 @@ public:
 
 	static void		MangleWheelModel(struct MODEL* model);
 
-	static void		DrawCars(Array<CCar*>& cars);
+	static void		DrawCars(Array<CCar*>& cars, const CameraViewParams& view);
 
 private:
-	static void				AddCarShadow(CMeshBuilder& meshBuilder, CCar* car);
+	static void				AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float distance);
 	static GrVAO*			ShadowVAO;
 	static Vector4D			ShadowUV;
 	static TexDetailInfo_t* ShadowDetail;

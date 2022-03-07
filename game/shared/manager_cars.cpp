@@ -818,7 +818,7 @@ void CManager_Cars::Draw(const CameraViewParams& view)
 	else
 		CRenderModel::SetupLightingProperties(CRender_Level::RenderProps.ambientScale, CRender_Level::RenderProps.lightScale);
 
-	CRender_Cars::DrawCars(g_cars->m_active_cars);
+	CRender_Cars::DrawCars(g_cars->m_active_cars, view);
 }
 
 void CManager_Cars::UpdateTime(int64 ticks)

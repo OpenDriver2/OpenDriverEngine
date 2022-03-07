@@ -118,7 +118,7 @@ void CRender_Cars::MangleWheelModel(MODEL* model)
 	model->num_polys = 6;
 }
 
-void CRender_Cars::DrawCars(Array<CCar*>& cars)
+void CRender_Cars::DrawCars(Array<CCar*>& cars, const CameraViewParams& view)
 {
 	if (!ShadowDetail)
 		return;
@@ -129,9 +129,12 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars)
 	for (usize i = 0; i < cars.size(); i++)
 	{
 		CCar* cp = cars[i];
+		const float distToView = distance(view.position, FromFixedVector(cp->GetPosition()));
+
+		// TODO: LOD!!!
 		cp->DrawCar();
 
-		AddCarShadow(carShadow, cp);
+		AddCarShadow(carShadow, cp, distToView);
 	}
 
 	TextureID carShadowPage = CWorld::GetHWTexture(ShadowDetail->pageNum, 0);
@@ -151,16 +154,13 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars)
 }
 
 
-void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car)
+void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float distance)
 {
 	if (!ShadowDetail || !ShadowVAO)
 		return;
 
-	// TODO: car distance from camera checl
-
 	const CarCosmetics& car_cos = car->GetCosmetics();
-
-	Matrix4x4 drawCarMat = car->GetInterpolatedDrawMatrix4();
+	const Matrix4x4 drawCarMat = car->GetInterpolatedDrawMatrix4();
 
 	meshBuilder.Color4f(0.6f, 0.6f, 0.6f, 0.35f);
 
@@ -177,9 +177,18 @@ void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car)
 	uvs[2] = Vector2D(tl.x, br.y);
 	uvs[3] = br;
 
+	const bool highDetail = distance < 6.0f;
 
-	//meshBuilder.TexturedQuad3(verts[0], verts[1], verts[2], verts[3],
-	//	uvs[0], uvs[1], uvs[2], uvs[3]);
+	if (highDetail)
+	{
+		CRender_Util::TesselatedShadowQuad(meshBuilder, verts, uvs);
+	}
+	else
+	{
+		for (int i = 0; i < 4; i++)
+			verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 10) / ONE_F;
 
-	CRender_Util::TesselatedShadowQuad(meshBuilder, verts, uvs);
+		meshBuilder.TexturedQuad3(verts[0], verts[1], verts[2], verts[3],
+									uvs[0], uvs[1], uvs[2], uvs[3]);
+	}	
 }
