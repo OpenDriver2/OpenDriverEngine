@@ -99,6 +99,9 @@ local CycleTimer = 0
 
 local function InitCyclingPals()
     CyclingPals = {}
+    if IsNightCity(CurrentCityType) == false then
+        return
+    end
     local cyclingPals = KnownCyclingPals[CurrentCityName]
     if cyclingPals == nil then
         return

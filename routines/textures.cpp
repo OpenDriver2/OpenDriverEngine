@@ -608,7 +608,9 @@ void CDriverLevelTextures::FreeAll()
 // getters
 CTexturePage* CDriverLevelTextures::GetTPage(int page) const
 {
-	return &m_texPages[page];
+	if (page > 0 && page < m_numTexPages)
+		return &m_texPages[page];
+	return nullptr;
 }
 
 int CDriverLevelTextures::GetTPageCount() const

@@ -70,7 +70,7 @@ CityHardcoding.MakeTreesAtNight = function()
 	if CurrentCityInfo.number == 0 then -- Chicago trees are already lit
 		return
 	end
-	if CurrentCityType ~= CityType.Night and CurrentCityType ~= CityType.MPNight then
+	if IsNightCity(CurrentCityType) == false then
 		return
 	end
 	for i=0,1535 do
@@ -188,7 +188,7 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		return
 	end
 
-	levRenderProps.nightMode = newCity.forceNight or (CurrentCityType == CityType.Night)
+	levRenderProps.nightMode = newCity.forceNight or IsNightCity(CurrentCityType)
 	
 	-- TODO: City lighting presets for each mode
 	if newCity.forceNight == true then

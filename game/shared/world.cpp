@@ -195,11 +195,14 @@ void CWorld::InitObjectMatrix()
 //-----------------------------------------------------------------
 
 TextureID g_hwTexturePages[128][16];
+ushort g_hwTexturePagesDirty[128] = { 0xFFFF };
 extern TextureID g_whiteTexture;
 
 // Creates hardware texture
 void CWorld::InitHWTexturePage(CTexturePage* tpage)
 {
+	if (!tpage)
+		return;
 	const TexBitmap_t& bitmap = tpage->GetBitmap();
 
 	if (bitmap.data == nullptr)
@@ -233,14 +236,15 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	const int tpageId = tpage->GetId();
 	TextureID& texture = g_hwTexturePages[tpageId][0];
 
-	// create new or update
-	if (texture == g_whiteTexture)
+	if (g_hwTexturePagesDirty[tpageId] & 1)
 	{
-		texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-	}
-	else 
-	{
-		GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+		// create new or update
+		if (texture == g_whiteTexture)
+			texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+		else
+			GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+
+		g_hwTexturePagesDirty[tpageId] &= ~1;
 	}
 
 	// also load different palettes
@@ -262,14 +266,15 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 
 		if (anyMatched)
 		{
-			TextureID& texture = g_hwTexturePages[tpageId][++numPalettes];
-			if (texture == g_whiteTexture)
+			const int palette = ++numPalettes;
+			if (g_hwTexturePagesDirty[tpageId] & (1 << palette))
 			{
-				texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-			}
-			else
-			{
-				GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+				TextureID& texture = g_hwTexturePages[tpageId][palette];
+				if (texture == g_whiteTexture)
+					texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+				else
+					GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+				g_hwTexturePagesDirty[tpageId] &= ~(1 << palette);
 			}
 		}
 	}
@@ -288,6 +293,7 @@ void CWorld::FreeHWTexturePage(CTexturePage* tpage)
 			GR_DestroyTexture(g_hwTexturePages[tpageId][pal]);
 
 		g_hwTexturePages[tpageId][pal] = g_whiteTexture;
+		g_hwTexturePagesDirty[tpageId] = 0xffff;
 	}
 }
 
@@ -297,6 +303,12 @@ TextureID CWorld::GetHWTexture(int tpage, int pal)
 	if (tpage < 0 || tpage >= 128 ||
 		pal < 0 || pal >= 16)
 		return g_whiteTexture;
+
+	if (g_hwTexturePagesDirty[tpage] & (1 << pal))
+	{
+		// TODO: do not recalc entire tpage!!!
+		InitHWTexturePage(GetTPage(tpage));
+	}
 
 	return g_hwTexturePages[tpage][pal];
 }
@@ -316,6 +328,7 @@ void CWorld::InitHWTextures()
 {
 	for (int i = 0; i < 128; i++)
 	{
+		g_hwTexturePagesDirty[i] = 0xffff;
 		for (int j = 0; j < 16; j++)
 			g_hwTexturePages[i][j] = g_whiteTexture;
 	}
@@ -339,7 +352,8 @@ void CWorld::StepTextureDetailPalette(const TexDetailInfo_t* detail, int start, 
 	assert(start < 16);
 	assert(stop < 16);
 
-	CTexturePage* tpage = GetTPage(detail->pageNum);
+	const int tpageId = detail->pageNum;
+	CTexturePage* tpage = GetTPage(tpageId);
 
 	const TexBitmap_t& bitmap = tpage->GetBitmap();
 	if (bitmap.data == nullptr)
@@ -351,8 +365,7 @@ void CWorld::StepTextureDetailPalette(const TexDetailInfo_t* detail, int start, 
 	memmove(bufaddr + start, bufaddr + start + 1, (stop - start) * sizeof(ushort));
 	bufaddr[stop] = temp;
 
-	// TODO: do not recalc entire tpage!!!
-	InitHWTexturePage(tpage);
+	g_hwTexturePagesDirty[tpageId] |= 1;
 }
 
 //-----------------------------------------------------------------
