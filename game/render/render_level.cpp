@@ -280,7 +280,9 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 
 				// check if it is in view
 				const float boundSphere = model->bounding_sphere * RENDER_SCALING * 2.0f;
-				if (!frustrumVolume.IsSphereInside(absCellPosition, boundSphere))
+				Vector3D cellFrustumPos = absCellPosition;
+				cellFrustumPos.y = cameraPos.y;
+				if (!frustrumVolume.IsSphereInside(cellFrustumPos, boundSphere))
 					return true;
 
 				if (distanceFromCamera < g_maxShadowDistance && (model->shape_flags & SHAPE_FLAG_SPRITE))

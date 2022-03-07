@@ -67,10 +67,6 @@ function RemoveCallback(callback, removeFrom)
 	return removeFrom
 end
 
-math.xor = function(a,b)
-	return (a | b) & ~(a | b)
-end
-
 util = {}
 
 -- cond ? a : b

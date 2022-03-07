@@ -1,6 +1,6 @@
 local world = engine.World						-- collision and rendering world
 
--- port of D2 smashables to lua
+-- most of D1 and all D2 smashables are here
 local KnownSmashables = {
     -- name, sound, volume, pitch
 	{ "", 1, 0, 800 },		-- default
@@ -64,6 +64,72 @@ local function InitSmashables()
 end
 AddCallback(InitSmashables, CityEvents.OnLoaded)
 
+--------------------------------------------------------------------
+
+-- TODO: register them in city Lua file!!!
+local KnownCyclingPals = {
+    -- name, vx, vy, start1, stop1, speed1, start2, stop2, speed2
+    Chicago = {
+        { "REDRVR", 0, 0, 6, 10, 2, 11, 15, 2 },
+        { "NAVPIR34", 0, 0, 0, 6, 0, 7, 13, 0 },
+    },
+    Havana = {
+        { "DOOR11", 0, 0, 1, 7, 2, 8, 14, 3 },
+    },
+    LasVegas = {
+        { "DTSYN01", 0, 0, 0, 3, 0, 4, 14, 0 },
+        { "DTSYN02", 0, 0, 0, 15, 0, -1, -1, 0 },
+        { "F-MTSYN2", 0, 0, 0, 3, 0, 10, 14, 0 },
+        { "DTSYN03", 0, 0, 0, 3, 0, -1, -1, 0 },
+        { "SYN-CAS1", 0, 0, 0, 3, 0, 4, 14, 0 },
+        { "SYNSLOT", 0, 0, 0, 3, 0, 4, 7, 0 },
+        { "ENT1B", 0, 0, 0, 15, 0, -1, -1, 0 },
+        { "FLAMINGO", 0, 0, 0, 3, 0, 9, 12, 0 },
+        { "CYCLE-01", 0, 0, 0, 5, 1, 6, 11, 1 },
+        { "CYCLE-02", 0, 0, 0, 3, 3, -1, -1, 0 },
+        { "CYCLE-03", 0, 0, 0, 6, 7, 7, 13, 7 },
+        { "CYCLE-04", 0, 0, 0, 6, 15, 7, 13, 15 }
+    },
+    RioDeJaneiro = {
+        { "FWING11", 0, 0, 1, 7, 2, 8, 14, 3 },
+    }
+}
+local CyclingPals = {}
+local CycleTimer = 0
+
+local function InitCyclingPals()
+    CyclingPals = {}
+    local cyclingPals = KnownCyclingPals[CurrentCityName]
+    if cyclingPals == nil then
+        return
+    end
+    for i,v in ipairs(cyclingPals) do
+        local texDetail = world.FindTextureDetail(v[1])
+        if texDetail ~= nil then
+            CyclingPals[texDetail] = v
+        end
+    end
+end
+AddCallback(InitCyclingPals, CityEvents.OnLoaded)
+
+local function ColourCycle()
+    local step = world.StepCount()
+    if (step & 1) == 0 then
+        return
+    end
+    for k,v in pairs(CyclingPals) do
+        if (CycleTimer & v[6]) == 0 then
+            world.StepTextureDetailPalette(k, v[4], v[5])
+        end
+        if (CycleTimer & v[9]) == 0 then
+            world.StepTextureDetailPalette(k, v[7], v[8])
+        end
+    end
+    CycleTimer = CycleTimer + 1
+end
+AddCallback(ColourCycle, CityEvents.OnStep)
+
+
 --
 -- OnHitSmashable : callback for smashable hit
 -- 		@eventData: 	hit event data
@@ -76,20 +142,23 @@ AddCallback(InitSmashables, CityEvents.OnLoaded)
 --
 
 CarEventCallbacks["HitSmashable"] = function(car, eventData)
-    local sobj = Smashables[eventData.cellObject.type]
-    if sobj == nil then
-        sobj = KnownSmashables[1]
-    end
 
-    --MsgInfo("Smashable ", sobj[1])
+    local doSound = ((eventData.model.shapeFlags & ShapeFlags.Trans) == 0)
 
-    local position = eventData.position.value
-    local velocity = eventData.velocity.value
+    if doSound then
+        local sobj = Smashables[eventData.cellObject.type]
+        if sobj == nil then
+            sobj = KnownSmashables[1]
+        end
     
-    local sbk_perm = SoundBanks["permanent"]
-    local soundName = SmashableSounds[sobj[2]]
-    local volume = sobj[3]
-    local pitch = sobj[4] + (((velocity.vx ~ velocity.vz) * (position.vx ~ position.vz) & 1023) - 512)
-
-    StartStaticSound3D(sbk_perm[soundName], fix.FromFixedVector(position), VolumeDbToPerc(volume), pitch / fix.ONE)
+        local position = eventData.position.value
+        local velocity = eventData.velocity.value
+        
+        local sbk_perm = SoundBanks["permanent"]
+        local soundName = SmashableSounds[sobj[2]]
+        local volume = sobj[3]
+        local pitch = sobj[4] + (((velocity.vx ~ velocity.vz) * (position.vx ~ position.vz) & 1023) - 512)
+    
+        StartStaticSound3D(sbk_perm[soundName], fix.FromFixedVector(position), VolumeDbToPerc(volume), pitch / fix.ONE)
+    end
 end

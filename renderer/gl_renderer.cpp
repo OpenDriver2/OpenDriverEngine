@@ -459,13 +459,7 @@ TextureID GR_CreateRGBATexture(int width, int height, ubyte* data)
 	TextureID newTexture;
 	glGenTextures(1, &newTexture);
 
-	glBindTexture(GL_TEXTURE_2D, newTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-	// get back to last bound texture
-	glBindTexture(GL_TEXTURE_2D, g_lastBoundTexture);
+	GR_UpdateRGBATexture(newTexture, width, height, data);
 
 	return newTexture;
 }
@@ -473,6 +467,17 @@ TextureID GR_CreateRGBATexture(int width, int height, ubyte* data)
 void GR_DestroyTexture(TextureID texture)
 {
 	glDeleteTextures(1, &texture);
+}
+
+void GR_UpdateRGBATexture(TextureID texture, int width, int height, ubyte* data)
+{
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	// get back to last bound texture
+	glBindTexture(GL_TEXTURE_2D, g_lastBoundTexture);
 }
 
 void GR_SetTexture(TextureID texture)

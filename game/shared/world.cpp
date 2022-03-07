@@ -25,8 +25,11 @@ void CWorld::Lua_Init(sol::state& lua)
 
 		auto world = engine["World"].get_or_create<sol::table>();
 
-		world[LUADOC_M("GetHWTexture")]
-			= &GetHWTexture;
+		world[LUADOC_M("FindTextureDetail", "(name: string): returns texture detail with specific name")]
+			= &FindTextureDetail;
+
+		world[LUADOC_M("StepTextureDetailPalette", "(texDetailInfo, start, ned): steps the texture detail palette at specific range")]
+			= &StepTextureDetailPalette;
 
 		world[LUADOC_M("LoadLevel", "loads level from file")] 
 			= &LoadLevel;
@@ -65,7 +68,7 @@ void CWorld::Lua_Init(sol::state& lua)
 			= &ResetStep;
 
 		world[LUADOC_M("StepCount", "world step count")]
-			= &StepCount;
+			= []() {return StepCount; };
 	}
 
 	// level properties
@@ -202,39 +205,43 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	if (bitmap.data == nullptr)
 		return;
 
-	int imgSize = TEXPAGE_SIZE * 4;
+	const int imgSize = TEXPAGE_SIZE * 4;
 	uint* color_data = (uint*)Memory::alloc(imgSize);
 
 	memset(color_data, 0, imgSize);
 
-	// Dump whole TPAGE indexes
-	for (int y = 0; y < 256; y++)
+	for (int y = 0; y < TEXPAGE_SIZE_Y; y++)
 	{
-		for (int x = 0; x < 256; x++)
+		for (int x = 0; x < TEXPAGE_SIZE_Y; x++)
 		{
-			ubyte clindex = bitmap.data[y * 128 + (x >> 1)];
+			ubyte clindex = bitmap.data[y * TEXPAGE_SIZE_X + (x >> 1)];
 
 			if (0 != (x & 1))
 				clindex >>= 4;
 
-			clindex &= 0xF;
+			clindex &= 15;
 
-			int ypos = (TEXPAGE_SIZE_Y - y - 1) * TEXPAGE_SIZE_Y;
-
+			const int ypos = (TEXPAGE_SIZE_Y - y - 1) * TEXPAGE_SIZE_Y;
 			color_data[ypos + x] = clindex * 32;
 		}
 	}
 
-	int numDetails = tpage->GetDetailCount();
-
-	// FIXME: load indexes instead?
-
+	const int numDetails = tpage->GetDetailCount();
 	for (int i = 0; i < numDetails; i++)
 		tpage->ConvertIndexedTextureToRGBA(color_data, i, &bitmap.clut[i], false, false);
 
-	int tpageId = tpage->GetId();
-	
-	g_hwTexturePages[tpageId][0] = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+	const int tpageId = tpage->GetId();
+	TextureID& texture = g_hwTexturePages[tpageId][0];
+
+	// create new or update
+	if (texture == g_whiteTexture)
+	{
+		texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+	}
+	else 
+	{
+		GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+	}
 
 	// also load different palettes
 	int numPalettes = 0;
@@ -255,10 +262,17 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 
 		if (anyMatched)
 		{
-			g_hwTexturePages[tpageId][++numPalettes] = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+			TextureID& texture = g_hwTexturePages[tpageId][++numPalettes];
+			if (texture == g_whiteTexture)
+			{
+				texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+			}
+			else
+			{
+				GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+			}
 		}
 	}
-	
 	
 	// no longer need in RGBA data
 	Memory::free(color_data);
@@ -289,7 +303,6 @@ TextureID CWorld::GetHWTexture(int tpage, int pal)
 
 CTexturePage* CWorld::GetTPage(int tpage)
 {
-	
 	return g_levTextures.GetTPage(tpage);
 }
 
@@ -316,6 +329,30 @@ void CWorld::InitHWModels()
 {
 	CRenderModel::InitModelShader();
 	g_levModels.SetModelLoadingCallbacks(CRenderModel::OnModelLoaded, CRenderModel::OnModelFreed);
+}
+
+void CWorld::StepTextureDetailPalette(const TexDetailInfo_t* detail, int start, int stop)
+{
+	if (!detail || start == -1 || stop == -1)
+		return;
+
+	assert(start < 16);
+	assert(stop < 16);
+
+	CTexturePage* tpage = GetTPage(detail->pageNum);
+
+	const TexBitmap_t& bitmap = tpage->GetBitmap();
+	if (bitmap.data == nullptr)
+		return;
+
+	ushort* bufaddr = bitmap.clut[detail->detailNum].colors;
+
+	ushort temp = bufaddr[start];
+	memmove(bufaddr + start, bufaddr + start + 1, (stop - start) * sizeof(ushort));
+	bufaddr[stop] = temp;
+
+	// TODO: do not recalc entire tpage!!!
+	InitHWTexturePage(tpage);
 }
 
 //-----------------------------------------------------------------

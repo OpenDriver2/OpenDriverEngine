@@ -111,6 +111,7 @@ void		GR_SetViewPort(int x, int y, int width, int height);
 
 TextureID	GR_CreateRGBATexture(int width, int height, ubyte* data = nullptr);
 void		GR_DestroyTexture(TextureID texture);
+void		GR_UpdateRGBATexture(TextureID texture, int width, int height, ubyte* data);
 
 //--------------------------------------------------
 

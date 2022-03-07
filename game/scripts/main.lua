@@ -64,6 +64,7 @@ function StepSim(dt)
 
 		-- advance game frame, replay time, etc
 		world.EndStep()
+		CityEvents.OnStep()
 	end
 
 	if testGameCamera then

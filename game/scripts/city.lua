@@ -115,7 +115,9 @@ CityEvents = {
 
 	OnRegionsSpooled = AddCallback(function() 
 		CityHardcoding.MakeTreesAtNight()
-	end)
+	end),
+
+	OnStep = AddCallback(function() end)
 }
 
 --
@@ -189,7 +191,12 @@ function ChangeCity(newCityName, newCityType, newWeather)
 	levRenderProps.nightMode = newCity.forceNight or (CurrentCityType == CityType.Night)
 	
 	-- TODO: City lighting presets for each mode
-	if levRenderProps.nightMode then
+	if newCity.forceNight == true then
+		levRenderProps.nightAmbientScale = 1
+		levRenderProps.nightLightScale = 0.15
+		levRenderProps.ambientScale = 1
+		levRenderProps.lightScale = 0.15
+	elseif levRenderProps.nightMode then
 		levRenderProps.nightAmbientScale = 0.5 * (CurrentCityInfo.brightnessScale or 1)
 		levRenderProps.nightLightScale = 0
 		levRenderProps.ambientScale = 2

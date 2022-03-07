@@ -50,6 +50,8 @@ public:
 
 	static void				InitHWTextures();
 	static void				InitHWModels();
+	// for animated textures
+	static void				StepTextureDetailPalette(const TexDetailInfo_t* detail, int start, int stop);
 
 	static void				RenderLevelView(const CameraViewParams& view);
 
