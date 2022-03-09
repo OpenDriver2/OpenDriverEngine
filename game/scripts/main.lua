@@ -22,10 +22,20 @@ local testGameCamera = false					-- See: RenderUI
 local fixed_timestep <const> = 1.0 / 30.0
 local timeAccumulator = 0.0
 
+---
+--- ControlMap: spool regions from player car position
+---
+local function ControlMap()
+	if players.localPlayer.currentCar ~= nil then
+		local spoolPos = players.localPlayer.currentCar.position
+		SpoolRegions(spoolPos)
+	end
+end
+
 --
 -- StepSim: performs physics fixed time step (callback)
 --
-function StepSim(dt)
+local function StepSim(dt)
 
 	timeAccumulator = timeAccumulator + dt
 
@@ -79,39 +89,11 @@ function StepSim(dt)
 	end
 end
 
---
--- InitCamera : updates the game engine main camera with specified parameters
--- 		@params: 	a table of { position: vec.vec3, angles: vec.vec3, fov: float}
---
-function InitCamera( params )
-	-- you can't replace MainView but we can copy all parameters
-	camera.MainView.position = params.position
-	camera.MainView.angles = params.angles
-	camera.MainView.fov = params.fov
-
-	if params.velocity ~= nil then
-		camera.MainViewVelocity.x = params.velocity.x
-		camera.MainViewVelocity.y = params.velocity.y
-		camera.MainViewVelocity.z = params.velocity.z
-	else
-		camera.MainViewVelocity.x = 0
-		camera.MainViewVelocity.y = 0
-		camera.MainViewVelocity.z = 0
-	end
-end
-
-function ControlMap()
-	-- spool regions from player car position
-	if players.localPlayer.currentCar ~= nil then
-		local spoolPos = players.localPlayer.currentCar.position
-		SpoolRegions(spoolPos)
-	end
-end
 
 --
 -- Main game loop (callback)
 --
-function GameLoop(dt)
+local function GameLoop(dt)
 
 	FreeCamera.UpdateCameraMovement(dt)
 	if testGameCamera == false then
@@ -140,28 +122,27 @@ function ResetFreeCamera()
 	--g_cameraAngles = FromFixedVector({ 0, 3840 - 1024, 0 }) * 360.0f;
 end
 
-function StartTest()
+local function OnLevelLoaded()
+	LoadSoundbank("permanent", SBK_Permanent)
+	eventModels.InitEventModels()
+	SetUpdateFunc("GameLoop", GameLoop)
+end
+
+local function OnLevelUnloading()
+	testGame.Terminate()
+	SetUpdateFunc("GameLoop", nil)
+end
+
+local function StartTest()
 	-- permanently disable lods
 	levRenderProps.noLod = true
 	ResetFreeCamera()
 
-	CityEvents.OnLoaded = AddCallback(function()
-		LoadSoundbank("permanent", SBK_Permanent)
-		eventModels.InitEventModels()
-		SetUpdateFunc("GameLoop", GameLoop)
-	end, CityEvents.OnLoaded)
-
-	CityEvents.OnUnloading = function()
-		testGame.Terminate()
-	end
+	AddCallback(OnLevelLoaded, CityEvents.OnLoaded)
+	AddCallback(OnLevelUnloading, CityEvents.OnUnloading)
 end
 
-function StopTest()
-	UnloadCity()
-	SetUpdateFunc("GameLoop", nil)
-end
-
-function RenderUI()
+local function RenderUI()
 
 	if forceShowUI == false and testGame.IsRunning() and testGameCamera then
 		return
@@ -227,7 +208,7 @@ function RenderUI()
 			end
 			
 			if ImGui.MenuItem("Unload") then
-				StopTest()
+				UnloadCity()
 			end
 
 			ImGui.EndMenu()

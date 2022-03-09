@@ -1,5 +1,6 @@
 local players = engine.Players					-- local players
 local world = engine.World						-- collision and rendering world
+local camera = engine.Camera
 
 local cameraAngle = 0
 local headAngle = 0
@@ -142,4 +143,25 @@ CameraFuncs = {
 	PlaceCameraFollowCar,
 	PlaceCameraInCar
 }
+
+--
+-- InitCamera : updates the game engine main camera with specified parameters
+-- 		@params: 	a table of { position: vec.vec3, angles: vec.vec3, fov: float}
+--
+function InitCamera( params )
+	-- you can't replace MainView but we can copy all parameters
+	camera.MainView.position = params.position
+	camera.MainView.angles = params.angles
+	camera.MainView.fov = params.fov
+
+	if params.velocity ~= nil then
+		camera.MainViewVelocity.x = params.velocity.x
+		camera.MainViewVelocity.y = params.velocity.y
+		camera.MainViewVelocity.z = params.velocity.z
+	else
+		camera.MainViewVelocity.x = 0
+		camera.MainViewVelocity.y = 0
+		camera.MainViewVelocity.z = 0
+	end
+end
 
