@@ -3,7 +3,8 @@
 enum EDocPropType
 {
 	DocProp_MemberFunc,
-	DocProp_Property
+	DocProp_Property,
+	DocProp_Enum
 };
 
 struct LuaDocProp
@@ -56,6 +57,17 @@ const char* CLuaDocumentation::TypeGuard::Init(const char* name, const char* doc
 	return name;
 }
 
+const char* CLuaDocumentation::TypeGuard::Enum(const char* name, const char* docText /*= nullptr*/)
+{
+	m_item->members.append(LuaDocProp{
+		DocProp_Enum,
+		String::fromCString(name),
+		docText ? String::fromCString(docText) : ""
+		});
+
+	return name;
+}
+
 const char* CLuaDocumentation::TypeGuard::Property(const char* name, const char* docText /*= nullptr*/)
 {
 	m_item->members.append(LuaDocProp{
@@ -97,7 +109,10 @@ void CLuaDocumentation::Lua_Init(sol::state& lua)
 		for (usize j = 0; j < doc->members.size(); j++)
 		{
 			LuaDocProp& prop = doc->members[j];
-			membersTable[(char*)prop.declName] = (char*)prop.description;
+			auto& propTable = membersTable[(char*)prop.declName].get_or_create<sol::table>();
+			
+			propTable["type"] = prop.type;
+			propTable["desc"] = (char*)prop.description;
 		}
 
 		delete doc;
