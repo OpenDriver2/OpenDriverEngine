@@ -1,7 +1,7 @@
 #include "game/pch.h"
 #include "luamath.h"
 
-#define VEC_OPERATORS(vec_type) \
+#define VEC_OPERATORS(vec_type, name) \
 	/* vec - vec */\
 	sol::meta_function::addition, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator+),\
 	sol::meta_function::subtraction, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator-),\
@@ -10,15 +10,15 @@
 	/* negate */\
 	sol::meta_function::unary_minus, sol::resolve<vec_type(const vec_type&)>(&operator-),\
 	/* common functions */ \
-	LUADOC_M("dot"), sol::resolve<float(const vec_type&, const vec_type&)>(dot),\
-	LUADOC_M("normalize"), sol::resolve<vec_type(const vec_type&)>(normalize),\
-	LUADOC_M("length"), sol::resolve<float(const vec_type&)>(length),\
-	LUADOC_M("lengthSqr"), sol::resolve<float(const vec_type&)>(lengthSqr),\
-	LUADOC_M("distance"), sol::resolve<float(const vec_type&, const vec_type&)>(distance),\
-	LUADOC_M("lerp"), sol::resolve<vec_type(const vec_type&, const vec_type&, float)>(lerp),\
-	LUADOC_M("cerp"), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&, const vec_type&, float)>(cerp),\
-	LUADOC_M("sign"), sol::resolve<vec_type(const vec_type&)>(sign),\
-	LUADOC_M("clamp"), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&)>(clamp),
+	LUADOC_M("dot", "(a: " name ", b: " name ")"), sol::resolve<float(const vec_type&, const vec_type&)>(dot),\
+	LUADOC_M("normalize", "(v: " name ")"), sol::resolve<vec_type(const vec_type&)>(normalize),\
+	LUADOC_M("length", "(v: " name ")"), sol::resolve<float(const vec_type&)>(length),\
+	LUADOC_M("lengthSqr", "(v: " name ")"), sol::resolve<float(const vec_type&)>(lengthSqr),\
+	LUADOC_M("distance", "(a: " name ", b: " name ")"), sol::resolve<float(const vec_type&, const vec_type&)>(distance),\
+	LUADOC_M("lerp", "(a: " name ", b: " name ", v: float)"), sol::resolve<vec_type(const vec_type&, const vec_type&, float)>(lerp),\
+	LUADOC_M("cerp", "(a: " name ", b: " name ", c: " name ", v: float)"), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&, const vec_type&, float)>(cerp),\
+	LUADOC_M("sign", "(v: " name ")"), sol::resolve<vec_type(const vec_type&)>(sign),\
+	LUADOC_M("clamp", "(v: " name ", min: " name ", max: " name ")"), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&)>(clamp),
 
 // NOT USED - conflicting (SAD)
 #define VEC_FLOAT_OPERATORS(vec_type) \
@@ -51,7 +51,7 @@ void Math_Lua_Init(sol::state& lua)
 					[](const sol::table& table) {
 						return Vector2D(table["x"], table["y"]);
 					}),
-				VEC_OPERATORS(Vector2D)
+				VEC_OPERATORS(Vector2D, "vec2")
 				LUADOC_P("x"), &Vector2D::x,
 				LUADOC_P("y"), &Vector2D::y);
 		}
@@ -69,8 +69,8 @@ void Math_Lua_Init(sol::state& lua)
 						return Vector3D(table["x"], table["y"], table["z"]);
 					}),
 				sol::call_constructor, sol::constructors<Vector3D(const float&, const float&, const float&), Vector3D(const float&)>(),
-				VEC_OPERATORS(Vector3D)
-				LUADOC_M("cross", "Cross product with other vector"), sol::resolve<Vector3D(const Vector3D&, const Vector3D&)>(cross),
+				VEC_OPERATORS(Vector3D, "vec3")
+				LUADOC_M("cross", "(a: vec3, b: vec3) : vec3 - Cross product with other vector"), sol::resolve<Vector3D(const Vector3D&, const Vector3D&)>(cross),
 				// members
 				LUADOC_P("x"), &Vector3D::x,
 				LUADOC_P("y"), &Vector3D::y,
@@ -90,7 +90,7 @@ void Math_Lua_Init(sol::state& lua)
 						return Vector4D(table["x"], table["y"], table["z"], table["w"]);
 					}),
 				sol::call_constructor, sol::constructors<Vector3D(const float&), Vector4D(const float&, const float&, const float&, const float&)>(),
-				VEC_OPERATORS(Vector4D)
+				VEC_OPERATORS(Vector4D, "vec4")
 				// members
 				"x", &Vector4D::x,
 				"y", &Vector4D::y,
@@ -143,37 +143,37 @@ void Math_Lua_Init(sol::state& lua)
 				"m33", sol::property([](Matrix3x3& self) {return self.rows[2][2]; }, [](Matrix3x3& self, const float& value) {self.rows[2][2] = value; }),
 
 				// operations
-				LUADOC_M("transformVec", "Transforms input vector by the matrix"), 
+				LUADOC_M("transformVec", "(m: mat3, v: vec3) : vec3 - Transforms input vector by the matrix"), 
 				[](Matrix3x3& self, const Vector3D& vec) {return transform3(vec, self); },
 
-				LUADOC_M("transformVecInv", "Transforms input vector by the matrix"),
+				LUADOC_M("transformVecInv", "(m: mat3, v: vec3) : vec3 - Transforms input vector by the matrix"),
 				[](Matrix3x3& self, const Vector3D& vec) {return transform3Inv(vec, self); },
 
-				LUADOC_M("transposed", "Returns transposed matrix"), 
+				LUADOC_M("transposed", "(m: mat3) : mat3 - Returns transposed matrix"), 
 				[](Matrix3x3& self) { return transpose(self); },
 
-				LUADOC_M("eulersXYZ", "Returns euler angles in specified rotation order"), 
+				LUADOC_M("eulersXYZ", "(m: mat3) : vec3 - Returns euler angles in specified rotation order"), 
 				[](Matrix3x3& self) { return EulerMatrixXYZ(self); },
 
-				LUADOC_M("eulersZXY", "Returns euler angles in specified rotation order"),
+				LUADOC_M("eulersZXY", "(m: mat3) : vec3 - Returns euler angles in specified rotation order"),
 				[](Matrix3x3& self) { return EulerMatrixZXY(self); },
 
 				// common matrix generators
-				LUADOC_M("identity", "Returns new identity matrix"), []() {return identity3(); },
+				LUADOC_M("identity", "() : mat3 - Returns new identity matrix"), []() {return identity3(); },
 
-				LUADOC_M("rotationX", "Makes rotation matrix around specified axis"),
+				LUADOC_M("rotationX", "(x: float) : mat3 - Makes rotation matrix around specified axis"),
 				[](float val) {return rotateX3(val); },
 
-				LUADOC_M("rotationY", "Makes rotation matrix around specified axis"),
+				LUADOC_M("rotationY", "(y: float) : mat3 - Makes rotation matrix around specified axis"),
 				[](float val) {return rotateY3(val); },
 
-				LUADOC_M("rotationZ", "Makes rotation matrix around specified axis"),
+				LUADOC_M("rotationZ", "(z: float) : mat3 - Makes rotation matrix around specified axis"),
 				[](float val) {return rotateZ3(val); },
 
-				LUADOC_M("rotationXYZ", "Makes rotation matrix around specified axis"),
+				LUADOC_M("rotationXYZ", "(x: float, y: float, z: float) : mat3 - Makes rotation matrix around specified axes"),
 				[](const Vector3D& val) {return rotateXYZ3(val.x, val.y, val.z); },
 
-				LUADOC_M("rotationZXY", "Makes rotation matrix around specified axis"),
+				LUADOC_M("rotationZXY", "(x: float, y: float, z: float) : mat3 - Makes rotation matrix around specified axes"),
 				[](const Vector3D& val) {return rotateZXY3(val.x, val.y, val.z); }
 			);
 			LUADOC_P("r<n>", "access matrix row by number as vec3");

@@ -569,7 +569,7 @@ void CAudioSourceAL::Ref_DeleteObject()
 }
 
 // Updates channel with user parameters
-void CAudioSourceAL::UpdateParams(Params params, int mask)
+void CAudioSourceAL::UpdateParams(const Params& params, int mask)
 {
 	mask |= params.flags;
 

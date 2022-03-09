@@ -42,27 +42,27 @@ void CPlayer::Lua_Init(sol::state& lua)
 	{
 		LUADOC_TYPE();
 		lua.new_usertype<CPlayer>(
-			LUADOC_T("CPlayer"),
+			LUADOC_T("Player"),
 
-			LUADOC_P("InitReplay", "<inputStream?: CReplayStream> initializes replay stream. If inputStream is null, only recording is initiated"),
+			LUADOC_P("InitReplay", "(inputStream?: ReplayStream) - initializes replay stream. If inputStream is null, only recording is initiated"),
 			&CPlayer::InitReplay,
 
-			LUADOC_P("currentCar", "get/set player car. If replay is initialized empty, it will be initialized"), 
+			LUADOC_P("currentCar", "<CCar> - get/set player car. If replay is initialized empty, it will be initialized"), 
 			sol::property(&CPlayer::GetCurrentCar, &CPlayer::SetCurrentCar),
 
-			LUADOC_P("controlType"), 
+			LUADOC_P("controlType", "<CarControlType>"),
 			&CPlayer::m_controlType,
 
-			LUADOC_P("input", "get/set player control buttons"), 
+			LUADOC_P("input", "<PlayerInputData> - player control buttons data"), 
 			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
 
-			LUADOC_P("playbackStream", "replay playback stream (may be null)"),
+			LUADOC_P("playbackStream", "<ReplayStream> (mayBeNull readonly) - replay playback stream"),
 			sol::property([](const CPlayer& ply) { 
 				CReplayStream& ptr = *ply.m_playbackStream;
 				return &ptr;
 			}),
 
-			LUADOC_P("recordStream", "replay recording stream (if null - no recording is done)"),
+			LUADOC_P("recordStream", "<ReplayStream> (mayBeNull readonly) - replay recording stream (if null - no recording is done)"),
 			sol::property([](const CPlayer& ply) {
 				CReplayStream& ptr = *ply.m_recordStream;
 				return &ptr;
@@ -414,22 +414,22 @@ void CManager_Players::Lua_Init(sol::state& lua)
 		LUADOC_TYPE("Players");
 		auto players = engine["Players"].get_or_create<sol::table>();
 
-		players[LUADOC_P("localPlayer")] 
+		players[LUADOC_P("localPlayer", "<Player> - current player")]
 			= &LocalPlayer;
 
-		players[LUADOC_M("GetPlayerByCar")]
+		players[LUADOC_M("GetPlayerByCar", "(car: CCar) : Player")]
 			= &GetPlayerByCar;
 
-		players[LUADOC_M("CreatePlayer")]
+		players[LUADOC_M("CreatePlayer", "() : Player")]
 			= &CreatePlayer;
 
-		players[LUADOC_M("RemovePlayer")]
+		players[LUADOC_M("RemovePlayer", "(Player)")]
 			= &RemovePlayer;
 
-		players[LUADOC_M("RemoveAllPlayers")]
+		players[LUADOC_M("RemoveAllPlayers", "(void)")]
 			= &RemoveAllPlayers;
 
-		players[LUADOC_M("Update")]
+		players[LUADOC_M("Update", "()")]
 			= &Update;
 	}
 

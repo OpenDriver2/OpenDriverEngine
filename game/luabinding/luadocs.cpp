@@ -2,7 +2,7 @@
 
 enum EDocPropType
 {
-	DocProp_MemberFunc,
+	DocProp_Method,
 	DocProp_Property,
 	DocProp_Enum
 };
@@ -82,7 +82,7 @@ const char* CLuaDocumentation::TypeGuard::Property(const char* name, const char*
 const char* CLuaDocumentation::TypeGuard::MemberFunc(const char* name, const char* docText /*= nullptr*/)
 {
 	m_item->members.append(LuaDocProp{
-		DocProp_MemberFunc,
+		DocProp_Method,
 		String::fromCString(name),
 		docText ? String::fromCString(docText) : ""
 		});

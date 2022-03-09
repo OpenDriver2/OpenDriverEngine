@@ -26,52 +26,52 @@ void CWorld::Lua_Init(sol::state& lua)
 
 		auto world = engine["World"].get_or_create<sol::table>();
 
-		world[LUADOC_M("FindTextureDetail", "(name: string): returns texture detail with specific name")]
+		world[LUADOC_M("FindTextureDetail", "(name: string) : TexDetailInfo - returns texture detail with specific name")]
 			= &FindTextureDetail;
 
-		world[LUADOC_M("StepTextureDetailPalette", "(texDetailInfo, start, ned): steps the texture detail palette at specific range")]
+		world[LUADOC_M("StepTextureDetailPalette", "(detail: TexDetailInfo, start: int, end: int) - steps the texture detail palette at specific range")]
 			= &StepTextureDetailPalette;
 
-		world[LUADOC_M("LoadLevel", "loads level from file")] 
+		world[LUADOC_M("LoadLevel", "(filename: string) : boolean - loads level from file")] 
 			= &LoadLevel;
 
-		world[LUADOC_M("UnloadLevel")] 
+		world[LUADOC_M("UnloadLevel", "(void)")]
 			= &UnloadLevel;
 
-		world[LUADOC_M("SpoolAllRegions", "load all models, regions and textures")] 
+		world[LUADOC_M("SpoolAllRegions", "(void) - load all models, regions and textures")] 
 			= &SpoolAllRegions;
 
-		world[LUADOC_M("SpoolRegions", "spool regions at specified point and radius")]
+		world[LUADOC_M("SpoolRegions", "(position: fix.VECTOR, radius: int) : int - spool regions at specified point and radius")]
 			= &SpoolRegions;
 
-		world[LUADOC_M("IsLevelLoaded")] 
+		world[LUADOC_M("IsLevelLoaded", "(void) : boolean")]
 			= &IsLevelLoaded;
 
-		world[LUADOC_M("GetModelByIndex", "returns model reference by specified index")] 
+		world[LUADOC_M("GetModelByIndex", "(index: int) : ModelRef - returns model reference by specified index")] 
 			= &GetModelByIndex;
 
-		world[LUADOC_M("GetModelByName", "returns model reference by specified name")]
+		world[LUADOC_M("GetModelByName", "(name: string) : ModelRef - returns model reference by specified name")]
 			= &GetModelByName;
 
-		world[LUADOC_M("MapHeight", "returns height value at specified 3D point")]
+		world[LUADOC_M("MapHeight", "(position: fix.VECTOR) : int - returns height value at specified 3D point")]
 			= &MapHeight;
 
-		world[LUADOC_M("PushCellObject", "push event cell object. Any collision checks afterwards will have an effect with it")]
+		world[LUADOC_M("PushCellObject", "(cellObj: CELL_OBJECT) - push event cell object. Any collision checks afterwards will have an effect with it")]
 			= &PushCellObject;
 
-		world[LUADOC_M("PurgeCellObjects", "purges list of recently added objects by PushCellObject")]
+		world[LUADOC_M("PurgeCellObjects", "(void) - purges list of recently added objects by PushCellObject")]
 			= &PurgeCellObjects;
 
-		world[LUADOC_M("AddDrawable", "add a DRAWABLE object. No collisions will be made with it")]
+		world[LUADOC_M("AddDrawable", "(drawable: DRAWABLE) - add a DRAWABLE object. No collisions will be made with it")]
 			= &AddDrawable;
 
-		world[LUADOC_M("EndStep", "finalizes the game step, incrementing step count by 1.")]
+		world[LUADOC_M("EndStep", "(void) - finalizes the game step, incrementing step count by 1.")]
 			= &EndStep;
 
-		world[LUADOC_M("ResetStep", "resets world step count")]
+		world[LUADOC_M("ResetStep", "(void) - resets world step count")]
 			= &ResetStep;
 
-		world[LUADOC_M("StepCount", "world step count")]
+		world[LUADOC_M("StepCount", "(void) : int - world step count")]
 			= []() {return StepCount; };
 	}
 
@@ -87,9 +87,9 @@ void CWorld::Lua_Init(sol::state& lua)
 					return DRAWABLE{ (Vector3D&)table["position"], (Vector3D&)table["angles"], table["model"] };
 				},
 				[]() { return DRAWABLE{ 0 }; }),
-			LUADOC_P("position"), &DRAWABLE::position,
-			LUADOC_P("angles"), &DRAWABLE::angles,
-			LUADOC_P("model"), &DRAWABLE::model
+			LUADOC_P("position", "<vec.vec3>"), &DRAWABLE::position,
+			LUADOC_P("angles", "<vec.vec3> - radian angles"), &DRAWABLE::angles,
+			LUADOC_P("model", "<int> - model index"), &DRAWABLE::model
 		);
 	}
 
@@ -99,18 +99,18 @@ void CWorld::Lua_Init(sol::state& lua)
 		lua.new_usertype<LevelRenderProps>(
 			LUADOC_T("LevelRenderProps"),
 
-			LUADOC_P("ambientColor"), &LevelRenderProps::ambientColor,
-			LUADOC_P("lightColor"), &LevelRenderProps::lightColor,
-			LUADOC_P("nightAmbientScale"), &LevelRenderProps::nightAmbientScale,
-			LUADOC_P("nightLightScale"), &LevelRenderProps::nightLightScale,
-			LUADOC_P("ambientScale"), &LevelRenderProps::ambientScale,
-			LUADOC_P("lightScale"), &LevelRenderProps::lightScale,
-			LUADOC_P("nightMode"), &LevelRenderProps::nightMode,
-			LUADOC_P("noLod"), &LevelRenderProps::noLod,
+			LUADOC_P("ambientColor", "<vec.vec4>"), &LevelRenderProps::ambientColor,
+			LUADOC_P("lightColor", "<vec.vec4>"), &LevelRenderProps::lightColor,
+			LUADOC_P("nightAmbientScale", "<float>"), &LevelRenderProps::nightAmbientScale,
+			LUADOC_P("nightLightScale", "<float>"), &LevelRenderProps::nightLightScale,
+			LUADOC_P("ambientScale", "<float>"), &LevelRenderProps::ambientScale,
+			LUADOC_P("lightScale", "<float>"), &LevelRenderProps::lightScale,
+			LUADOC_P("nightMode", "<boolean>"), &LevelRenderProps::nightMode,
+			LUADOC_P("noLod", "<boolean>"), &LevelRenderProps::noLod,
 
-			LUADOC_P("displayCollisionBoxes"), &LevelRenderProps::displayCollisionBoxes,
-			LUADOC_P("displayHeightMap"), &LevelRenderProps::displayHeightMap,
-			LUADOC_P("displayAllCellLevels"), &LevelRenderProps::displayAllCellLevels
+			LUADOC_P("displayCollisionBoxes", "<boolean>"), &LevelRenderProps::displayCollisionBoxes,
+			LUADOC_P("displayHeightMap", "<boolean>"), &LevelRenderProps::displayHeightMap,
+			LUADOC_P("displayAllCellLevels", "<boolean>"), &LevelRenderProps::displayAllCellLevels
 		);
 	}
 
@@ -121,15 +121,15 @@ void CWorld::Lua_Init(sol::state& lua)
 			LUADOC_T("ModelRef"),
 
 			LUADOC_P("name"), &ModelRef_t::name,
-			LUADOC_P("index"), &ModelRef_t::index,
-			LUADOC_P("highDetailId"), &ModelRef_t::highDetailId,
-			LUADOC_P("lowDetailId"), &ModelRef_t::lowDetailId,
-			LUADOC_P("enabled"), &ModelRef_t::enabled,
-			LUADOC_P("lightingLevel"), &ModelRef_t::lightingLevel,
-			LUADOC_P("shapeFlags"), sol::property([](const ModelRef_t& thisRef) {
+			LUADOC_P("index", "<int>"), sol::property(&ModelRef_t::index),
+			LUADOC_P("highDetailId", "<int>"), sol::property(&ModelRef_t::highDetailId),
+			LUADOC_P("lowDetailId", "<int>"), sol::property(&ModelRef_t::lowDetailId),
+			LUADOC_P("enabled", "<boolean>"), &ModelRef_t::enabled,
+			LUADOC_P("lightingLevel", "<float>"), &ModelRef_t::lightingLevel,
+			LUADOC_P("shapeFlags", "<ShapeFlags>"), sol::property([](const ModelRef_t& thisRef) {
 				return thisRef.model ? thisRef.model->shape_flags : 0;
 			}),
-			LUADOC_P("modelFlags"), sol::property([](const ModelRef_t& thisRef) {
+			LUADOC_P("modelFlags", "<ModelFlags>"), sol::property([](const ModelRef_t& thisRef) {
 				return thisRef.model ? thisRef.model->flags2 : 0;
 			})
 		);
@@ -188,9 +188,9 @@ void CWorld::Lua_Init(sol::state& lua)
 					return CELL_OBJECT{ (VECTOR_NOPAD&)table["position"], 0, table["yang"], table["type"] };
 				},
 				[]() { return CELL_OBJECT{ 0 }; }),
-			LUADOC_P("pos"), &CELL_OBJECT::pos,
-			LUADOC_P("yang"), &CELL_OBJECT::yang,
-			LUADOC_P("type", "model index"), &CELL_OBJECT::type
+			LUADOC_P("pos", "<fix.VECTOR>"), & CELL_OBJECT::pos,
+			LUADOC_P("yang", "<int> angle (0 - 63)"), &CELL_OBJECT::yang,
+			LUADOC_P("type", "<int> model index"), &CELL_OBJECT::type
 		);
 	}
 
@@ -469,6 +469,7 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	
 	CRender_Level::DrawMap(view.position, view.angles.y, frustumVolume);
 
+	GR_SetCullMode(CULL_FRONT);
 	for (usize i = 0; i < m_CellObjects.size(); i++)
 	{
 		CRender_Level::DrawCellObject(m_CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);

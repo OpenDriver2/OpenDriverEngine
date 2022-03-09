@@ -350,10 +350,10 @@ void CSky::Lua_Init(sol::state& lua)
 		LUADOC_TYPE("Sky");
 		auto sky = engine["Sky"].get_or_create<sol::table>();
 
-		sky[LUADOC_M("Load", "Loads sky from file with specified index")]
+		sky[LUADOC_M("Load", "(filename: string, num: int) : boolean - Loads sky from file with specified index")]
 			= &Load;
 
-		sky[LUADOC_M("Unload")]
+		sky[LUADOC_M("Unload", "(void)")]
 			= &Unload;
 	}
 }

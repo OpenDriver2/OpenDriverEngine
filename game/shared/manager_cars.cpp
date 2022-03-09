@@ -81,25 +81,25 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 				LUADOC_M("UnloadAllModels", "removes all cars and unload all models"), 
 				&UnloadAllModels,
 
-				LUADOC_M("Create", "create new car. <PARAMS>(cosmetic: CAR_COSMETICS, control: number, modelId: number, positionInfo: POSITION_INFO)"), 
+				LUADOC_M("Create", "(cosmetic: CAR_COSMETICS, control: number, modelId: number, positionInfo: POSITION_INFO) : CCar - create new car."), 
 				&Create,
 
-				LUADOC_M("Remove", "removes specific car"), 
+				LUADOC_M("Remove", "(car: CCar) - removes specific car"), 
 				&Remove,
 
-				LUADOC_M("RemoveAll", "Deletes all car from the world"),
+				LUADOC_M("RemoveAll", "(void) - Deletes all car from the world"),
 				&RemoveAll,
 
-				LUADOC_M("UpdateControl", "updates car controls. Must be called before GlobalTimeStep"), 
+				LUADOC_M("UpdateControl", "(void) - updates car controls. Must be called before GlobalTimeStep"), 
 				&UpdateControl,
 
-				LUADOC_M("GlobalTimeStep", "updates car physics globally"), 
+				LUADOC_M("GlobalTimeStep", "(void) - updates car physics globally"), 
 				&GlobalTimeStep,
 
-				LUADOC_P("soundSourceGetCallback"), 
+				LUADOC_P("soundSourceGetCallback", "<(name: string)>"),
 				&CManager_Cars::m_soundSourceGetCbLua,
 
-				LUADOC_P("eventCallback"),
+				LUADOC_P("eventCallback", "<(self, name: 'HitGround' | 'HitCurb' | 'HitCellObject' | 'HitSmashable' | 'CarsCollision' | 'HitCar', params: table)> - events callback"),
 				&CManager_Cars::m_carEventsLua
 				
 			);

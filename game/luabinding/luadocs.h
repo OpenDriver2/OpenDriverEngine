@@ -29,6 +29,14 @@ public:
 };
 
 //------------------------------------------------------------------------
+// Guidelines:
+// property description	: 
+// "<type> (readonly) - description text"
+// 
+// method description	: 
+// "(param : typeName, optParam? : typeName, refParam: ref(typeName)) : returnType - description text"
+//
+
 
 #define LUADOC_GLOBAL()					CLuaDocumentation::NamespaceGuard	_n
 #define LUADOC_NAMESPACE(name)			CLuaDocumentation::NamespaceGuard	_n(name)
@@ -36,10 +44,10 @@ public:
 
 #define LUADOC_ENUM(name, ...)			_t.Enum(name, __VA_ARGS__)
 #define LUADOC_PROP(name, ...)			_t.Property(name, __VA_ARGS__)
-#define LUADOC_MEMBER(name, ...)		_t.MemberFunc(name, __VA_ARGS__)
+#define LUADOC_METHOD(name, ...)		_t.MemberFunc(name, __VA_ARGS__)
 
 #define LUADOC_P(name, ...)				LUADOC_PROP(name, __VA_ARGS__)
-#define LUADOC_M(name, ...)				LUADOC_MEMBER(name, __VA_ARGS__)
+#define LUADOC_M(name, ...)				LUADOC_METHOD(name, __VA_ARGS__)
 #define LUADOC_T(name, ...)				_t.Init(name, __VA_ARGS__)
 
 #define LUA_BEGIN_ENUM(name)			using ENUM = name

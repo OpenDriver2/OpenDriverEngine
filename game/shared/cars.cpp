@@ -410,64 +410,70 @@ void CCar::Lua_Init(sol::state& lua)
 			LUADOC_M("Destroy", "Marks object for destruction in next physics frame"),
 			& CCar::Destroy,
 
-			LUADOC_P("controlType", "Car control type ID"),
+			LUADOC_P("controlType", "<CarControlType> - Car control type ID"),
 			&CCar::m_controlType,
 
-			LUADOC_P("cosmetics", "Car configuration"),
+			LUADOC_P("cosmetics", "<CarCosmetics> - Car configuration"),
 			&CCar::m_cosmetics,
 
 			// inputs
-			LUADOC_P("thrust", "controls"),
+			LUADOC_P("thrust", "<short> - accelerator value"),
 			&CCar::m_thrust,
 
-			LUADOC_P("wheelAngle", "controls"),
+			LUADOC_P("wheelAngle", "<short>"),
 			&CCar::m_wheel_angle,
 
-			LUADOC_P("handbrake", "controls"),
+			LUADOC_P("handbrake", "<boolean>"),
 			&CCar::m_handbrake,
 
-			LUADOC_P("wheelspin", "controls"),
+			LUADOC_P("wheelspin", "<boolean>"),
 			&CCar::m_wheelspin,
 
-			LUADOC_P("autobrake", "controls"),
+			LUADOC_P("autobrake", "<boolean>"),
 			sol::property(&CCar::GetAutobrake, &CCar::SetAutobrake),
 
 			// driving properties
-			LUADOC_P("changingGear"), sol::property(&CCar::GetChangingGear),
+			LUADOC_P("changingGear", "<boolean> (readonly)"),
+			sol::property(&CCar::GetChangingGear),
 
-			LUADOC_P("wheelSpeed"), sol::property(&CCar::GetWheelSpeed),
+			LUADOC_P("wheelSpeed", "<int> (readonly)"),
+			sol::property(&CCar::GetWheelSpeed),
 
-			LUADOC_P("speed"), sol::property(&CCar::GetSpeed),
+			LUADOC_P("speed", "<int> (readonly)"),
+			sol::property(&CCar::GetSpeed),
 
 			// physics properties
-			LUADOC_P("linearVelocity"), sol::property(&CCar::GetLinearVelocity),
-			LUADOC_P("angularVelocity"), sol::property(&CCar::GetAngularVelocity),
+			LUADOC_P("linearVelocity", "<fix.VECTOR> (readonly)"),
+			sol::property(&CCar::GetLinearVelocity),
+
+			LUADOC_P("angularVelocity", "<fix.VECTOR> (readonly)"),
+			sol::property(&CCar::GetAngularVelocity),
 
 			// transform
-			LUADOC_P("position", "raw transform"),
+			LUADOC_P("position", "<fix.VECTOR> (readonly)"),
 			sol::property(&CCar::GetPosition, &CCar::SetPosition),
 
-			LUADOC_P("cogPosition", "raw transform"),
+			LUADOC_P("cogPosition", "<fix.VECTOR> (readonly)"),
 			sol::property(&CCar::GetCogPosition),
 
-			LUADOC_P("direction", "raw transform"),
+			LUADOC_P("direction", "<int> (readonly)"),
 			sol::property(&CCar::GetDirection, &CCar::SetDirection),
 
 			// interpolated transform
-			LUADOC_P("i_position", "interpolated transform"),
+			LUADOC_P("i_position", "<fix.VECTOR> (readonly) - interpolated transform"),
 			sol::property(&CCar::GetInterpolatedPosition),
 
-			LUADOC_P("i_cogPosition", "interpolated transform"),
+			LUADOC_P("i_cogPosition", "<fix.VECTOR> (readonly) - interpolated transform"),
 			sol::property(&CCar::GetInterpolatedCogPosition),
 
-			LUADOC_P("i_direction", "interpolated transform"),
+			LUADOC_P("i_direction", "<int> (readonly) - interpolated transform"),
 			sol::property(&CCar::GetInterpolatedDirection),
 
-			LUADOC_P("i_drawMatrix", "interpolated transform"),
+			LUADOC_P("i_drawMatrix", "<mat3> (readonly) - interpolated transform"),
 			sol::property(&CCar::GetInterpolatedDrawMatrix),
 
 			// Events
-			LUADOC_P("eventCallback", "Events callback. Signature: func(self, name: 'HitGround' | 'HitCurb' | 'HitCellObject' | 'HitSmashable' | 'CarsCollision' | 'HitCar', params: table)"),
+			LUADOC_P("eventCallback", "<(self, name: 'HitGround' | 'HitCurb' | 'HitCellObject' | 'HitSmashable' | 'CarsCollision' | 'HitCar', params: table)> - events callback"),
 			&CCar::m_carEventsLua
 		);
 	}

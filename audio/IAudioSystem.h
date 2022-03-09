@@ -92,7 +92,7 @@ public:
 
 	// full scale
 	virtual void			GetParams(Params& params) = 0;
-	virtual void			UpdateParams(Params params, int mask = 0) = 0;
+	virtual void			UpdateParams(const Params& params, int mask = 0) = 0;
 
 	// atomic
 	virtual State			GetState() const = 0;
