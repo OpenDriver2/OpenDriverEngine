@@ -121,9 +121,9 @@ void CWorld::Lua_Init(sol::state& lua)
 			LUADOC_T("ModelRef"),
 
 			LUADOC_P("name"), &ModelRef_t::name,
-			LUADOC_P("index", "<int>"), sol::property(&ModelRef_t::index),
-			LUADOC_P("highDetailId", "<int>"), sol::property(&ModelRef_t::highDetailId),
-			LUADOC_P("lowDetailId", "<int>"), sol::property(&ModelRef_t::lowDetailId),
+			LUADOC_P("index", "<int>"), &ModelRef_t::index,
+			LUADOC_P("highDetailId", "<int>"), &ModelRef_t::highDetailId,
+			LUADOC_P("lowDetailId", "<int>"), &ModelRef_t::lowDetailId,
 			LUADOC_P("enabled", "<boolean>"), &ModelRef_t::enabled,
 			LUADOC_P("lightingLevel", "<float>"), &ModelRef_t::lightingLevel,
 			LUADOC_P("shapeFlags", "<ShapeFlags>"), sol::property([](const ModelRef_t& thisRef) {
