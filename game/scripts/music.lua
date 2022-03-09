@@ -101,6 +101,7 @@ function Music.FunkUpDaBGMTunez(funk)
 	local sample = if_then_else(funk, CurrentMusicBankSamples.Chase, CurrentMusicBankSamples.Drive)
 	if sample == nil then
 		MsgError("Can't start music, no sample!")
+		return
 	end
 
 	CurrentMusicSource:Setup(0, sample)

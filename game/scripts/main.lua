@@ -191,6 +191,8 @@ function RenderUI()
 
 		ImGui.End()
 	end
+	
+	DisplayDocumentationWindow()
 
 	if ImGui.BeginMainMenuBar() then
 		if ImGui.BeginMenu("Level") then
@@ -293,6 +295,14 @@ function RenderUI()
 		if world.IsLevelLoaded() and ImGui.BeginMenu("Replay") then
 			if ImGui.MenuItem("Start replay") then
 				testGame.StartReplay()
+			end
+			ImGui.EndMenu()
+		end
+		
+		if ImGui.BeginMenu("Help") then
+			selected,activated = ImGui.MenuItem("API documentation", "", ShowDocumentation)
+			if activated then
+				ShowDocumentation = not ShowDocumentation
 			end
 			ImGui.EndMenu()
 		end
