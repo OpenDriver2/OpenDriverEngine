@@ -97,6 +97,7 @@ void CPlayer::InitReplay(CReplayStream* sourceStream /*= nullptr*/)
 		{
 			m_recordStream = new CReplayStream(REPLAY_STEAM_MAX_LENGTH);
 		}
+		m_recordStream->Purge();
 	}
 
 	m_playbackStream = sourceStream;

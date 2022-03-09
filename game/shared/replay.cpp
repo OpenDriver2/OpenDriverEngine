@@ -115,6 +115,7 @@ void CReplayData::Lua_Init(sol::state& lua)
 		lua.new_usertype<CReplayStream>(
 			LUADOC_T("ReplayStream"),
 			LUADOC_M("Reset", "(void) - resets to start"), &CReplayStream::Reset,
+			LUADOC_M("Purge", "(void) - clears replay stream"), &CReplayStream::Purge,
 			LUADOC_M("Clone", "(void) - clones this replay for playback purposes"), &CReplayStream::Clone,
 
 			LUADOC_M("Play", "(inputs: PlayerInputData) : boolean - Updates playback. Returns false if out of tape"), &CReplayStream::Play,
@@ -178,11 +179,10 @@ void UnpackInput(CPlayer::InputData& outInputs, uint pad, char steer, char type)
 
 CReplayStream::CReplayStream(int bufferSize)
 {
-	memset(&m_sourceType, 0, sizeof(m_sourceType));
 	m_initialPadRecordBuffer = (PADRECORD*)Memory::alloc(bufferSize * sizeof(PADRECORD));
 	m_padRecordBufferEnd = m_initialPadRecordBuffer + bufferSize;
-	m_startStep = CWorld::StepCount;
-	Reset();
+
+	Purge();
 }
 
 CReplayStream::~CReplayStream()
@@ -211,6 +211,13 @@ void CReplayStream::Reset()
 {
 	m_padRecordBuffer = m_initialPadRecordBuffer;
 	m_playbackrun = 0;
+}
+
+void CReplayStream::Purge()
+{
+	memset(&m_sourceType, 0, sizeof(m_sourceType));
+	m_startStep = CWorld::StepCount;
+	Reset();
 }
 
 // update replay

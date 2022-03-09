@@ -61,6 +61,7 @@ public:
 	bool					IsEmpty() const { return m_padRecordBuffer == m_initialPadRecordBuffer; }
 	bool					IsAtEnd() const { return m_padRecordBuffer == m_padRecordBufferEnd; }
 	void					Reset();
+	void					Purge();
 
 	// Updates playback. Returns false if out of tape
 	bool					Play(CPlayer::InputData& outInputs);
