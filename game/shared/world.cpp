@@ -225,6 +225,11 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 {
 	if (!tpage)
 		return;
+
+	const int tpageId = tpage->GetId();
+	if (!g_hwTexturePagesDirty[tpageId])
+		return;
+
 	const TexBitmap_t& bitmap = tpage->GetBitmap();
 
 	if (bitmap.data == nullptr)
@@ -240,8 +245,6 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	for (int i = 0; i < numDetails; i++)
 		tpage->ConvertIndexedTextureToRGBA(color_data, i, &bitmap.clut[i], false, false);
 
-	const int tpageId = tpage->GetId();
-
 	if (g_hwTexturePagesDirty[tpageId] & 1)
 	{
 		TextureID& texture = g_hwTexturePages[tpageId][0];
@@ -250,8 +253,6 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 			texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
 		else
 			GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-
-		g_hwTexturePagesDirty[tpageId] &= ~1;
 	}
 
 	// also load different palettes
@@ -278,10 +279,10 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 				texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
 			else
 				GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-
-			g_hwTexturePagesDirty[tpageId] &= ~(1 << pal);
 		}
 	}
+
+	g_hwTexturePagesDirty[tpageId] = 0;
 	
 	// no longer need in RGBA data
 	Memory::free(color_data);
