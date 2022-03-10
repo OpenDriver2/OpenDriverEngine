@@ -31,9 +31,10 @@ public:
 		UPDATE_LOOPING = (1 << 9),
 		UPDATE_EFFECTSLOT = (1 << 10),
 		UPDATE_RELEASE_ON_STOP = (1 << 11),
+		UPDATE_CHANNEL = (1 << 12),
 
 		// command
-		UPDATE_DO_REWIND = (1 << 12),
+		UPDATE_DO_REWIND = (1 << 13),
 	};
 
 	enum State
@@ -47,7 +48,7 @@ public:
 	{
 		inline Params()
 		{
-			flags = 0;
+			updateFlags = 0;
 		}
 
 		Vector3D			position{ 0.0f };
@@ -62,9 +63,9 @@ public:
 		bool				relative{ true };
 		bool				looping{ false };
 		bool				releaseOnStop{ true };
-		int					id{ -1 };						// read-only
+		int					channel{ -1 };
 
-#define PROP_SETTER(var, flag)	template<typename T> inline void set_##var(T value) {var = value; flags |= flag;}
+#define PROP_SETTER(var, flag)	template<typename T> inline void set_##var(T value) {var = value; updateFlags |= flag;}
 
 		PROP_SETTER(position, UPDATE_POSITION)
 		PROP_SETTER(velocity, UPDATE_VELOCITY)
@@ -78,9 +79,10 @@ public:
 		PROP_SETTER(relative, UPDATE_RELATIVE)
 		PROP_SETTER(looping, UPDATE_LOOPING)
 		PROP_SETTER(releaseOnStop, UPDATE_RELEASE_ON_STOP)
+		PROP_SETTER(channel, UPDATE_CHANNEL)
 #undef PROP_SETTER
 
-		int					flags;
+		int					updateFlags{ 0 };
 	};
 
 	typedef void			(*UpdateCallback)(void* obj, Params& params);		// returns EVoiceUpdateFlags
@@ -124,6 +126,9 @@ public:
 	virtual void				StopAllSounds(int chanType = -1, void* callbackObject = nullptr) = 0;
 	virtual void				PauseAllSounds(int chanType = -1, void* callbackObject = nullptr) = 0;
 	virtual void				ResumeAllSounds(int chanType = -1, void* callbackObject = nullptr) = 0;
+
+	virtual void				SetChannelVolume(int chanType, float value) = 0;
+	virtual void				SetChannelPitch(int chanType, float value) = 0;
 
 	virtual void				SetMasterVolume(float value) = 0;
 

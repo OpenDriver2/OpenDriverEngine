@@ -525,11 +525,9 @@ void CCar::StartSounds()
 	params.set_referenceDistance(512 / ONE_F);
 	params.set_releaseOnStop(true);
 
-	params.flags |= IAudioSource::UPDATE_RELEASE_ON_STOP;
-
+	m_skidSound->UpdateParams(params);
 	m_engineSound->UpdateParams(params);
 	m_idleSound->UpdateParams(params);
-	m_skidSound->UpdateParams(params);
 }
 
 void CCar::StopSounds()
@@ -1715,8 +1713,8 @@ void CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 		params.set_state(IAudioSource::PLAYING);
 	}
 
-	int volume = (skidsound - 10000) * 3 / 4 - 5000;
-	int pitch = skidsound * 1024 / 13000 + 3072;
+	const int volume = (skidsound - 10000) * 3 / 4 - 5000;
+	const int pitch = skidsound * 1024 / 13000 + 3072;
 
 	params.set_volume((10000 + volume) / 10000.0f);
 	params.set_pitch(pitch / ONE_F);

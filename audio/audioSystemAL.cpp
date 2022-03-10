@@ -78,7 +78,8 @@ LPALDELETEEFFECTS _alDeleteEffects = nullptr;
 
 //---------------------------------------------------------
 
-#define BUFFER_SILENCE_SIZE 128
+#define MIXER_CHANNELS			16
+#define BUFFER_SILENCE_SIZE		128
 static const short _silence[BUFFER_SILENCE_SIZE] = { 0 };
 
 //---------------------------------------------------------
@@ -183,6 +184,7 @@ void CAudioSystemAL::Init()
 	if (!InitContext())
 		return;
 
+	m_mixerChannels.resize(MIXER_CHANNELS);
 
 	InitEffects();
 
@@ -192,7 +194,6 @@ void CAudioSystemAL::Init()
 	alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
 
 	alDopplerFactor(0.25f);
-
 }
 
 void CAudioSystemAL::InitEffects()
@@ -353,20 +354,20 @@ void CAudioSystemAL::DestroySource(IAudioSource* source)
 	src->m_forceStop = true;
 }
 
-void CAudioSystemAL::StopAllSounds(int chanType /*= -1*/, void* callbackObject /*= nullptr*/)
+void CAudioSystemAL::StopAllSounds(int chanId /*= -1*/, void* callbackObject /*= nullptr*/)
 {
 	// suspend all sources
 	for (uint i = 0; i < m_sources.size(); i++)
 	{
 		CAudioSourceAL* source = m_sources[i].p();
-		if (chanType == -1 || source->m_chanType == chanType && source->m_callbackObject == callbackObject)
+		if (chanId == -1 || source->m_channel == chanId && source->m_callbackObject == callbackObject)
 		{
 			source->m_forceStop = true;
 		}
 	}
 }
 
-void CAudioSystemAL::PauseAllSounds(int chanType /*= -1*/, void* callbackObject /*= nullptr*/)
+void CAudioSystemAL::PauseAllSounds(int chanId /*= -1*/, void* callbackObject /*= nullptr*/)
 {
 	IAudioSource::Params param;
 	param.set_state(IAudioSource::PAUSED);
@@ -375,12 +376,12 @@ void CAudioSystemAL::PauseAllSounds(int chanType /*= -1*/, void* callbackObject 
 	for (uint i = 0; i < m_sources.size(); i++)
 	{
 		CAudioSourceAL* source = m_sources[i].p();
-		if (chanType == -1 || source->m_chanType == chanType && source->m_callbackObject == callbackObject)
+		if (chanId == -1 || source->m_channel == chanId && source->m_callbackObject == callbackObject)
 			source->UpdateParams(param);
 	}
 }
 
-void CAudioSystemAL::ResumeAllSounds(int chanType /*= -1*/, void* callbackObject /*= nullptr*/)
+void CAudioSystemAL::ResumeAllSounds(int chanId /*= -1*/, void* callbackObject /*= nullptr*/)
 {
 	IAudioSource::Params param;
 	param.set_state(IAudioSource::PLAYING);
@@ -389,9 +390,29 @@ void CAudioSystemAL::ResumeAllSounds(int chanType /*= -1*/, void* callbackObject
 	for (uint i = 0; i < m_sources.size(); i++)
 	{
 		CAudioSourceAL* source = m_sources[i].p();
-		if (chanType == -1 || source->m_chanType == chanType && source->m_callbackObject == callbackObject)
+		if (chanId == -1 || source->m_channel == chanId && source->m_callbackObject == callbackObject)
 			source->UpdateParams(param);
 	}
+}
+
+void CAudioSystemAL::SetChannelVolume(int chanType, float value)
+{
+	if (chanType < 0 || chanType >= (int)m_mixerChannels.size())
+		return;
+
+	MixerChannel_t& channel = m_mixerChannels[chanType];
+	channel.volume = value;
+	channel.updateFlags |= IAudioSource::UPDATE_VOLUME;
+}
+
+void CAudioSystemAL::SetChannelPitch(int chanType, float value)
+{
+	if (chanType < 0 || chanType >= (int)m_mixerChannels.size())
+		return;
+
+	MixerChannel_t& channel = m_mixerChannels[chanType];
+	channel.pitch = value;
+	channel.updateFlags |= IAudioSource::UPDATE_PITCH;
 }
 
 // loads sample source data
@@ -544,7 +565,7 @@ CAudioSourceAL::CAudioSourceAL(CAudioSystemAL* owner) :
 	m_source(AL_NONE),
 	m_streamPos(0),
 	m_state(STOPPED),
-	m_chanType(-1),
+	m_channel(-1),
 	m_releaseOnStop(true),
 	m_forceStop(false),
 	m_looping(false),
@@ -571,7 +592,22 @@ void CAudioSourceAL::Ref_DeleteObject()
 // Updates channel with user parameters
 void CAudioSourceAL::UpdateParams(const Params& params, int mask)
 {
-	mask |= params.flags;
+	mask |= params.updateFlags;
+
+	CAudioSystemAL::MixerChannel_t mixChannel;
+
+	// apply update flags from mixer
+	if (mask & UPDATE_CHANNEL)
+	{
+		m_channel = params.channel;
+		mask &= ~UPDATE_CHANNEL;
+	}
+
+	const int channel = m_channel;
+	if (channel >= 0 && channel < (int)m_owner->m_mixerChannels.size())
+		mixChannel = m_owner->m_mixerChannels[channel];
+
+	mask |= mixChannel.updateFlags;
 
 	if (mask == 0)
 		return;
@@ -583,11 +619,11 @@ void CAudioSourceAL::UpdateParams(const Params& params, int mask)
 		return;
 
 	ALuint qbuffer;
-	int tempValue;
 	int numQueued;
 	bool isStreaming;
 
 	isStreaming = m_sample ? m_sample->IsStreaming() : false;
+
 
 	if (mask & UPDATE_POSITION)
 		alSourcefv(thisSource, AL_POSITION, params.position);
@@ -596,10 +632,16 @@ void CAudioSourceAL::UpdateParams(const Params& params, int mask)
 		alSourcefv(thisSource, AL_VELOCITY, params.velocity);
 
 	if (mask & UPDATE_VOLUME)
-		alSourcef(thisSource, AL_GAIN, params.volume);
+	{
+		m_volume = params.volume;
+		alSourcef(thisSource, AL_GAIN, params.volume * mixChannel.volume);
+	}
 
 	if (mask & UPDATE_PITCH)
-		alSourcef(thisSource, AL_PITCH, params.pitch);
+	{
+		m_pitch = params.pitch;
+		alSourcef(thisSource, AL_PITCH, params.pitch * mixChannel.pitch);
+	}
 
 	if (mask & UPDATE_REF_DIST)
 		alSourcef(thisSource, AL_REFERENCE_DISTANCE, params.referenceDistance);
@@ -617,7 +659,7 @@ void CAudioSourceAL::UpdateParams(const Params& params, int mask)
 
 	if (mask & UPDATE_RELATIVE)
 	{
-		tempValue = params.relative == true ? AL_TRUE : AL_FALSE;
+		const int tempValue = params.relative == true ? AL_TRUE : AL_FALSE;
 		alSourcei(thisSource, AL_SOURCE_RELATIVE, tempValue);
 	}
 
@@ -649,6 +691,10 @@ void CAudioSourceAL::UpdateParams(const Params& params, int mask)
 		}
 		else if (params.state == PAUSED)
 		{
+			// HACK: make source armed
+			if(m_state != PLAYING)
+				alSourcePlay(thisSource);
+
 			alSourcePause(thisSource);
 		}
 		else if (params.state == PLAYING)
@@ -689,15 +735,15 @@ void CAudioSourceAL::GetParams(Params& params)
 	if (thisSource == AL_NONE)
 		return;
 
-	params.id = m_chanType;
+	params.channel = m_channel;
 
 	bool isStreaming = m_sample ? m_sample->IsStreaming() : false;
 
 	// get current state of alSource
 	alGetSourcefv(thisSource, AL_POSITION, params.position);
 	alGetSourcefv(thisSource, AL_VELOCITY, params.velocity);
-	alGetSourcef(thisSource, AL_GAIN, &params.volume);
-	alGetSourcef(thisSource, AL_PITCH, &params.pitch);
+	params.volume = m_volume;
+	params.pitch = m_pitch;
 	alGetSourcef(thisSource, AL_REFERENCE_DISTANCE, &params.referenceDistance);
 	alGetSourcef(thisSource, AL_ROLLOFF_FACTOR, &params.rolloff);
 	alGetSourcef(thisSource, AL_AIR_ABSORPTION_FACTOR, &params.airAbsorption);
@@ -728,7 +774,7 @@ void CAudioSourceAL::GetParams(Params& params)
 	params.releaseOnStop = m_releaseOnStop;
 }
 
-void CAudioSourceAL::Setup(int typeId, ISoundSource* sample, UpdateCallback fnCallback /*= nullptr*/, void* callbackObject /*= nullptr*/)
+void CAudioSourceAL::Setup(int chanId, ISoundSource* sample, UpdateCallback fnCallback /*= nullptr*/, void* callbackObject /*= nullptr*/)
 {
 	Release();
 	InitSource();
@@ -736,7 +782,7 @@ void CAudioSourceAL::Setup(int typeId, ISoundSource* sample, UpdateCallback fnCa
 	m_callbackObject = callbackObject;
 	m_callback = fnCallback;
 
-	m_chanType = typeId;
+	m_channel = chanId;
 
 	SetupSample(sample);
 }
@@ -766,7 +812,7 @@ void CAudioSourceAL::Release()
 
 	EmptyBuffers();
 
-	m_chanType = -1;
+	m_channel = -1;
 	m_callback = nullptr;
 	m_callbackObject = nullptr;
 	m_state = STOPPED;
@@ -790,6 +836,21 @@ bool CAudioSourceAL::DoUpdate()
 
 		// update channel parameters
 		UpdateParams(params);
+	}
+	else
+	{
+		// monitor mixer state
+		const int channel = m_channel;
+		if (channel >= 0 && channel < (int)m_owner->m_mixerChannels.size())
+		{
+			const CAudioSystemAL::MixerChannel_t& mixChannel = m_owner->m_mixerChannels[channel];
+			if (mixChannel.updateFlags)
+			{
+				Params params;
+				GetParams(params);
+				UpdateParams(params);
+			}
+		}
 	}
 
 	if (m_sample == nullptr)
@@ -856,10 +917,7 @@ void CAudioSourceAL::SetupSample(ISoundSource* sample)
 	m_streamPos = 0;
 	m_releaseOnStop = (m_callback == nullptr);
 
-	if (sample == nullptr)
-		return;
-
-	if (!sample->IsStreaming())
+	if (sample && !sample->IsStreaming())
 	{
 		CSoundSource_OpenALCache* alSource = (CSoundSource_OpenALCache*)sample;
 

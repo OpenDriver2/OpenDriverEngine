@@ -27,10 +27,12 @@ public:
 
 	void						Update();
 
-	void						StopAllSounds(int chanType = -1, void* callbackObject = nullptr);
-	void						PauseAllSounds(int chanType = -1, void* callbackObject = nullptr);
-	void						ResumeAllSounds(int chanType = -1, void* callbackObject = nullptr);
+	void						StopAllSounds(int chanId = -1, void* callbackObject = nullptr);
+	void						PauseAllSounds(int chanId = -1, void* callbackObject = nullptr);
+	void						ResumeAllSounds(int chanId = -1, void* callbackObject = nullptr);
 
+	void						SetChannelVolume(int chanType, float value);
+	void						SetChannelPitch(int chanType, float value);
 	void						SetMasterVolume(float value);
 
 	// sets listener properties
@@ -59,6 +61,13 @@ private:
 		ALuint		nAlEffect;
 	};
 
+	struct MixerChannel_t
+	{
+		float		volume{ 1.0f };
+		float		pitch{ 1.0f };
+		int			updateFlags{ 0 }; // IAudioSource::Update enum
+	};
+
 	// bool			CreateALEffect(const char* pszName, kvkeybase_t* pSection, sndEffect_t& effect);
 	void			SuspendSourcesWithSample(ISoundSource* sample);
 
@@ -68,9 +77,10 @@ private:
 	void			DestroyContext();
 	void			DestroyEffects();
 
-	Array<CRefPointer<CAudioSourceAL*>>	m_sources;	// tracked sources
+	Array<CRefPointer<CAudioSourceAL*>>		m_sources;	// tracked sources
 	Array<ISoundSource*>					m_samples;
 	Array<sndEffect_t>						m_effects;
+	Array<MixerChannel_t>					m_mixerChannels;
 
 	ALCcontext*								m_ctx;
 	ALCdevice*								m_dev;
@@ -94,7 +104,7 @@ public:
 	CAudioSourceAL(int typeId, ISoundSource* sample, UpdateCallback fnCallback, void* callbackObject);
 	~CAudioSourceAL();
 
-	void					Setup(int chanType, ISoundSource* sample, UpdateCallback fnCallback = nullptr, void* callbackObject = nullptr);
+	void					Setup(int chanId, ISoundSource* sample, UpdateCallback fnCallback = nullptr, void* callbackObject = nullptr);
 	void					Release();
 
 	// full scale
@@ -128,7 +138,10 @@ protected:
 	int						m_streamPos;
 	State					m_state;
 
-	int						m_chanType;
+	float					m_volume{ 1.0f };	// need them raw and unaffected by mixer params
+	float					m_pitch{ 1.0f };
+
+	int						m_channel;			// mixer channel index
 	bool					m_releaseOnStop;
 	bool					m_forceStop;
 	bool					m_looping;

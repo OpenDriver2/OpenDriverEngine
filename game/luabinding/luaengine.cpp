@@ -106,10 +106,10 @@ void IAudioSystem_Lua_Init(sol::state& lua)
 		lua.new_usertype<IAudioSource>(
 			LUADOC_T("IAudioSource", "Audible sound source"),
 
-			LUADOC_M("Setup", "sets up type id and sound sample for playback"), 
-			[](IAudioSource* self, int typeId, ISoundSource* sample) { 
+			LUADOC_M("Setup", "(chanId: int, sample: ISoundSource) - sets up type id and sound sample for playback"), 
+			[](IAudioSource* self, int chanId, ISoundSource* sample) { 
 				// no callbacks are allowed
-				self->Setup(typeId, sample, nullptr);
+				self->Setup(chanId, sample, nullptr);
 			},
 
 			LUADOC_M("Release", "(void) - stops the sound and drops the reference"),
@@ -147,7 +147,25 @@ void IAudioSystem_Lua_Init(sol::state& lua)
 			&IAudioSystem::LoadSample,
 
 			LUADOC_M("FreeSample", "(sample: ISoundSource)"),
-			&IAudioSystem::FreeSample
+			&IAudioSystem::FreeSample,
+
+			LUADOC_M("StopAllSounds", "(chanId: int = -1)"),
+			&IAudioSystem::StopAllSounds,
+
+			LUADOC_M("PauseAllSounds", "(chanId: int = -1)"),
+			&IAudioSystem::PauseAllSounds,
+
+			LUADOC_M("ResumeAllSounds", "(chanId: int = -1)"),
+			&IAudioSystem::ResumeAllSounds,
+
+			LUADOC_M("SetChannelVolume", "(chanId: int, value: float)"),
+			&IAudioSystem::SetChannelVolume,
+
+			LUADOC_M("SetChannelPitch", "(chanId: int, value: float)"),
+			&IAudioSystem::SetChannelPitch,
+
+			LUADOC_M("SetMasterVolume", "(value: float)"),
+			&IAudioSystem::SetMasterVolume
 		);
 	}
 
