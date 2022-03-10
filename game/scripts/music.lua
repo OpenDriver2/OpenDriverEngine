@@ -104,7 +104,7 @@ function Music.FunkUpDaBGMTunez(funk)
 		return
 	end
 
-	CurrentMusicSource:Setup(0, sample)
+	CurrentMusicSource:Setup(ChannelId.Music, sample)
 
 	local sparams = CurrentMusicSource.params
 	

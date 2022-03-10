@@ -210,7 +210,7 @@ function MoveSmashables(dt)
         if dam.position.y > dam.origPosY-0.015 then
             dam.position = dam.position + dam.velocity * vec.vec3(dt)
             dam.velocity.y = dam.velocity.y - 3.0 * dt;
-            dam.angles = dam.angles + vec.vec3(dam.rot_speed * dt) * vec.vec3(0.35, 3.0, 0.35)
+            dam.angles = dam.angles + vec.vec3(dam.rot_speed * dt) * vec.vec3(0, 3.0, 0.85)
             table.insert(newSmashedObjects, dam)
         end
 

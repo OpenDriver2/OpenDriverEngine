@@ -1,5 +1,12 @@
 local audio = engine.Audio
 
+ChannelId = {
+	Sfx = 0,		-- Hardcoded; cars, hit sounds, etc
+	Music = 1,
+	Voice = 2
+}
+
+
 SoundBanks = {}
 
 function LoadSoundbank( key, bankTable )

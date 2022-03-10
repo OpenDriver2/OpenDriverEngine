@@ -18,6 +18,8 @@ local testGame = dofile("scripts/test_game.lua")
 local forceShowUI = false
 local testGameCamera = false					-- See: RenderUI
 
+local oldPauseState = false
+local pauseState = false
 
 local fixed_timestep <const> = 1.0 / 30.0
 local timeAccumulator = 0.0
@@ -36,49 +38,63 @@ end
 -- StepSim: performs physics fixed time step (callback)
 --
 local function StepSim(dt)
-
-	timeAccumulator = timeAccumulator + dt
-
-	local numSteps = 0
-	
-	while timeAccumulator >= fixed_timestep do
-		if numSteps > 4 then
-			timeAccumulator = 0.0
-			break
+	-- handle pause state
+	if pauseState then
+		if not oldPauseState then
+			audio:SetChannelPitch(ChannelId.Sfx, 0.0)
+			audio:SetChannelPitch(ChannelId.Music, 0.0)
 		end
-
-		timeAccumulator = timeAccumulator - fixed_timestep
-	
-		ControlMap()
-
-		eventModels.AddEventObjects()
-		
-		testGame.UpdateCarPads()
-
-		-- TODO: direct port from MAIN.C
-		-- 
-		-- events:Update()
-		-- mission:Update()
-		-- civAI:PingIn()
-		cars:UpdateControl()	-- controls and replay
-		
-		-- cops.Update()
-		-- peds.Update()
-
-		cars:GlobalTimeStep()
-
-		--players:Update()
-		--players:CheckMiscFelonies()
-
-		numSteps = numSteps + 1
-
-		-- advance game frame, replay time, etc
-		world.EndStep()
-		CityEvents.OnStep()
+	else
+		if oldPauseState then
+			audio:SetChannelPitch(ChannelId.Sfx, 1.0)
+			audio:SetChannelPitch(ChannelId.Music, 1.0)
+		end
 	end
+	oldPauseState = pauseState
 	
-	-- move and draw smashables
-	MoveSmashables(dt)
+	if not pauseState then
+		timeAccumulator = timeAccumulator + dt
+		local numSteps = 0
+	
+		while timeAccumulator >= fixed_timestep do
+			if numSteps > 4 then
+				timeAccumulator = 0.0
+				break
+			end
+
+			timeAccumulator = timeAccumulator - fixed_timestep
+		
+			ControlMap()
+
+			eventModels.AddEventObjects()
+			
+			testGame.UpdateCarPads()
+
+			-- TODO: direct port from MAIN.C
+			-- 
+			-- events:Update()
+			-- mission:Update()
+			-- civAI:PingIn()
+			cars:UpdateControl()	-- controls and replay
+			
+			-- cops.Update()
+			-- peds.Update()
+
+			cars:GlobalTimeStep()
+
+			--players:Update()
+			--players:CheckMiscFelonies()
+
+			numSteps = numSteps + 1
+
+			-- advance game frame, replay time, etc
+			world.EndStep()
+			CityEvents.OnStep()
+		end
+		
+		-- move and draw smashables
+		MoveSmashables(dt)
+	end
 
 	if testGameCamera then
 		testGame.UpdateCamera(dt)
@@ -114,7 +130,7 @@ end
 --          UI STUFF
 --------------------------------------------------------------------------
 
-function ResetFreeCamera()
+local function ResetFreeCamera()
 	FreeCamera.Position = vec.vec3(5100 / fix.ONE, 590 / fix.ONE, -13651 / fix.ONE)
 	FreeCamera.Angles = vec.vec3(25.0, 45.0, 0)
 	
@@ -258,6 +274,11 @@ local function RenderUI()
 			selected,activated = ImGui.MenuItem("Game camera", "", testGameCamera)
 			if activated then
 				testGameCamera = not testGameCamera
+			end
+
+			selected,activated = ImGui.MenuItem("Pause", "", pauseState)
+			if activated then
+				pauseState = not pauseState
 			end
 			
 			if ImGui.BeginMenu("Change car") then
