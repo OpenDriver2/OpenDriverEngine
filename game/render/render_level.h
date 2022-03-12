@@ -9,6 +9,8 @@ struct LevelRenderProps
 	ColorRGB ambientColor{ 0.95f, 0.9f, 1.0f };
 	ColorRGB lightColor{ 0.95f, 0.9f, 0.5f };
 
+	int displayCellObjectList{ -1 };
+
 	float nightAmbientScale{ 0.35f };
 	float nightLightScale{ 0.0f };
 
@@ -22,7 +24,7 @@ struct LevelRenderProps
 	// debug stuff
 	bool displayCollisionBoxes{ false };
 	bool displayHeightMap{ false };
-	bool displayAllCellLevels{ true };	// TODO: transform to list of drawn cells
+	bool displayAllCellLevels{ false };
 };
 
 class CRender_Level

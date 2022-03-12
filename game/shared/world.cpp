@@ -110,7 +110,8 @@ void CWorld::Lua_Init(sol::state& lua)
 
 			LUADOC_P("displayCollisionBoxes", "<boolean>"), &LevelRenderProps::displayCollisionBoxes,
 			LUADOC_P("displayHeightMap", "<boolean>"), &LevelRenderProps::displayHeightMap,
-			LUADOC_P("displayAllCellLevels", "<boolean>"), &LevelRenderProps::displayAllCellLevels
+			LUADOC_P("displayAllCellLevels", "<boolean>"), &LevelRenderProps::displayAllCellLevels,
+			LUADOC_P("displayCellObjectList", "<int>"), & LevelRenderProps::displayCellObjectList
 		);
 	}
 
@@ -760,15 +761,12 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& 
 		CELL_ITERATOR_D2 ci;
 		ci.cache = iteratorCache;
 
-		PACKED_CELL_OBJECT* ppco = levMapDriver2->GetFirstPackedCop(&ci, cell);
-
 		// walk each cell object in cell
-		while (ppco)
+		for (PACKED_CELL_OBJECT* ppco = levMapDriver2->GetFirstPackedCop(&ci, cell); 
+			ppco != nullptr; ppco = levMapDriver2->GetNextPackedCop(&ci))
 		{
 			if (!func(ci.listType, ci.co))
 				break;
-
-			ppco = levMapDriver2->GetNextPackedCop(&ci);
 		}
 	}
 	else
@@ -779,14 +777,12 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& 
 		CELL_ITERATOR_D1 ci;
 		ci.cache = iteratorCache;
 
-		CELL_OBJECT* pco = levMapDriver1->GetFirstCop(&ci, cell);
-
 		// walk each cell object in cell
-		while (pco)
+		for (CELL_OBJECT* pco = levMapDriver1->GetFirstCop(&ci, cell); 
+			pco != nullptr; levMapDriver1->GetNextCop(&ci))
 		{
 			if (!func(-1, pco))
 				break;
-			pco = levMapDriver1->GetNextCop(&ci);
 		}
 	}
 }

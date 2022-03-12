@@ -18,6 +18,7 @@ sol::state				g_luaState;
 extern int g_drawnCells;
 extern int g_drawnModels;
 extern int g_drawnPolygons;
+extern int g_debugListCellsDrawn;
 extern int g_cellsDrawDistance;
 
 bool g_quit = false;
@@ -66,6 +67,7 @@ void UpdateStats(float deltaTime)
 	statsTable["drawnCells"] = g_drawnCells;
 	statsTable["drawnModels"] = g_drawnModels;
 	statsTable["drawnPolygons"] = g_drawnPolygons;
+	statsTable["debugListCellsDrawn"] = g_debugListCellsDrawn;
 }
 
 //-------------------------------------------------------------

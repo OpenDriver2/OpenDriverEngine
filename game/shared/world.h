@@ -27,6 +27,13 @@ struct DRAWABLE
 	int model;
 };
 
+struct CELL_LIST
+{
+	Matrix4x4 transform;
+	VECTOR_NOPAD position;
+	int list;
+};
+
 //typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
 //typedef bool (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
 

@@ -59,6 +59,7 @@ int g_drawnCells;
 int g_drawnModels;
 int g_drawnPolygons;
 int g_drawnRegions;
+int g_debugListCellsDrawn;
 
 void CRender_Level::DrawObject(const DRAWABLE& drawable, const Vector3D& cameraPos, const Volume& frustrumVolume, bool buildingLighting)
 {
@@ -141,6 +142,11 @@ void CRender_Level::DrawCellObject(
 	if (co.type >= MAX_MODELS)
 	{
 		// WHAT THE FUCK?
+		return;
+	}
+
+	if (co.pos.vx == OBJECT_SMASHED_MARK)
+	{
 		return;
 	}
 
@@ -252,15 +258,28 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 	g_drawnModels = 0;
 	g_drawnPolygons = 0;
 	g_drawnRegions = 0;
+	g_debugListCellsDrawn = 0;
 
 	CBaseLevelMap* levMap = g_levMap;
 
 	const bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 
-	VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
+	const VECTOR_NOPAD cameraPosition = ToFixedVector(cameraPos);
+	static XZPAIR lastCameraPosCell{ 0,0 };
+	static float lastCameraAngleY = 0.0f;
 
-	XZPAIR cell;
-	levMap->WorldPositionToCellXZ(cell, cameraPosition);
+	XZPAIR cameraPosCell;
+	levMap->WorldPositionToCellXZ(cameraPosCell, cameraPosition);
+
+	bool needMapIteration = (RenderProps.displayCellObjectList != -1);
+	if (cameraPosCell.x != lastCameraPosCell.x ||
+		cameraPosCell.z != lastCameraPosCell.z ||
+		fabs(AngleDiff(DEG2RAD(lastCameraAngleY), DEG2RAD(cameraAngleY))) > DEG2RAD(10.0f))
+	{
+		lastCameraAngleY = cameraAngleY;
+		lastCameraPosCell = cameraPosCell;
+		needMapIteration = true;
+	}
 
 	// drawing state
 	static Array<CELL_OBJECT*> drawObjects;
@@ -268,9 +287,12 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 	static Array<ModelRef_t*> drawObjectModel;
 	static Array<float> drawObjectDistance;
 	static Array<int> shadowObjectIds;
-	int numObjects = 0;
-	int numObjectShadows = 0;
+	static int numObjects = 0;
+	static int numObjectShadows = 0;
+
+	if(needMapIteration)
 	{
+		numObjects = 0;
 		const int maxObjectsPerCell = 64;
 		const int totalObjects = g_cellsDrawDistance * maxObjectsPerCell;
 		drawObjects.reserve(totalObjects);
@@ -280,100 +302,123 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 		shadowObjectIds.reserve(totalObjects);
 	}
 
-	int i = g_cellsDrawDistance;
-	int vloop = 0;
-	int hloop = 0;
-	int dir = 0;
-
-	XZPAIR icell;
-
-	CELL_ITERATOR_CACHE iteratorCache;
-	HashSet<int> drawnRegions;
-	int prevRegion = -1;
-
-	// walk through all cells
-	while (i >= 0)
+	if (needMapIteration)
 	{
-		icell.x = cell.x + hloop;
-		icell.z = cell.z + vloop;
+		Volume mapFrustum = frustrumVolume;
+		mapFrustum.Expand(3000.0f / ONE_F);
 
-		if (icell.x > -1 && icell.x < levMap->GetCellsAcross() &&
-			icell.z > -1 && icell.z < levMap->GetCellsDown())
+		CELL_ITERATOR_CACHE iteratorCache;
+		int prevRegion = -1;
+
+		int i = g_cellsDrawDistance;
+		int vloop = 0;
+		int hloop = 0;
+		int dir = 0;
+
+		// walk through all cells
+		while (i >= 0)
 		{
-			g_drawnCells++;
-			const int regionIdx = g_levMap->GetRegionIndex(icell);
+			XZPAIR icell;
+			icell.x = cameraPosCell.x + hloop;
+			icell.z = cameraPosCell.z + vloop;
 
-			// BUG: cell iterator is prone to duplication
-			// due to very high drawn cell count it gets overflown
-			if (g_drawnCells > 441 && regionIdx != prevRegion)
-				memset(&iteratorCache, 0, sizeof(iteratorCache));
+			if (icell.x > -1 && icell.x < levMap->GetCellsAcross() &&
+				icell.z > -1 && icell.z < levMap->GetCellsDown())
+			{
+				g_drawnCells++;
+				const int regionIdx = g_levMap->GetRegionIndex(icell);
 
-			if(regionIdx != prevRegion)
-				drawnRegions.append(regionIdx);
-			prevRegion = regionIdx;
+				// BUG: cell iterator is prone to duplication
+				// due to very high drawn cell count it gets overflown
+				if (g_drawnCells > 441 && regionIdx != prevRegion)
+					memset(&iteratorCache, 0, sizeof(iteratorCache));
+				prevRegion = regionIdx;
 
-			CWorld::ForEachCellObjectAt(icell, [&cameraPos, &frustrumVolume, &numObjects, &numObjectShadows](int listType, CELL_OBJECT* co) {
-				if (listType != -1 && !RenderProps.displayAllCellLevels)
-					return false;
+				CWorld::ForEachCellObjectAt(icell, [&cameraPos, &mapFrustum](int listType, CELL_OBJECT* co) {
 
-				Vector3D absCellPosition = FromFixedVector(co->pos);
-				absCellPosition.y *= -1.0f;
-				
-				const float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
-				
-				ModelRef_t* ref = GetModelCheckLods(co->type, distanceFromCamera);
-				if (!ref->model || !ref->enabled)
+					if (listType != -1)
+					{
+						if (!RenderProps.displayAllCellLevels)
+							return false;
+
+						if (RenderProps.displayCellObjectList != -1 && listType != RenderProps.displayCellObjectList)
+							return true;
+
+						if (RenderProps.displayCellObjectList == listType)
+							g_debugListCellsDrawn++;
+					}
+
+					Vector3D absCellPosition = FromFixedVector(co->pos);
+					absCellPosition.y *= -1.0f;
+
+					const float distanceFromCamera = lengthSqr(absCellPosition - cameraPos);
+
+					ModelRef_t* ref = GetModelCheckLods(co->type, distanceFromCamera);
+					if (!ref->model || !ref->enabled)
+						return true;
+
+					const MODEL* model = ref->model;
+
+					// check if it is in view
+					const float boundSphereUnits = model->bounding_sphere;
+					const float boundSphere = boundSphereUnits * RENDER_SCALING * 2.0f;
+
+					if (model->flags2 || (model->shape_flags & (SHAPE_FLAG_ROAD | SHAPE_FLAG_SPRITE))) // basically any flag is candidate
+					{
+						const float sphereMultiplier = (model->shape_flags & SHAPE_FLAG_ROAD) ? 3.0f : 1.0f;
+						if ((boundSphereUnits * sphereMultiplier) / distanceFromCamera < 1.0f)
+							return true;
+					}
+
+					Vector3D cellFrustumPos = absCellPosition;
+					cellFrustumPos.y = cameraPos.y;
+					if (!mapFrustum.IsSphereInside(cellFrustumPos, boundSphere))
+						return true;
+
+					// add
+					drawObjects[numObjects] = co;
+					drawObjectPositions[numObjects] = absCellPosition;
+					drawObjectDistance[numObjects] = distanceFromCamera;
+					drawObjectModel[numObjects] = ref;
+					numObjects++;
+
 					return true;
-				
-				const MODEL* model = ref->model;
+				}, &iteratorCache);
+			}
 
-				// check if it is in view
-				const float boundSphere = model->bounding_sphere * RENDER_SCALING * 2.0f;
-				Vector3D cellFrustumPos = absCellPosition;
-				cellFrustumPos.y = cameraPos.y;
-				if (!frustrumVolume.IsSphereInside(cellFrustumPos, boundSphere))
-					return true;
+			if (dir == 0)
+			{
+				dir = (++hloop + vloop == 1) ? 1 : dir;
+			}
+			else if (dir == 1)
+			{
+				dir = (hloop == ++vloop) ? 2 : dir;
+			}
+			else if (dir == 2)
+			{
+				dir = (--hloop + vloop == 0) ? 3 : dir;
+			}
+			else
+			{
+				dir = (hloop == --vloop) ? 0 : dir;
+			}
 
-				if (distanceFromCamera < g_maxShadowDistance && (model->shape_flags & SHAPE_FLAG_SPRITE))
-					shadowObjectIds[numObjectShadows++] = numObjects;
-
-				// add
-				drawObjects[numObjects] = co;
-				drawObjectPositions[numObjects] = absCellPosition;
-				drawObjectDistance[numObjects] = distanceFromCamera;
-				drawObjectModel[numObjects] = ref;
-				numObjects++;
-
-				return true;
-			}, &iteratorCache);
+			i--;
 		}
-
-		if (dir == 0)
-		{
-			dir = (++hloop + vloop == 1) ? 1 : dir;
-		}
-		else if (dir == 1)
-		{
-			dir = (hloop == ++vloop) ? 2 : dir;
-		}
-		else if (dir == 2)
-		{
-			dir = (--hloop + vloop == 0) ? 3 : dir;
-		}
-		else
-		{
-			dir = (hloop == --vloop) ? 0 : dir;
-		}
-
-		i--;
 	}
 
 	// at least once we should do that
 	CRenderModel::SetupModelShader();
 
+	numObjectShadows = 0;
+
 	// draw object list
 	for (int i = 0; i < numObjects; i++)
 	{
+		const MODEL* model = drawObjectModel[i]->model;
+		if (drawObjectDistance[i] < g_maxShadowDistance && (model->shape_flags & SHAPE_FLAG_SPRITE))
+			shadowObjectIds[numObjectShadows++] = i;
+
 		DrawCellObject(*drawObjects[i], drawObjectPositions[i], drawObjectModel[i], cameraAngleY, driver2Map);
 
 		// debug
@@ -381,7 +426,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 			CRenderModel::DrawModelCollisionBox(drawObjectModel[i], drawObjects[i]->pos, drawObjects[i]->yang);
 	}
 
-	if (ShadowVAO)
+	if (ShadowVAO && numObjectShadows > 0)
 	{
 		// compulte shadow matrix
 		const OUT_CELL_FILE_HEADER& cellHeader = g_levMap->GetMapInfo();

@@ -105,6 +105,11 @@ float fract(float value)
     return (float)fmod(value, 1.0f);
 }
 
+float AngleDiff(float u, float v)
+{
+	return fmodf((v-u) + PI, PI*2) - PI;
+}
+
 void AngleVectors(const Vector3D &angles, Vector3D *forward, Vector3D *right, Vector3D *up)
 {
 	float cp,cy,cr,sp,sy,sr;

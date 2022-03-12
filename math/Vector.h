@@ -584,6 +584,9 @@ TVec3D<T>	balance(const TVec3D<T> &v);
 template <typename T>
 TVec4D<T>	balance(const TVec4D<T> &v);
 
+// compute angle difference
+float		AngleDiff(float u, float v);
+
 // computes direction vectors from angles (degrees)
 void		AngleVectors(const Vector3D &angles,Vector3D *forward,Vector3D *right = NULL,Vector3D *up = NULL);
 

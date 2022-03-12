@@ -51,6 +51,8 @@ public:
 
 	void			SetupPlane(Plane &pl, int n);
 
+	void			Expand(float radius);
+
 	Vector3D		GetFarRightDown() const;
 	Vector3D		GetFarRightUp() const;
 	Vector3D		GetFarLeftDown() const;

@@ -67,6 +67,14 @@ void Volume::SetupPlane(Plane &pl, int n)
 	m_planes[n] = pl;
 }
 
+void Volume::Expand(float radius)
+{
+	for (int i = 0; i < 6; i++)
+	{
+		m_planes[i].offset += radius;
+	}
+}
+
 bool Volume::IsPointInside(const Vector3D &pos) const
 {
 	for (int i = 0; i < 6; i++)
