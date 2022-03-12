@@ -336,16 +336,30 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 
 				CWorld::ForEachCellObjectAt(icell, [&cameraPos, &cameraAngleY, &mapFrustum](int listType, CELL_OBJECT* co) {
 
-					if (listType != -1)
+					bool skipRotation = false;
+					if (listType != -1 && RenderProps.displayAllCellLevels)
 					{
-						if (!RenderProps.displayAllCellLevels)
-							return false;
-
 						if (RenderProps.displayCellObjectList != -1 && listType != RenderProps.displayCellObjectList)
 							return true;
 
 						if (RenderProps.displayCellObjectList == listType)
+						{
 							g_debugListCellsDrawn++;
+							skipRotation = true;
+						}
+					}
+
+					auto& foundCellList = CWorld::CellLists.find(listType);
+					if (foundCellList != CWorld::CellLists.end())
+					{
+						// TODO: apply transform to objectMatrix
+						CELL_LIST_DESC& cellList = *foundCellList;
+						if (!cellList.visible)
+							return true;
+					}
+					else if(listType != -1 && !RenderProps.displayAllCellLevels)
+					{
+						return true;
 					}
 
 					Vector3D absCellPosition = FromFixedVector(co->pos);
@@ -369,10 +383,23 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 						objectMatrix.setTranslationTransposed(absCellPosition);
 					}
 
-					auto& cellList = CWorld::CellLists.find(listType);
-					if (cellList != CWorld::CellLists.end())
+					if (!skipRotation && foundCellList != CWorld::CellLists.end())
 					{
-						// TODO: apply transform to objectMatrix
+						// apply transform to objectMatrix
+						CELL_LIST_DESC& cellList = *foundCellList;
+						if (cellList.dirty)
+						{
+							Matrix4x4 listTransform = rotateXYZ4(
+								float(cellList.rotation.vx) * TO_RADIAN, 
+								float(cellList.rotation.vy) * TO_RADIAN,
+								float(cellList.rotation.vz) * TO_RADIAN);
+							listTransform.setTranslationTransposed(FromFixedVector(cellList.position));
+
+							cellList.transform = listTransform * !cellList.pivotMatrix;
+							cellList.dirty = false;
+						}
+
+						objectMatrix = cellList.transform * objectMatrix;
 					}
 
 					// check if it is in view
@@ -465,7 +492,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 		for (int i = 0; i < numObjectShadows; i++)
 		{
 			const int objIdx = shadowObjectIds[i];
-			DrawObjectShadow(shadowMesh, shadowMat, drawObjectModel[objIdx], drawObjectWorldMatrix[objIdx].getTranslationComponent(), drawObjectDistance[objIdx]);
+			DrawObjectShadow(shadowMesh, shadowMat, drawObjectModel[objIdx], drawObjectWorldMatrix[objIdx].getTranslationComponentTransposed(), drawObjectDistance[objIdx]);
 		}
 
 		// restore render states

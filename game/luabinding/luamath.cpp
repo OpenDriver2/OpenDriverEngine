@@ -243,6 +243,12 @@ void Math_Lua_Init(sol::state& lua)
 				LUADOC_M("getRotationComponentTransposed", "(void) : mat3"),
 				&Matrix4x4::getRotationComponentTransposed,
 
+				LUADOC_M("setTranslation", "(translate: vec3)"),
+				&Matrix4x4::setTranslation,
+
+				LUADOC_M("setTranslationTransposed", "(translate: vec3)"),
+				&Matrix4x4::setTranslationTransposed,
+
 				// operations
 				LUADOC_M("transformVec", "(m: mat4, v: vec3) : vec3 - Transforms input vector by the matrix"), 
 				[](Matrix4x4& self, const Vector3D& vec) {return transform4(vec, self); },
@@ -260,7 +266,7 @@ void Math_Lua_Init(sol::state& lua)
 				[](Matrix4x4& self) { return EulerMatrixZXY(self.getRotationComponent()); },
 
 				// common matrix generators
-				LUADOC_M("identity", "(void) : mat4 - Returns new identity matrix"), []() {return identity3(); },
+				LUADOC_M("identity", "(void) : mat4 - Returns new identity matrix"), []() {return identity4(); },
 
 				LUADOC_M("rotationX", "(x: float) : mat4 - Makes rotation matrix around specified axis"),
 				[](float val) {return rotateX4(val); },
@@ -270,6 +276,9 @@ void Math_Lua_Init(sol::state& lua)
 
 				LUADOC_M("rotationZ", "(z: float) : mat4 - Makes rotation matrix around specified axis"),
 				[](float val) {return rotateZ4(val); },
+
+				LUADOC_M("translate", "(translation: vec3) : mat4 - Makes translation matrix"),
+				[](const Vector3D& val) {return translate(val); },
 
 				LUADOC_M("rotationXYZ", "(x: float, y: float, z: float) : mat4 - Makes rotation matrix around specified axes"),
 				[](const Vector3D& val) {return rotateXYZ4(val.x, val.y, val.z); },

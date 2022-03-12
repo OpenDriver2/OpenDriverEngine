@@ -29,9 +29,14 @@ struct DRAWABLE
 
 struct CELL_LIST_DESC
 {
-	Matrix4x4 transform{ identity4() };
+	Matrix4x4 transform{ identity4() };		// this field is recalculated whenever list is dirty
+
+	Matrix4x4 pivotMatrix{ identity4() };
+	VECTOR_NOPAD rotation{ 0 };
 	VECTOR_NOPAD position{ 0 };
+
 	bool visible{ true };
+	bool dirty{ false };
 };
 
 // TODO: replace std::function with custom impl with allocator support

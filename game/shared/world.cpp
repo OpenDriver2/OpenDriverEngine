@@ -94,9 +94,32 @@ void CWorld::Lua_Init(sol::state& lua)
 					return DRAWABLE{ (Vector3D&)table["position"], (Vector3D&)table["angles"], table["model"] };
 				},
 				[]() { return DRAWABLE{ 0 }; }),
-			LUADOC_P("position", "<vec.vec3>"), &DRAWABLE::position,
-			LUADOC_P("angles", "<vec.vec3> - radian angles"), &DRAWABLE::angles,
-			LUADOC_P("model", "<int> - model index"), &DRAWABLE::model
+			LUADOC_P("position", "<vec.vec3>"), 
+			&DRAWABLE::position,
+
+			LUADOC_P("angles", "<vec.vec3> - radian angles"),
+			&DRAWABLE::angles,
+
+			LUADOC_P("model", "<int> - model index"),
+			&DRAWABLE::model
+		);
+	}
+
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<CELL_LIST_DESC>(
+			LUADOC_T("CELL_LIST_DESC"),
+			LUADOC_P("position", "<fix.VECTOR>"), 
+			sol::property([](const CELL_LIST_DESC& self) {return self.position; }, [](CELL_LIST_DESC& dest, const VECTOR_NOPAD& vec) {dest.position = vec; dest.dirty = true; }),
+
+			LUADOC_P("rotation", "<fix.VECTOR>"), 
+			sol::property([](const CELL_LIST_DESC& self) {return self.rotation; }, [](CELL_LIST_DESC& dest, const VECTOR_NOPAD& vec) {dest.rotation = vec; dest.dirty = true; }),
+
+			LUADOC_P("pivotMatrix", "<vec.mat4> - offset matrix which makes pivot point"), 
+			sol::property([](const CELL_LIST_DESC& self) {return self.pivotMatrix; }, [](CELL_LIST_DESC& dest, const Matrix4x4& newMat) {dest.pivotMatrix = newMat; dest.dirty = true; }),
+
+			LUADOC_P("visible", "<boolean>"), 
+			&CELL_LIST_DESC::visible
 		);
 	}
 
