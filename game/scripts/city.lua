@@ -105,6 +105,7 @@ CurrentCityName = nil
 CurrentCityInfo = {}
 CurrentCityType = CityType.Day
 CurrentSkyType = SkyType.Day
+CurrentCityEvents = {}
 
 CityEvents = {
 	OnLoading = AddCallback(function() end),
@@ -117,8 +118,54 @@ CityEvents = {
 		CityHardcoding.MakeTreesAtNight()
 	end),
 
-	OnStep = AddCallback(function() end)
+	OnStep = AddCallback(function() end),
+
+	--
 }
+
+local function InitCityEvents()
+	if CurrentCityInfo.events == nil then
+		return
+	end
+	local eventsTable = dofile(CurrentCityInfo.events)
+	-- validate
+
+	if type(eventsTable) ~= "table" then
+		error("City events " .. CurrentCityInfo.events .. " Lua must return a table!")
+		return
+	end
+
+	if type(eventsTable.Initialize) ~= "function" then
+		error("City events " .. CurrentCityInfo.events .. " doesn't have Initialize function!")
+		return
+	end
+
+	if type(eventsTable.Terminate) ~= "function" then
+		error("City events " .. CurrentCityInfo.events .. " doesn't have Terminate function!")
+		return
+	end
+
+	if type(eventsTable.Trigger) ~= "function" then
+		error("City events " .. CurrentCityInfo.events .. " doesn't have Trigger function!")
+		return
+	end
+
+	if type(eventsTable.Step) ~= "function" then
+		error("City events " .. CurrentCityInfo.events .. " doesn't have Step function!")
+		return
+	end
+
+	CurrentCityEvents = eventsTable
+
+	CurrentCityEvents.Initialize()
+	local terminateFunc = eventsTable.Terminate
+	CurrentCityEvents.Terminate = function()
+		terminateFunc()
+		RemoveCallback(CurrentCityEvents.Terminate, CityEvents.OnUnloading)
+	end
+	AddCallback(CurrentCityEvents.Step, CityEvents.OnStep)
+	AddCallback(CurrentCityEvents.Terminate, CityEvents.OnUnloading)
+end
 
 --
 -- SpoolRegions : loads city regions
@@ -228,7 +275,8 @@ function ChangeCity(newCityName, newCityType, newWeather)
 				cars:LoadModel(i)
 			end
 			sky.Load( CurrentCityInfo.skyPath, CurrentSkyType )
-		
+
+			InitCityEvents()	
 			CityEvents.OnLoaded()
 		end
 	else

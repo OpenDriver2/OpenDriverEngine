@@ -96,6 +96,8 @@ local function StepSim(dt)
 		MoveSmashables(dt)
 	end
 
+	DrawSmashables()
+
 	if testGameCamera then
 		testGame.UpdateCamera(dt)
 
@@ -156,6 +158,62 @@ local function StartTest()
 
 	AddCallback(OnLevelLoaded, CityEvents.OnLoaded)
 	AddCallback(OnLevelUnloading, CityEvents.OnUnloading)
+end
+
+local newCameraPos = fix.VECTOR(0,0,0)
+local cameraWindowShown = false
+local cameraWindowShownLast = false
+local function ShowFreeCameraWindow()
+	local open, draw = ImGui.Begin("Camera", cameraWindowShown)
+	cameraWindowShown = open
+	if draw then
+		ImGui.SetWindowSize(332, 159)
+		
+		if ImGui.Button("Reset camera") then
+			ResetFreeCamera()
+		end
+
+		do
+			local newVal, changed = ImGui.InputInt("X", newCameraPos.vx);
+			newCameraPos.vx = newVal
+		end
+
+		do
+			local newVal, changed = ImGui.InputInt("Y", newCameraPos.vy);
+			newCameraPos.vy = newVal
+		end
+
+		do
+			local newVal, changed = ImGui.InputInt("Z", newCameraPos.vz);
+			newCameraPos.vz = newVal
+		end
+
+		if cameraWindowShownLast ~= open or ImGui.Button("Get") then
+			newCameraPos = fix.ToFixedVector(FreeCamera.Position)
+		end
+		ImGui.SameLine()
+		if ImGui.Button("Set") then
+			FreeCamera.Position = fix.FromFixedVector(newCameraPos)
+		end
+		ImGui.End()
+	end
+	cameraWindowShownLast = cameraWindowShown
+end
+
+local cellObjectWindowShown = false
+local function ShowCellObjectDebugListWindow()
+	local open, draw = ImGui.Begin("Debug cell object list", cellObjectWindowShown)
+	cellObjectWindowShown = open
+	if draw then
+		local stats = engine.Stats
+
+		local newVal, changed = ImGui.InputInt("Index", levRenderProps.displayCellObjectList);
+		levRenderProps.displayCellObjectList = math.max(newVal, -1)
+
+		ImGui.Text(string.format("Drawn cell objects: %d", stats.debugListCellsDrawn))
+
+		ImGui.End()
+	end
 end
 
 local function RenderUI()
@@ -255,13 +313,16 @@ local function RenderUI()
 			if activated then
 				levRenderProps.displayAllCellLevels = not levRenderProps.displayAllCellLevels
 			end
-			
-			ImGui.Separator();
 
-			if ImGui.MenuItem("Reset camera") then
-				ResetFreeCamera()
+			if ImGui.MenuItem("Cell object list debug") then
+				cellObjectWindowShown = not cellObjectWindowShown
 			end
 
+			ImGui.Separator();
+
+			if ImGui.MenuItem("Camera properties") then
+				cameraWindowShown = not cameraWindowShown
+			end
 			ImGui.EndMenu();
 		end
 		
@@ -311,6 +372,9 @@ local function RenderUI()
 
 		ImGui.EndMainMenuBar();
 	end
+
+	ShowCellObjectDebugListWindow()
+	ShowFreeCameraWindow()
 end
 
 -------------------------------------------------

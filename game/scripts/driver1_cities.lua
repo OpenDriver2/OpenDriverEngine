@@ -15,7 +15,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/MIAMI.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		
@@ -43,7 +43,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/FRISCO.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		
@@ -72,7 +72,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/IVIEW.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		
@@ -101,7 +101,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/LA.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		
@@ -129,7 +129,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/FLAT.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		
@@ -150,7 +150,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/NEWYORK.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		
@@ -178,7 +178,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/TRAIN.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		
@@ -199,7 +199,7 @@ return {
 		-- lev path for all city types
 		levPath		= "DRIVER/LEVELS/CREDITS.LEV",
 		
-		events 		= {},
+		events 		= nil,
 		cosmetics 	= "scripts/driver1_cosmetics.lua",
 		lcf			= "DRIVER/COSMETICS.LCF",
 		

@@ -19,7 +19,7 @@ return {
 			"DRIVER2/MNLEVELS/CHICAGO.LEV",
 		},
 		
-		events 		= {},--dofile("driver2_chicago_events.lua"),
+		events 		= "scripts/events/chicago.lua",
 		
 		cosmetics 	= "scripts/driver2_cosmetics.lua",
 		lcf			= "DRIVER2/LEVELS/CHICAGO.LCF",
@@ -57,7 +57,7 @@ return {
 			"DRIVER2/MNLEVELS/HAVANA.LEV",
 		},
 		
-		events 		= {},--dofile("driver2_chicago_events.lua"),
+		events 		= nil,--dofile("driver2_chicago_events.lua"),
 	
 		cosmetics 	= "scripts/driver2_cosmetics.lua",
 		lcf			= "DRIVER2/LEVELS/HAVANA.LCF",
@@ -88,7 +88,7 @@ return {
 			"DRIVER2/MNLEVELS/VEGAS.LEV",
 		},
 		
-		events 		= {},--dofile("driver2_chicago_events.lua"),
+		events 		= nil,--dofile("driver2_chicago_events.lua"),
 	
 		cosmetics 	= "scripts/driver2_cosmetics.lua",
 		lcf			= "DRIVER2/LEVELS/VEGAS.LCF",
@@ -118,7 +118,7 @@ return {
 			"DRIVER2/MNLEVELS/RIO.LEV",
 		},
 		
-		events 		= {},--dofile("driver2_chicago_events.lua"),
+		events 		= nil,--dofile("driver2_chicago_events.lua"),
 	
 		cosmetics 	= "scripts/driver2_cosmetics.lua",
 		lcf			= "DRIVER2/LEVELS/RIO.LCF",

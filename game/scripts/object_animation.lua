@@ -189,7 +189,7 @@ CarEventCallbacks["HitSmashable"] = function(car, eventData)
         velocity.y = 0.045
     end
 
-    velocity.y = velocity.y * 11
+    velocity.y = velocity.y * 14
 
     -- add smashed object
     table.insert(SmashedObjects, {
@@ -210,12 +210,15 @@ function MoveSmashables(dt)
         if dam.position.y > dam.origPosY-0.015 then
             dam.position = dam.position + dam.velocity * vec.vec3(dt)
             dam.velocity.y = dam.velocity.y - 3.0 * dt;
-            dam.angles = dam.angles + vec.vec3(dam.rot_speed * dt) * vec.vec3(0, 3.0, 0.85)
+            dam.angles = dam.angles + vec.vec3(dam.rot_speed * dt) * vec.vec3(0, 3.14, 1)
             table.insert(newSmashedObjects, dam)
         end
-
-        -- add to renderer
-        world.AddDrawable(DRAWABLE(dam))
     end
     SmashedObjects = newSmashedObjects
+end
+
+function DrawSmashables()
+    for i,dam in ipairs(SmashedObjects) do
+        world.AddDrawable(DRAWABLE(dam))
+    end
 end
