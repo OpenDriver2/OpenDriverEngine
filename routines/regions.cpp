@@ -410,7 +410,8 @@ void CBaseLevelMap::LoadInAreaTPages(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 		// assign
 		areaTPages.tpage[i] = tpage;
 
-		tpage->LoadTPageAndCluts(ctx.dataStream, true);
+		if(tpage)
+			tpage->LoadTPageAndCluts(ctx.dataStream, true);
 
 		if (ctx.dataStream->Tell() % SPOOL_CD_BLOCK_SIZE)
 			ctx.dataStream->Seek(SPOOL_CD_BLOCK_SIZE - (ctx.dataStream->Tell() % SPOOL_CD_BLOCK_SIZE), VS_SEEK_CUR);
