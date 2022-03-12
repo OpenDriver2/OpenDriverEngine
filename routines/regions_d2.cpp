@@ -999,7 +999,7 @@ PACKED_CELL_OBJECT* CDriver2LevelMap::GetNextPackedCop(CELL_ITERATOR_D2* iterato
 
 			if (celld->num & 0x4000) // if we got new list
 			{
-				iterator->listType = celld->num;
+				iterator->listType = celld->num & 16383;
 				celld++; // get to the start
 			}
 
