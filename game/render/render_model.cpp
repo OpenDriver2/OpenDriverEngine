@@ -343,7 +343,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 				verticesMap.append(vertMap);
 
 				// vertices and verticesMap should be equal
-				assert(verticesMap.size() == vertices.size());
+				ASSERT(verticesMap.size() == vertices.size());
 			}
 			
 			// add index

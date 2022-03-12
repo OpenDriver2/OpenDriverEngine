@@ -46,7 +46,7 @@ public:
 
 private:
 	static void DrawCellObject(
-		const CELL_OBJECT& co, const Vector3D& position, const ModelRef_t* ref, 
+		const CELL_OBJECT& co, const Matrix4x4& worldMat, const ModelRef_t* ref, 
 		float cameraAngleY, bool buildingLighting);
 
 	static void DrawObjectShadow(CMeshBuilder& shadowMesh, const Matrix3x3& shadowMat, const ModelRef_t* ref, const Vector3D& position, float distance);

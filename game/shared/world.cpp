@@ -9,9 +9,10 @@ CDriverLevelTextures	g_levTextures;
 CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
-Array<CELL_OBJECT>		CWorld::m_CellObjects;
-Array<DRAWABLE>			CWorld::m_Drawables;
-int						CWorld::StepCount = 0;
+Array<CELL_OBJECT>			CWorld::CellObjects;
+Array<DRAWABLE>				CWorld::Drawables;
+Map<int, CELL_LIST_DESC>	CWorld::CellLists;
+int							CWorld::StepCount = 0;
 
 Matrix4x4	g_objectMatrix[64];
 MATRIX		g_objectMatrixFixed[64];
@@ -64,6 +65,12 @@ void CWorld::Lua_Init(sol::state& lua)
 
 		world[LUADOC_M("AddDrawable", "(drawable: DRAWABLE) - add a DRAWABLE object. No collisions will be made with it")]
 			= &AddDrawable;
+
+		world[LUADOC_M("CreateCellList", "(listNumber: int) : CELL_LIST_DESC - add cell list handler for renderer")]
+			= &CreateCellList;
+
+		world[LUADOC_M("RemoveCellList", "(listNumber: int) - removes cell list. All objects will not be rendered")]
+			= &RemoveCellList;
 
 		world[LUADOC_M("EndStep", "(void) - finalizes the game step, incrementing step count by 1.")]
 			= &EndStep;
@@ -355,8 +362,8 @@ void CWorld::StepTextureDetailPalette(const TexDetailInfo_t* detail, int start, 
 	if (!detail || start == -1 || stop == -1)
 		return;
 
-	assert(start < 16);
-	assert(stop < 16);
+	ASSERT(start < 16);
+	ASSERT(stop < 16);
 
 	const int tpageId = detail->pageNum;
 	CTexturePage* tpage = GetTPage(tpageId);
@@ -436,6 +443,8 @@ void CWorld::UnloadLevel()
 	CManager_Players::RemoveAllPlayers();
 	if (g_levMap)
 	{
+		CellLists.clear();
+
 		MsgWarning("Freeing level data ...\n");
 		g_levMap->FreeAll();
 
@@ -472,16 +481,16 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	CRender_Level::DrawMap(view.position, view.angles.y, frustumVolume);
 
 	GR_SetCullMode(CULL_FRONT);
-	for (usize i = 0; i < m_CellObjects.size(); i++)
+	for (usize i = 0; i < CellObjects.size(); i++)
 	{
-		CRender_Level::DrawCellObject(m_CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
+		CRender_Level::DrawCellObject(CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
 	}
 
-	for (usize i = 0; i < m_Drawables.size(); i++)
+	for (usize i = 0; i < Drawables.size(); i++)
 	{
-		CRender_Level::DrawObject(m_Drawables[i], view.position, frustumVolume, driver2Map);
+		CRender_Level::DrawObject(Drawables[i], view.position, frustumVolume, driver2Map);
 	}
-	m_Drawables.clear();
+	Drawables.clear();
 }
 
 int CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
@@ -652,9 +661,9 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 	}
 
 	// add event cell objects to list
-	for (usize i = 0; i < m_CellObjects.size(); i++)
+	for (usize i = 0; i < CellObjects.size(); i++)
 	{
-		CELL_OBJECT& co = m_CellObjects[i];
+		CELL_OBJECT& co = CellObjects[i];
 		const int dx = co.pos.vx - queryPos.vx >> 4;
 		const int dz = co.pos.vz - queryPos.vz >> 4;
 
@@ -731,21 +740,42 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 // any collision checks afterwards will have an effect with it
 int CWorld::PushCellObject(const CELL_OBJECT& object)
 {
-	int num = m_CellObjects.size();
-	m_CellObjects.append(object);
+	int num = CellObjects.size();
+	CellObjects.append(object);
 	return num;
 }
 
 // purges list of recently added objects by PushCellObject
 void CWorld::PurgeCellObjects()
 {
-	m_CellObjects.clear();
+	CellObjects.clear();
 }
 
 // adds a drawable object for one draw frame
 void CWorld::AddDrawable(const DRAWABLE& drawable)
 {
-	m_Drawables.append(drawable);
+	Drawables.append(drawable);
+}
+
+CELL_LIST_DESC& CWorld::CreateCellList(int list)
+{
+	ASSERT(m_CellLists.contains(list) == false);
+
+	auto& found = CellLists.find(list);
+	if (found != CellLists.end())
+	{
+		return *found;
+	}
+
+	auto& newList = CellLists.insert(list, CELL_LIST_DESC{});
+	return *newList;
+}
+
+void CWorld::RemoveCellList(int list)
+{
+	auto& found = CellLists.find(list);
+	if (found != CellLists.end())
+		CellLists.remove(found);
 }
 
 void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, CELL_ITERATOR_CACHE* iteratorCache /*= nullptr*/)

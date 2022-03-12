@@ -27,15 +27,12 @@ struct DRAWABLE
 	int model;
 };
 
-struct CELL_LIST
+struct CELL_LIST_DESC
 {
-	Matrix4x4 transform;
-	VECTOR_NOPAD position;
-	int list;
+	Matrix4x4 transform{ identity4() };
+	VECTOR_NOPAD position{ 0 };
+	bool visible{ true };
 };
-
-//typedef bool (*CellObjectIterateFn)(int listType, CELL_OBJECT* co);
-//typedef bool (*BoxCollisionFn)(BUILDING_BOX& box, CELL_OBJECT* co, void* object);
 
 // TODO: replace std::function with custom impl with allocator support
 using CellObjectIterateFn = std::function<bool(int listType, CELL_OBJECT* co)>;
@@ -46,6 +43,7 @@ extern MATRIX g_objectMatrixFixed[64];
 
 class CWorld
 {
+	friend class CRender_Level;
 public:
 
 	// shared object and rendering stuff
@@ -99,6 +97,10 @@ public:
 	// adds a drawable object for one draw frame
 	static void				AddDrawable(const DRAWABLE& drawable);
 
+	// cell lists
+	static CELL_LIST_DESC&	CreateCellList(int list);
+	static void				RemoveCellList(int list);
+
 	// iterates through all cell objects at specific cell on map
 	static void				ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
 
@@ -108,16 +110,17 @@ public:
 	static void				ResetStep();
 	static int				StepCount;		// aka CameraCnt
 
+
 	//------------------------------------------
 
 	static void				Lua_Init(sol::state& lua);
+
 protected:
 
-	static Array<CELL_OBJECT>	m_CellObjects;
-	static Array<DRAWABLE>		m_Drawables;
+	static Array<CELL_OBJECT>			CellObjects;
+	static Array<DRAWABLE>				Drawables;
+	static Map<int, CELL_LIST_DESC>		CellLists;
 };
-
-int ViewerMain();
 
 
 #endif // WORLD_H
