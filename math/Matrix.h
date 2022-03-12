@@ -368,13 +368,17 @@ TMat4<T> _identity4();
 template <typename T>
 TVec3D<T> transform3(const TVec3D<T> &in, const TMat3<T>& mat);
 
-// transforms point by matrix4
+// transforms point by matrix3
 template <typename T>
-TVec3D<T> transform3(const TVec3D<T> &in, const TMat4<T>& mat);
+TVec3D<T> transform3Inv(const TVec3D<T>& in, const TMat3<T>& mat);
 
 // transforms point by matrix4 using all matrix features
 template <typename T>
 TVec3D<T> transform4(const TVec3D<T> &in, const TMat4<T>& mat);
+
+// transforms point by matrix4 using all matrix features
+template <typename T>
+TVec3D<T> transform4Inv(const TVec3D<T>& in, const TMat4<T>& mat);
 
 // inverse rotation of vector
 template <typename T>

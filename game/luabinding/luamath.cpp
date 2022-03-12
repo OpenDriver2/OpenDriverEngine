@@ -10,15 +10,15 @@
 	/* negate */\
 	sol::meta_function::unary_minus, sol::resolve<vec_type(const vec_type&)>(&operator-),\
 	/* common functions */ \
-	LUADOC_M("dot", "(a: " name ", b: " name ")"), sol::resolve<float(const vec_type&, const vec_type&)>(dot),\
-	LUADOC_M("normalize", "(v: " name ")"), sol::resolve<vec_type(const vec_type&)>(normalize),\
-	LUADOC_M("length", "(v: " name ")"), sol::resolve<float(const vec_type&)>(length),\
-	LUADOC_M("lengthSqr", "(v: " name ")"), sol::resolve<float(const vec_type&)>(lengthSqr),\
-	LUADOC_M("distance", "(a: " name ", b: " name ")"), sol::resolve<float(const vec_type&, const vec_type&)>(distance),\
-	LUADOC_M("lerp", "(a: " name ", b: " name ", v: float)"), sol::resolve<vec_type(const vec_type&, const vec_type&, float)>(lerp),\
-	LUADOC_M("cerp", "(a: " name ", b: " name ", c: " name ", v: float)"), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&, const vec_type&, float)>(cerp),\
-	LUADOC_M("sign", "(v: " name ")"), sol::resolve<vec_type(const vec_type&)>(sign),\
-	LUADOC_M("clamp", "(v: " name ", min: " name ", max: " name ")"), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&)>(clamp),
+	LUADOC_M("dot", "(a: " name ", b: " name "): float"), sol::resolve<float(const vec_type&, const vec_type&)>(dot),\
+	LUADOC_M("normalize", "(v: " name "): " name), sol::resolve<vec_type(const vec_type&)>(normalize),\
+	LUADOC_M("length", "(v: " name "): float"), sol::resolve<float(const vec_type&)>(length),\
+	LUADOC_M("lengthSqr", "(v: " name "): float"), sol::resolve<float(const vec_type&)>(lengthSqr),\
+	LUADOC_M("distance", "(a: " name ", b: " name "): float"), sol::resolve<float(const vec_type&, const vec_type&)>(distance),\
+	LUADOC_M("lerp", "(a: " name ", b: " name ", v: float): " name), sol::resolve<vec_type(const vec_type&, const vec_type&, float)>(lerp),\
+	LUADOC_M("cerp", "(a: " name ", b: " name ", c: " name ", v: float): " name), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&, const vec_type&, float)>(cerp),\
+	LUADOC_M("sign", "(v: " name "): " name), sol::resolve<vec_type(const vec_type&)>(sign),\
+	LUADOC_M("clamp", "(v: " name ", min: " name ", max: " name "): " name), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&)>(clamp),
 
 // NOT USED - conflicting (SAD)
 #define VEC_FLOAT_OPERATORS(vec_type) \
@@ -70,7 +70,7 @@ void Math_Lua_Init(sol::state& lua)
 					}),
 				sol::call_constructor, sol::constructors<Vector3D(const float&, const float&, const float&), Vector3D(const float&)>(),
 				VEC_OPERATORS(Vector3D, "vec3")
-				LUADOC_M("cross", "(a: vec3, b: vec3) : vec3 - Cross product with other vector"), sol::resolve<Vector3D(const Vector3D&, const Vector3D&)>(cross),
+				LUADOC_M("cross", "(a: vec3, b: vec3) : vec3"), sol::resolve<Vector3D(const Vector3D&, const Vector3D&)>(cross),
 				// members
 				LUADOC_P("x"), &Vector3D::x,
 				LUADOC_P("y"), &Vector3D::y,
@@ -159,7 +159,7 @@ void Math_Lua_Init(sol::state& lua)
 				[](Matrix3x3& self) { return EulerMatrixZXY(self); },
 
 				// common matrix generators
-				LUADOC_M("identity", "() : mat3 - Returns new identity matrix"), []() {return identity3(); },
+				LUADOC_M("identity", "(void) : mat3 - Returns new identity matrix"), []() {return identity3(); },
 
 				LUADOC_M("rotationX", "(x: float) : mat3 - Makes rotation matrix around specified axis"),
 				[](float val) {return rotateX3(val); },
@@ -177,6 +177,107 @@ void Math_Lua_Init(sol::state& lua)
 				[](const Vector3D& val) {return rotateZXY3(val.x, val.y, val.z); }
 			);
 			LUADOC_P("r<n>", "access matrix row by number as vec3");
+			LUADOC_P("m<row><column>", "access matrix value by row - column");
+		}
+
+		//
+		// Matrix4x4
+		//
+		{
+			MAKE_PROPERTY_REF(lua, Matrix4x4);
+			LUADOC_TYPE();
+			vec.new_usertype<Matrix4x4>(
+				LUADOC_T("mat4", "4x4 Matrix"),
+				sol::call_constructor, sol::factories(
+					[](const sol::table& table) {
+						return Matrix4x4((Vector4D&)table[1], (Vector4D&)table[2], (Vector4D&)table[3], (Vector4D&)table[4]);
+					},
+					[]() {return identity4(); }),
+				sol::call_constructor, sol::constructors<
+						Matrix4x4(const float&, const float&, const float&, const float&,
+								  const float&, const float&, const float&, const float&, 
+								  const float&, const float&, const float&, const float&,
+								  const float&, const float&, const float&, const float&)>(),
+				// matrix - matrix ops
+				sol::meta_function::addition, sol::resolve<Matrix4x4(const Matrix4x4&, const Matrix4x4&)>(&operator+),
+				sol::meta_function::subtraction, sol::resolve<Matrix4x4(const Matrix4x4&, const Matrix4x4&)>(&operator-),
+				sol::meta_function::multiplication, sol::resolve<Matrix4x4(const Matrix4x4&, const Matrix4x4&)>(&operator*),
+				// negate 
+				sol::meta_function::unary_minus, sol::resolve<Matrix4x4(const Matrix4x4&)>(&operator-),
+				// inverse matrix
+				sol::meta_function::bitwise_not, sol::resolve<Matrix4x4(const Matrix4x4&)>(&operator!),
+				// members
+				"r1", sol::property([](Matrix4x4& self) {return self.rows[0]; }, [](Matrix4x4& self, const Vector4D& value) {self.rows[0] = value; }),
+				"r2", sol::property([](Matrix4x4& self) {return self.rows[1]; }, [](Matrix4x4& self, const Vector4D& value) {self.rows[1] = value; }),
+				"r3", sol::property([](Matrix4x4& self) {return self.rows[2]; }, [](Matrix4x4& self, const Vector4D& value) {self.rows[2] = value; }),
+				"r4", sol::property([](Matrix4x4& self) {return self.rows[3]; }, [](Matrix4x4& self, const Vector4D& value) {self.rows[3] = value; }),
+
+				// members - row access
+				"m11", sol::property([](Matrix4x4& self) {return self.rows[0][0]; }, [](Matrix4x4& self, const float& value) {self.rows[0][0] = value; }),
+				"m12", sol::property([](Matrix4x4& self) {return self.rows[0][1]; }, [](Matrix4x4& self, const float& value) {self.rows[0][1] = value; }),
+				"m13", sol::property([](Matrix4x4& self) {return self.rows[0][2]; }, [](Matrix4x4& self, const float& value) {self.rows[0][2] = value; }),
+				"m14", sol::property([](Matrix4x4& self) {return self.rows[0][3]; }, [](Matrix4x4& self, const float& value) {self.rows[0][3] = value; }),
+				"m21", sol::property([](Matrix4x4& self) {return self.rows[1][0]; }, [](Matrix4x4& self, const float& value) {self.rows[1][0] = value; }),
+				"m22", sol::property([](Matrix4x4& self) {return self.rows[1][1]; }, [](Matrix4x4& self, const float& value) {self.rows[1][1] = value; }),
+				"m23", sol::property([](Matrix4x4& self) {return self.rows[1][2]; }, [](Matrix4x4& self, const float& value) {self.rows[1][2] = value; }),
+				"m24", sol::property([](Matrix4x4& self) {return self.rows[1][3]; }, [](Matrix4x4& self, const float& value) {self.rows[1][3] = value; }),
+				"m31", sol::property([](Matrix4x4& self) {return self.rows[2][0]; }, [](Matrix4x4& self, const float& value) {self.rows[2][0] = value; }),
+				"m32", sol::property([](Matrix4x4& self) {return self.rows[2][1]; }, [](Matrix4x4& self, const float& value) {self.rows[2][1] = value; }),
+				"m33", sol::property([](Matrix4x4& self) {return self.rows[2][2]; }, [](Matrix4x4& self, const float& value) {self.rows[2][2] = value; }),
+				"m34", sol::property([](Matrix4x4& self) {return self.rows[2][3]; }, [](Matrix4x4& self, const float& value) {self.rows[2][3] = value; }),
+				"m41", sol::property([](Matrix4x4& self) {return self.rows[3][0]; }, [](Matrix4x4& self, const float& value) {self.rows[3][0] = value; }),
+				"m42", sol::property([](Matrix4x4& self) {return self.rows[3][1]; }, [](Matrix4x4& self, const float& value) {self.rows[3][1] = value; }),
+				"m43", sol::property([](Matrix4x4& self) {return self.rows[3][2]; }, [](Matrix4x4& self, const float& value) {self.rows[3][2] = value; }),
+				"m44", sol::property([](Matrix4x4& self) {return self.rows[3][3]; }, [](Matrix4x4& self, const float& value) {self.rows[3][3] = value; }),
+
+				// getters
+				LUADOC_M("getTranslationComponent", "(void) : vec3"),
+				&Matrix4x4::getTranslationComponent,
+
+				LUADOC_M("getRotationComponent", "(void) : mat3"),
+				&Matrix4x4::getRotationComponent,
+
+				LUADOC_M("getTranslationComponentTransposed", "(void) : vec3"),
+				&Matrix4x4::getTranslationComponentTransposed,
+
+				LUADOC_M("getRotationComponentTransposed", "(void) : mat3"),
+				&Matrix4x4::getRotationComponentTransposed,
+
+				// operations
+				LUADOC_M("transformVec", "(m: mat4, v: vec3) : vec3 - Transforms input vector by the matrix"), 
+				[](Matrix4x4& self, const Vector3D& vec) {return transform4(vec, self); },
+
+				LUADOC_M("transformVecInv", "(m: mat4, v: vec3) : vec3 - Transforms input vector by the matrix"),
+				[](Matrix4x4& self, const Vector3D& vec) {return transform4Inv(vec, self); },
+
+				LUADOC_M("transposed", "(m: mat4) : mat4 - Returns transposed matrix"), 
+				[](Matrix4x4& self) { return transpose(self); },
+
+				LUADOC_M("eulersXYZ", "(m: mat4) : vec3 - Returns euler angles in specified rotation order"), 
+				[](Matrix4x4& self) { return EulerMatrixXYZ(self.getRotationComponent()); },
+
+				LUADOC_M("eulersZXY", "(m: mat4) : vec3 - Returns euler angles in specified rotation order"),
+				[](Matrix4x4& self) { return EulerMatrixZXY(self.getRotationComponent()); },
+
+				// common matrix generators
+				LUADOC_M("identity", "(void) : mat4 - Returns new identity matrix"), []() {return identity3(); },
+
+				LUADOC_M("rotationX", "(x: float) : mat4 - Makes rotation matrix around specified axis"),
+				[](float val) {return rotateX4(val); },
+
+				LUADOC_M("rotationY", "(y: float) : mat4 - Makes rotation matrix around specified axis"),
+				[](float val) {return rotateY4(val); },
+
+				LUADOC_M("rotationZ", "(z: float) : mat4 - Makes rotation matrix around specified axis"),
+				[](float val) {return rotateZ4(val); },
+
+				LUADOC_M("rotationXYZ", "(x: float, y: float, z: float) : mat4 - Makes rotation matrix around specified axes"),
+				[](const Vector3D& val) {return rotateXYZ4(val.x, val.y, val.z); },
+
+				LUADOC_M("rotationZXY", "(x: float, y: float, z: float) : mat4 - Makes rotation matrix around specified axes"),
+				[](const Vector3D& val) {return rotateZXY4(val.x, val.y, val.z); }
+			);
+			LUADOC_P("r<n>", "access matrix row by number as vec4");
 			LUADOC_P("m<row><column>", "access matrix value by row - column");
 		}
 

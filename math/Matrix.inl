@@ -777,23 +777,6 @@ inline TVec3D<T> transform3Inv(const TVec3D<T> &in, const TMat3<T>& mat)
 }
 
 template <typename T>
-inline TVec3D<T> transform3(const TVec3D<T> &in, const TMat4<T>& mat)
-{
-	return TVec3D<T>(
-		(in[0] * mat.rows[0][0] +
-	    in[1] * mat.rows[1][0] +
-	    in[2] * mat.rows[2][0]),
-
-		(in[0] * mat.rows[0][1] +
-	    in[1] * mat.rows[1][1] +
-	    in[2] * mat.rows[2][1]),
-
-	    (in[0] * mat.rows[0][2] +
-	    in[1] * mat.rows[1][2] +
-	    in[2] * mat.rows[2][2]) );
-}
-
-template <typename T>
 inline TVec3D<T> transform4(const TVec3D<T> &in, const TMat4<T>& mat)
 {
 	return TVec3D<T>(
@@ -810,6 +793,26 @@ inline TVec3D<T> transform4(const TVec3D<T> &in, const TMat4<T>& mat)
 	    (in[0] *	mat.rows[0][2] +
 	    in[1] *		mat.rows[1][2] +
 	    in[2] *		mat.rows[2][2]+
+	    mat.rows[3][2]));
+}
+
+template <typename T>
+inline TVec3D<T> transform4Inv(const TVec3D<T> &in, const TMat4<T>& mat)
+{
+	return TVec3D<T>(
+		(in[0] *	mat.rows[0][0] +
+	    in[1] *		mat.rows[0][1] +
+	    in[2] *		mat.rows[0][2] +
+	   mat.rows[3][0]),
+
+		(in[0] *	mat.rows[1][0] +
+	    in[1] *		mat.rows[1][1] +
+	    in[2] *		mat.rows[1][2] +
+	    mat.rows[3][1]),
+
+	    (in[0] *	mat.rows[2][0] +
+	    in[1] *		mat.rows[2][1] +
+	    in[2] *		mat.rows[2][2] +
 	    mat.rows[3][2]));
 }
 
