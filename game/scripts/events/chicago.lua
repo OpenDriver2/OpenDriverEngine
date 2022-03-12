@@ -80,9 +80,24 @@ local function BridgeTime(n)
     return timeOffset % 8000
 end
 
+local function GetBridgeRotation(timer)
+	if timer > 2600 then
+		return 0
+    end
+
+	if timer > 1600 then
+		timer = 2600 - timer
+	elseif timer > 1000 then
+		timer = 1000
+    end
+
+	return 800 * (4096 - gte.icos((timer * 2048) // 1000)) // 8192
+end
+
 local function MakeBridges()
-    for _,bridgesInfo in ipairs(LiftingBridges) do
+    for bridgeNum,bridgesInfo in ipairs(LiftingBridges) do
         bridgesInfo.lists = {}
+        bridgesInfo.timer = BridgeTime(bridgeNum-1)
         for i,cellList in ipairs(bridgesInfo.cellList) do
 
             local cellListHandler = world.CreateCellList(cellList)
@@ -104,11 +119,16 @@ local function UpdateBridges()
     --  rotate!
     for _,bridgesInfo in ipairs(LiftingBridges) do
         for i,cellList in ipairs(bridgesInfo.lists) do
-            local sign = if_then_else(i > 1, -1, 1)
+
+            bridgesInfo.timer = (bridgesInfo.timer + 1) % 8000
+
+            local sign = if_then_else(i > 1, -1, 1) * if_then_else(bridgesInfo.direction == 0, -1, 1)
+            local rotation = sign * GetBridgeRotation(bridgesInfo.timer)
+
             if bridgesInfo.direction == 0 then
-                cellList.rotation = fix.VECTOR(0, 0, sign * gte.isin(world.StepCount() * 4) // 4)
+                cellList.rotation = fix.VECTOR(0, 0, rotation)
             else
-                cellList.rotation = fix.VECTOR(sign * gte.isin(world.StepCount() * 4) // 4, 0, 0)
+                cellList.rotation = fix.VECTOR(rotation, 0, 0)
             end
         end
     end
