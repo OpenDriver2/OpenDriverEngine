@@ -8,6 +8,9 @@
 #include "core/IVirtualStream.h"
 #include "core/cmdlib.h"
 
+sdPlane g_defaultPlane = { (short)SurfaceType::Concrete, 0, 0, 0, 2048 };
+sdPlane g_seaPlane = { (short)SurfaceType::DeepWater, 0, 16384, 0, 2048 };
+
 // loaded headers
 CBaseLevelRegion::CBaseLevelRegion()
 {

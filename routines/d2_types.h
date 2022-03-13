@@ -409,7 +409,7 @@ struct SURFACEINFO
 	short			heading;
 	short			numpolys;
 
-	inline SIPOLY* GetPoly(int num)
+	inline SIPOLY* GetPoly(int num) const
 	{
 		return (SIPOLY*)(this + 1) + num;
 	}

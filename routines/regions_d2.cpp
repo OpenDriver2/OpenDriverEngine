@@ -14,8 +14,8 @@
 #define IS_CURVED_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x4000 && ((surfid) & 0x1FFF) < m_numCurves)
 #define IS_JUNCTION_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x2000 && ((surfid) & 0x1FFF) < m_numJunctions)
 
-sdPlane g_defaultPlane	= { (short)SurfaceType::Concrete, 0, 0, 0, 2048 };
-sdPlane g_seaPlane		= { (short)SurfaceType::DeepWater, 0, 16384, 0, 2048 };
+extern sdPlane g_defaultPlane;
+extern sdPlane g_seaPlane;
 
 int SdHeightOnPlane(const VECTOR_NOPAD& position, sdPlane* plane, DRIVER2_CURVE* curves)
 {
@@ -121,9 +121,9 @@ sdPlane* CDriver2LevelRegion::SdGetCell(const VECTOR_NOPAD& cPosition, int& sdLe
 
 	// initial surface
 	if (*surface == -1)
-		return &g_seaPlane;
+		return nullptr;
 
-	bool simplerMethod = m_owner->m_format == LEV_FORMAT_DRIVER2_ALPHA16;
+	const bool simplerMethod = m_owner->m_format == LEV_FORMAT_DRIVER2_ALPHA16;
 
 	// check surface has overlapping planes flag (aka multiple levels)
 	if(simplerMethod ?
@@ -175,17 +175,10 @@ sdPlane* CDriver2LevelRegion::SdGetCell(const VECTOR_NOPAD& cPosition, int& sdLe
 
 	plane = &m_planeData[*surface];
 
-	if (((int)plane & 3) == 0 && *(int*)plane != -1)
+	if (((int)plane & 3) != 0 || *(int*)plane == -1)
 	{
-		// TODO: event surface handling
-
-		//if (plane->surfaceType - 16U < 16)
-		//	plane = EventSurface(pos, plane);
-
-		//plane = nullptr;
+		return nullptr;
 	}
-	else
-		plane = &g_seaPlane;
 
 	return plane;
 }
@@ -733,72 +726,32 @@ bool CDriver2LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 	return false;
 }
 
-int CDriver2LevelMap::MapHeight(const VECTOR_NOPAD& position) const
+void CDriver2LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const
 {
 	VECTOR_NOPAD cellPos;
 	XZPAIR cell;
 	int level = 0;
-
-	//const int half_cell_size = m_mapInfo.cell_size / 2;
 
 	cellPos.vx = position.vx - 512;	// FIXME: is that a quarter of a cell?
 	cellPos.vy = position.vy;
 	cellPos.vz = position.vz - 512;
 
 	WorldPositionToCellXZ(cell, cellPos);
-	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
-
-	sdPlane* plane = &g_seaPlane;
-	if (region)
-		plane = region->SdGetCell(cellPos, level, SdGetBSP);
-
-	if (plane)
-		return SdHeightOnPlane(position, plane, m_curves);
-
-	return 0;
-}
-
-int CDriver2LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const
-{
-	VECTOR_NOPAD cellPos;
-	XZPAIR cell;
-	int level = 0;
-
-	//const int half_cell_size = m_mapInfo.cell_size / 2;
-
-	cellPos.vx = position.vx - 512;	// FIXME: is that a quarter of a cell?
-	cellPos.vy = position.vy;
-	cellPos.vz = position.vz - 512;
-
-	WorldPositionToCellXZ(cell, cellPos);
-	CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
+	const CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
 
 	if (region)
 	{
-		sdPlane* foundPlane = region->SdGetCell(cellPos, level, SdGetBSP);
-
-		outPoint.vx = position.vx;
-		outPoint.vz = position.vz;
-		outPoint.vy = SdHeightOnPlane(position, foundPlane, m_curves);
+		const sdPlane* foundPlane = region->SdGetCell(cellPos, level, SdGetBSP);
 
 		if (foundPlane)
 			outPlane = *foundPlane;
-
-		if (foundPlane == NULL || foundPlane->b == 0)
-		{
-			outNormal.vx = 0;
-			outNormal.vy = 4096;
-			outNormal.vz = 0;
-		}
 		else
-		{
-			outNormal.vx = (int)outPlane.a >> 2;
-			outNormal.vy = (int)outPlane.b >> 2;
-			outNormal.vz = (int)outPlane.c >> 2;
-		}
-	}
+			outPlane = g_seaPlane;
 
-	return 4096;
+		outPoint.vx = position.vx;
+		outPoint.vz = position.vz;
+		outPoint.vy = SdHeightOnPlane(position, &outPlane, m_curves);
+	}
 }
 
 int	CDriver2LevelMap::GetRoadIndex(VECTOR_NOPAD& position) const

@@ -105,8 +105,7 @@ public:
 	virtual CBaseLevelRegion*	GetRegion(const XZPAIR& cell) const = 0;
 	virtual CBaseLevelRegion*	GetRegion(int regionIdx) const = 0;
 
-	virtual int					MapHeight(const VECTOR_NOPAD& position) const = 0;
-	virtual int					FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const = 0;
+	virtual void				FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const = 0;
 
 	// converters
 	void						WorldPositionToCellXZ(XZPAIR& cell, const VECTOR_NOPAD& position, const XZPAIR& offset = {0}) const;

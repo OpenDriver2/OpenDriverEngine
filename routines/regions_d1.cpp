@@ -6,6 +6,9 @@
 #include "core/IVirtualStream.h"
 #include "math/isin.h"
 
+extern sdPlane g_defaultPlane;
+extern sdPlane g_seaPlane;
+
 void CDriver1LevelRegion::FreeAll()
 {
 	if (!m_loaded)
@@ -299,7 +302,7 @@ bool CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 	return false;
 }
 
-int PointInTri2d(int tx, int ty, XYPAIR* verts)
+int PointInTri2d(int tx, int ty, const XYPAIR* verts)
 {
 	// from PC reversing
 	if ((verts[1].y - verts[0].y) * (tx - verts[0].x) - (verts[1].x - verts[0].x) * (ty - verts[0].y) < 0)
@@ -311,7 +314,7 @@ int PointInTri2d(int tx, int ty, XYPAIR* verts)
 	return 0;
 }
 
-int PointInQuad2d(int tx, int ty, XYPAIR* verts)
+int PointInQuad2d(int tx, int ty, const XYPAIR* verts)
 {
 	// from PC reversing
 	if ((tx - verts[0].x) * (verts[1].y - verts[0].y) -
@@ -438,70 +441,31 @@ static int GetHardcodedFriscoHeight(const VECTOR_NOPAD& position)
 	return 0;
 }
 
-int	CDriver1LevelMap::MapHeight(const VECTOR_NOPAD& position) const
+void CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const
 {
-	ROUTE_DATA routeData;
-	if (!GetRoadInfo(routeData, position))
-	{
-		return 0;
-	}
+	outPlane = g_defaultPlane;
 
-	int height = -routeData.height;
+	outPoint.vx = position.vx;
+	outPoint.vz = position.vz;
+	outPoint.vy = outPlane.d;
 
-	if (routeData.type < 900)
-	{
-		SURFACEINFO* si = m_surfacePtrs[routeData.type];
-
-		if (si)
-		{
-			int px, py;
-			GetSurfaceLocalCoords(position, px, py);
-			RotatePoint(routeData, px, py);
-
-			for (int i = 0; i < si->numpolys; i++)
-			{
-				SIPOLY* poly = si->GetPoly(i);
-
-				int res = (poly->num_vertices == 4) ?
-					PointInQuad2d(px, py, poly->xz) :
-					PointInTri2d(px, py, poly->xz);
-
-				if (res != 0)
-				{
-					int normFac = px * poly->normals.a + py * poly->normals.c;
-					height = ((normFac / ONE) - poly->normals.d) - routeData.height;
-					break;
-				}
-			}
-		} // si != nullptr
-	}
-
-	return height;
-}
-
-int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const
-{
 	// oh, there is a trouble with D1...
 	ROUTE_DATA routeData;
 	if (!GetRoadInfo(routeData, position))
 	{
-		return 4096;
+		return;
 	}
 
-	outNormal.vx = 0;
-	outNormal.vy = 4096;
-	outNormal.vz = 0;
+	outPlane.d = -routeData.height;
 
 	outPoint.vx = position.vx;
 	outPoint.vz = position.vz;
 	outPoint.vy = -routeData.height;
 
-	outPlane.surfaceType = 0;
-
 	// check collision
 	if (routeData.type < 900)
 	{
-		SURFACEINFO* si = m_surfacePtrs[routeData.type];
+		const SURFACEINFO* si = m_surfacePtrs[routeData.type];
 
 		if (si)
 		{
@@ -511,7 +475,7 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 
 			for (int i = 0; i < si->numpolys; i++)
 			{
-				SIPOLY* poly = si->GetPoly(i);
+				const SIPOLY* poly = si->GetPoly(i);
 
 				int res = (poly->num_vertices == 4) ?
 					PointInQuad2d(px, py, poly->xz) :
@@ -528,9 +492,9 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 
 					RotateNormal(routeData, n_vx, n_vz);
 
-					outNormal.vx = n_vx;
-					outNormal.vy = n_vy;
-					outNormal.vz = n_vz;
+					outPlane.a = n_vx << 2;
+					outPlane.b = n_vy << 2;
+					outPlane.c = n_vz << 2;
 
 					outPoint.vy = height;
 				}
@@ -553,8 +517,6 @@ int CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& ou
 				outPlane.surfaceType = (int)SurfaceType::Grass;
 		}
 	}
-
-	return 4096;
 }
 
 //-------------------------------------------------------------

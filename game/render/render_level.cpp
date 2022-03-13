@@ -313,7 +313,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 		int dir = 0;
 
 		// walk through all cells
-		while (i >= 0)
+		while (i-- >= 0)
 		{
 			XZPAIR icell;
 			icell.x = cameraPosCell.x + hloop;
@@ -408,8 +408,6 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 			{
 				dir = (hloop == --vloop) ? 0 : dir;
 			}
-
-			i--;
 		}
 	}
 

@@ -608,16 +608,36 @@ ModelRef_t* CWorld::GetModelByName(const char* name)
 
 int CWorld::MapHeight(const VECTOR_NOPAD& position)
 {
-	return g_levMap->MapHeight(position);
+	sdPlane outPlane;
+	VECTOR_NOPAD outPoint;
+	g_levMap->FindSurface(position, outPoint, outPlane);
+
+	return outPoint.vy;
 }
 
 int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane)
 {
-	int fr = g_levMap->FindSurface(position, outNormal, outPoint, outPlane);
+	g_levMap->FindSurface(position, outPoint, outPlane);
 
-	 if (outPlane.surfaceType == (int)SurfaceType::Grass)
+	if (outPlane.b == 0)
 	{
-		// TODO: move this hardcoding away
+		outNormal.vx = 0;
+		outNormal.vy = 4096;
+		outNormal.vz = 0;
+	}
+	else
+	{
+		outNormal.vx = (int)outPlane.a >> 2;
+		outNormal.vy = (int)outPlane.b >> 2;
+		outNormal.vz = (int)outPlane.c >> 2;
+	}
+
+	const bool eventSurface = (outPlane.surfaceType >= 16 && outPlane.surfaceType < 32);
+	const int surfaceFactor = 4096;
+
+	// TODO: move this hardcoding away
+	if (outPlane.surfaceType == (int)SurfaceType::Grass)
+	{
 #if 0
 		if (gInGameCutsceneActive && gCurrentMissionNumber == 23 && gInGameCutsceneID == 0)
 			outPoint.vy += isin((pos->vx + pos->vz) * 2) >> 9;
@@ -625,10 +645,10 @@ int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, V
 #endif
 			outPoint.vy += (isin((position.vx + position.vz) * 2) >> 8) / 3;
 
-		return fr >> 1;
+		return surfaceFactor >> 1;
 	}
 
-	return fr;
+	return surfaceFactor;
 }
 
 //-------------------------------------------------------------
@@ -832,7 +852,7 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& 
 
 		// walk each cell object in cell
 		for (CELL_OBJECT* pco = levMapDriver1->GetFirstCop(&ci, cell); 
-			pco != nullptr; levMapDriver1->GetNextCop(&ci))
+			pco != nullptr; pco = levMapDriver1->GetNextCop(&ci))
 		{
 			if (!func(-1, pco))
 				break;
