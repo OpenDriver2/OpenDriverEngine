@@ -10,11 +10,25 @@ void LuaInit(sol::state& lua)
 {
 	lua.open_libraries(sol::lib::base);
 	lua.open_libraries(sol::lib::package);
-	lua.open_libraries(sol::lib::debug);
 	lua.open_libraries(sol::lib::math);
 	lua.open_libraries(sol::lib::bit32);
 	lua.open_libraries(sol::lib::string);
 	lua.open_libraries(sol::lib::table);
+
+	lua.open_libraries(sol::lib::coroutine);
+	lua.open_libraries(sol::lib::os);
+	lua.open_libraries(sol::lib::io);
+
+	lua.open_libraries(sol::lib::debug);
+
+	// init lua debugger right here
+	const char* vsCodeDebuggerOn = getenv("LOCAL_LUA_DEBUGGER_VSCODE");
+	if (vsCodeDebuggerOn && !stricmp(vsCodeDebuggerOn, "1"))
+	{
+		// Lua debugger supported:
+		// https://marketplace.visualstudio.com/items?itemName=tomblind.local-lua-debugger-vscode
+		lua.do_string("require('lldebugger').start()");
+	}
 
 	LuaImGuiInit(lua);
 
