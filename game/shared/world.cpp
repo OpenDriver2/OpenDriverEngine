@@ -667,7 +667,19 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 		{
 			CWorld::ForEachCellObjectAt(cell, [](int listType, CELL_OBJECT* co) {
 				if (listType != -1) // TODO: check event objects too!
-					return false;
+				{
+					auto& foundCellList = CWorld::CellLists.find(listType);
+					if (foundCellList != CWorld::CellLists.end())
+					{
+						CELL_LIST_DESC& cellList = *foundCellList;
+						if (!cellList.visible)
+							return true;
+					}
+					else
+					{
+						return true;
+					}
+				}
 
 				const ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
 
