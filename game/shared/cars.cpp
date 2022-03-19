@@ -656,9 +656,23 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		gte_rtv0tr();
 		gte_stlvnl(wheelPos);
 
-		newCompression = CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, Surface);
+		int surfaceFactor = 4096;
+		CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, Surface);
 
-		friction_coef = (newCompression * (32400 - wetness) >> 15) + 500;
+		if (Surface.surfaceType == (int)SurfaceType::Grass)
+		{
+#if 0
+			if (gInGameCutsceneActive && gCurrentMissionNumber == 23 && gInGameCutsceneID == 0)
+				surfacePoint[1] += isin((surfacePoint[0] + surfacePoint[2]) * 2) >> 9;
+			else
+#endif
+				surfacePoint[1] += (isin((surfacePoint[0] + surfacePoint[2]) * 2) >> 8) / 3;
+
+			surfaceFactor >>= 1;
+		}
+
+
+		friction_coef = (surfaceFactor * (32400 - wetness) >> 15) + 500;
 
 		wheel->onGrass = Surface.surfaceType == (short)SurfaceType::Grass;
 		wheel->surface = 0;

@@ -29,14 +29,27 @@ struct DRAWABLE
 
 struct CELL_LIST_DESC
 {
-	Matrix4x4 transform{ identity4() };		// this field is recalculated whenever list is dirty
-
 	Matrix4x4 pivotMatrix{ identity4() };
+
+	// TODO: multiple instances?
+	Matrix4x4 transform{ identity4() };		// this field is recalculated whenever list is dirty
 	VECTOR_NOPAD rotation{ 0 };
 	VECTOR_NOPAD position{ 0 };
-
 	bool visible{ true };
 	bool dirty{ false };
+};
+
+// almost like SURFACE and SINFO
+struct EVENT_SURFACE
+{
+	struct POLY
+	{
+		VECTOR_NOPAD verts[4]{ VECTOR_NOPAD{ 0 } };
+		sdPlane surface;		// computed surface
+		bool dirty{ false };
+	};
+
+	Array<POLY> polys;
 };
 
 // TODO: replace std::function with custom impl with allocator support
@@ -86,7 +99,7 @@ public:
 	static ModelRef_t*		GetModelByName(const char* name);
 
 	static int				MapHeight(const VECTOR_NOPAD& position);
-	static int				FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane);
+	static void				FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane);
 
 	//------------------------------------------
 	// objects and collision
@@ -105,6 +118,10 @@ public:
 	// cell lists
 	static CELL_LIST_DESC&	CreateCellList(int list);
 	static void				RemoveCellList(int list);
+
+	// event surfaces
+	static EVENT_SURFACE&	CreateEventSurface(int surface);
+	static void				RemoveEventSurface(int surface);
 
 	// iterates through all cell objects at specific cell on map
 	static void				ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
@@ -125,6 +142,7 @@ protected:
 	static Array<CELL_OBJECT>			CellObjects;
 	static Array<DRAWABLE>				Drawables;
 	static Map<int, CELL_LIST_DESC>		CellLists;
+	static Map<int, EVENT_SURFACE>		EventSurfaces;
 };
 
 

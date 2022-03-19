@@ -499,7 +499,7 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	// reset lighting
 	CRenderModel::SetupLightingProperties();
 
-	bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
+	const bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 	
 	CRender_Level::DrawMap(view.position, view.angles.y, frustumVolume);
 
@@ -527,10 +527,8 @@ int CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 	spoolContext.dataStream = &stream;
 	spoolContext.lumpInfo = &g_levInfo;
 
-	int regionsAcross = g_levMap->GetRegionsAcross();
-	int regionsDown = g_levMap->GetRegionsDown();
-	int regionSize = g_levMap->GetMapInfo().region_size;
-	int cellSize = g_levMap->GetMapInfo().cell_size;
+	const int regionsAcross = g_levMap->GetRegionsAcross();
+	const int regionsDown = g_levMap->GetRegionsDown();
 
 	// get center region
 	XZPAIR cell;
@@ -615,7 +613,7 @@ int CWorld::MapHeight(const VECTOR_NOPAD& position)
 	return outPoint.vy;
 }
 
-int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane)
+void CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane)
 {
 	g_levMap->FindSurface(position, outPoint, outPlane);
 
@@ -632,23 +630,13 @@ int CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, V
 		outNormal.vz = (int)outPlane.c >> 2;
 	}
 
-	const bool eventSurface = (outPlane.surfaceType >= 16 && outPlane.surfaceType < 32);
-	const int surfaceFactor = 4096;
-
-	// TODO: move this hardcoding away
-	if (outPlane.surfaceType == (int)SurfaceType::Grass)
+	const bool isEventSurface = outPlane.surfaceType - 16U < 16; // in range of 16-31
+	if (isEventSurface)
 	{
-#if 0
-		if (gInGameCutsceneActive && gCurrentMissionNumber == 23 && gInGameCutsceneID == 0)
-			outPoint.vy += isin((pos->vx + pos->vz) * 2) >> 9;
-		else
-#endif
-			outPoint.vy += (isin((position.vx + position.vz) * 2) >> 8) / 3;
+		const int eventId = outPlane.surfaceType & ~16;
 
-		return surfaceFactor >> 1;
+		// TODO: 2D polygon shape for bounds and plane normal
 	}
-
-	return surfaceFactor;
 }
 
 //-------------------------------------------------------------
@@ -658,7 +646,7 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 	if (!func)
 		return;
 
-	auto& mapInfo = g_levMap->GetMapInfo();
+	const OUT_CELL_FILE_HEADER& mapInfo = g_levMap->GetMapInfo();
 	const int squared_reg_size = mapInfo.region_size * mapInfo.region_size;
 
 	XZPAIR initial, cell;
@@ -681,7 +669,7 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 				if (listType != -1) // TODO: check event objects too!
 					return false;
 
-				ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
+				const ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
 
 				if (!ref->enabled)
 					return true;
@@ -823,12 +811,12 @@ void CWorld::RemoveCellList(int list)
 
 void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, CELL_ITERATOR_CACHE* iteratorCache /*= nullptr*/)
 {
-	CBaseLevelMap* levMap = g_levMap;
-	bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
+	const CBaseLevelMap* levMap = g_levMap;
+	const bool driver2Map = levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 
 	if (driver2Map)
 	{
-		CDriver2LevelMap* levMapDriver2 = (CDriver2LevelMap*)levMap;
+		const CDriver2LevelMap* levMapDriver2 = (CDriver2LevelMap*)levMap;
 
 		// Driver 2 map iteration
 		CELL_ITERATOR_D2 ci;
@@ -844,7 +832,7 @@ void CWorld::ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& 
 	}
 	else
 	{
-		CDriver1LevelMap* levMapDriver1 = (CDriver1LevelMap*)levMap;
+		const CDriver1LevelMap* levMapDriver1 = (CDriver1LevelMap*)levMap;
 
 		// Driver 1 map iteration
 		CELL_ITERATOR_D1 ci;
