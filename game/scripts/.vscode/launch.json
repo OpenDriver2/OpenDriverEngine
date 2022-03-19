@@ -9,9 +9,11 @@
             "type": "lua-local",
             "request": "launch",
             "program": {
-                "command": "${workspaceFolder}\\OpenDriverGame.exe"
+                "command": "${workspaceFolder}\\..\\OpenDriverGame.exe"
             },
+            "scriptFiles": ["**/*.lua"],
             "cwd": "${workspaceFolder}\\..",
+            "scriptRoots": ["."],
             "args": []
         }
     ]

@@ -75,8 +75,8 @@ local CainesCompoundBridges = {
 }
 
 local function BridgeTime(n)
-    local rnd = 28403 -- Random2(0);
-    local timeOffset = (rnd >> (n & 31) & 255) * 32;
+    local rnd = 28403 -- Random2(0); this is how D2 random works!!!
+    local timeOffset = (rnd >> (n & 31) & 255) * 32
     return timeOffset % 8000
 end
 
@@ -96,12 +96,13 @@ end
 
 local function MakeBridges()
     for bridgeNum,bridgesInfo in ipairs(LiftingBridges) do
+        bridgesInfo.alwaysOn = true
         bridgesInfo.lists = {}
-        bridgesInfo.timer = BridgeTime(bridgeNum-1)
+        bridgesInfo.timer = BridgeTime(bridgeNum-1) % 8000
         for i,cellList in ipairs(bridgesInfo.cellList) do
 
+            --local eventPlaneHandler = world.CreateEventPlane(cellList)
             local cellListHandler = world.CreateCellList(cellList)
-            cellListHandler.rotation = fix.VECTOR(0, 0, 0)
 
             if bridgesInfo.direction == 0 then
                 cellListHandler.position = fix.VECTOR(bridgesInfo.positionX[1 + (i-1)*2], 0, bridgesInfo.positionZ[1])
@@ -120,8 +121,6 @@ local function UpdateBridges()
     for _,bridgesInfo in ipairs(LiftingBridges) do
         for i,cellList in ipairs(bridgesInfo.lists) do
 
-            bridgesInfo.timer = (bridgesInfo.timer + 1) % 8000
-
             local sign = if_then_else(i > 1, -1, 1) * if_then_else(bridgesInfo.direction == 0, -1, 1)
             local rotation = sign * GetBridgeRotation(bridgesInfo.timer)
 
@@ -130,6 +129,12 @@ local function UpdateBridges()
             else
                 cellList.rotation = fix.VECTOR(rotation, 0, 0)
             end
+
+            if bridgesInfo.alwaysOn or bridgesInfo.timer <= 1000 then
+                bridgesInfo.timer = (bridgesInfo.timer + 1) % 8000
+            end
+
+            -- TODO: add plane computations
         end
     end
 end

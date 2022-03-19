@@ -57,7 +57,7 @@ return {
 			"DRIVER2/MNLEVELS/HAVANA.LEV",
 		},
 		
-		events 		= nil,--dofile("driver2_chicago_events.lua"),
+		events 		= "scripts/events/havana.lua",
 	
 		cosmetics 	= "scripts/driver2_cosmetics.lua",
 		lcf			= "DRIVER2/LEVELS/HAVANA.LCF",
