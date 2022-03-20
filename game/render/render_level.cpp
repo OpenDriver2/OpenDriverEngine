@@ -8,9 +8,48 @@ extern CBaseLevelMap*			g_levMap;
 LevelRenderProps CRender_Level::RenderProps;
 GrVAO* CRender_Level::ShadowVAO = nullptr;
 
+struct RenderLevelFrame
+{
+	void Reserve(int num)
+	{
+		object.reserve(num);
+		model.reserve(num);
+		distance.reserve(num);
+		listType.reserve(num);
+		maxObjects = num;
+	}
+
+	void Clear()
+	{
+		numObjects = 0;
+	}
+
+	void AddObject(CELL_OBJECT* co, ModelRef_t* ref, float dist, int _listType)
+	{
+		if (numObjects >= maxObjects)
+		{
+			return;
+		}
+		object[numObjects] = co;
+		distance[numObjects] = dist;
+		model[numObjects] = ref;
+		listType[numObjects] = _listType;
+		numObjects++;
+	}
+
+	Array<CELL_OBJECT*> object;
+	Array<ModelRef_t*> model;
+	Array<float> distance;
+	Array<int> listType;
+	int numObjects = 0;
+
+	int maxObjects = 0;
+} g_RenderLevelFrame;
+
 void CRender_Level::InitRender()
 {
 	ShadowVAO = GR_CreateVAO(128, 128);
+	g_RenderLevelFrame.Clear();
 }
 
 void CRender_Level::TerminateRender()
@@ -91,7 +130,9 @@ void CRender_Level::DrawObject(const DRAWABLE& drawable, const Vector3D& cameraP
 		isGround = true;
 	}
 
-	Matrix4x4 objectMatrix = translate(drawable.position) * rotateXYZ4(drawable.angles.x, drawable.angles.y, drawable.angles.z);
+	Matrix4x4 objectMatrix = translate(drawable.position) * 
+		rotateXYZ4(drawable.angles.x, drawable.angles.y, drawable.angles.z) * 
+		scale4(drawable.scale.x, drawable.scale.y, drawable.scale.z);
 
 	GR_SetMatrix(MATRIX_WORLD, objectMatrix);
 	GR_UpdateMatrixUniforms();
@@ -280,24 +321,17 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 	}
 
 	// drawing state
-	static Array<CELL_OBJECT*> drawObjects;
-	static Array<ModelRef_t*> drawObjectModel;
-	static Array<float> drawObjectDistance;
-	static Array<int> drawObjectListType;
 	static Array<int> shadowObjectIds;
 	static Array<Vector3D> shadowObjectPos;
-	static int numObjects = 0;
-	static int numObjectShadows = 0;
+	int numObjectShadows = 0;
 
 	if(needMapIteration)
 	{
-		numObjects = 0;
 		const int maxObjectsPerCell = 64;
 		const int totalObjects = g_cellsDrawDistance * maxObjectsPerCell;
-		drawObjects.reserve(totalObjects);
-		drawObjectModel.reserve(totalObjects);
-		drawObjectDistance.reserve(totalObjects);
-		drawObjectListType.reserve(totalObjects);
+		g_RenderLevelFrame.Clear();
+		g_RenderLevelFrame.Reserve(totalObjects);
+
 		shadowObjectIds.reserve(totalObjects);
 		shadowObjectPos.reserve(totalObjects);
 	}
@@ -382,11 +416,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 					}
 
 					// add
-					drawObjects[numObjects] = co;
-					drawObjectDistance[numObjects] = distanceFromCamera;
-					drawObjectModel[numObjects] = ref;
-					drawObjectListType[numObjects] = skipRotation ? -1 : listType;
-					numObjects++;
+					g_RenderLevelFrame.AddObject(co, ref, distanceFromCamera, skipRotation ? -1 : listType);
 
 					return true;
 				}, &iteratorCache);
@@ -417,11 +447,11 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 	numObjectShadows = 0;
 
 	// draw object list
-	for (int i = 0; i < numObjects; i++)
+	for (int i = 0; i < g_RenderLevelFrame.numObjects; i++)
 	{
-		const MODEL* model = drawObjectModel[i]->model;
+		const MODEL* model = g_RenderLevelFrame.model[i]->model;
 
-		Vector3D absCellPosition = FromFixedVector(drawObjects[i]->pos);
+		Vector3D absCellPosition = FromFixedVector(g_RenderLevelFrame.object[i]->pos);
 		absCellPosition.y *= -1.0f;
 
 		// compute world matrix
@@ -430,11 +460,11 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 			if (model->shape_flags & SHAPE_FLAG_SPRITE)
 				objectMatrix = rotateY4(DEG2RAD(cameraAngleY));
 			else
-				objectMatrix = g_objectMatrix[drawObjects[i]->yang];
+				objectMatrix = g_objectMatrix[g_RenderLevelFrame.object[i]->yang];
 			objectMatrix.setTranslationTransposed(absCellPosition);
 		}
 
-		auto& foundCellList = CWorld::CellLists.find(drawObjectListType[i]);
+		auto& foundCellList = CWorld::CellLists.find(g_RenderLevelFrame.listType[i]);
 		if (foundCellList != CWorld::CellLists.end())
 		{
 			// apply transform to objectMatrix
@@ -463,17 +493,17 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 				continue;
 		}
 
-		if (drawObjectDistance[i] < g_maxShadowDistance && (model->shape_flags & SHAPE_FLAG_SPRITE))
+		if (g_RenderLevelFrame.distance[i] < g_maxShadowDistance && (model->shape_flags & SHAPE_FLAG_SPRITE))
 		{
 			shadowObjectPos[numObjectShadows] = absCellPosition;
 			shadowObjectIds[numObjectShadows++] = i;
 		}
 
-		DrawCellObject(*drawObjects[i], objectMatrix, drawObjectModel[i], cameraAngleY, driver2Map);
+		DrawCellObject(*g_RenderLevelFrame.object[i], objectMatrix, g_RenderLevelFrame.model[i], cameraAngleY, driver2Map);
 
 		// debug
 		if (RenderProps.displayCollisionBoxes)
-			CRenderModel::DrawModelCollisionBox(drawObjectModel[i], drawObjects[i]->pos, drawObjects[i]->yang);
+			CRenderModel::DrawModelCollisionBox(g_RenderLevelFrame.model[i], g_RenderLevelFrame.object[i]->pos, g_RenderLevelFrame.object[i]->yang);
 	}
 
 	if (ShadowVAO && numObjectShadows > 0)
@@ -498,7 +528,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 		for (int i = 0; i < numObjectShadows; i++)
 		{
 			const int objIdx = shadowObjectIds[i];
-			DrawObjectShadow(shadowMesh, shadowMat, drawObjectModel[objIdx], shadowObjectPos[i], drawObjectDistance[objIdx]);
+			DrawObjectShadow(shadowMesh, shadowMat, g_RenderLevelFrame.model[objIdx], shadowObjectPos[i], g_RenderLevelFrame.distance[objIdx]);
 		}
 
 		// restore render states
