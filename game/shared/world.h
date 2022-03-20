@@ -24,6 +24,7 @@ struct DRAWABLE
 {
 	Vector3D position;
 	Vector3D angles;
+	Vector3D scale;
 	int model;
 };
 
@@ -139,7 +140,7 @@ public:
 
 protected:
 
-	static Array<CELL_OBJECT>			CellObjects;
+	static Map<int, Array<CELL_OBJECT>>	CellObjects;
 	static Array<DRAWABLE>				Drawables;
 	static Map<int, CELL_LIST_DESC>		CellLists;
 	static Map<int, EVENT_SURFACE>		EventSurfaces;

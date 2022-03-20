@@ -9,13 +9,25 @@ CDriverLevelTextures	g_levTextures;
 CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
-Array<CELL_OBJECT>			CWorld::CellObjects;
-Array<DRAWABLE>				CWorld::Drawables;
-Map<int, CELL_LIST_DESC>	CWorld::CellLists;
-int							CWorld::StepCount = 0;
+Map<int, Array<CELL_OBJECT>>	CWorld::CellObjects;
+Array<DRAWABLE>					CWorld::Drawables;
+Map<int, CELL_LIST_DESC>		CWorld::CellLists;
+int								CWorld::StepCount = 0;
 
 Matrix4x4	g_objectMatrix[64];
 MATRIX		g_objectMatrixFixed[64];
+extern int g_cellsDrawDistance;
+
+inline int PackXZCell(const XZPAIR& cell)
+{
+	return (cell.x & 65535) | (cell.z & 65535) << 16;
+}
+
+inline void UnpackXZCell(XZPAIR& cell, int packedCellId)
+{
+	cell.x = packedCellId & 65535;
+	cell.z = packedCellId >> 16 & 65535;
+}
 
 void CWorld::Lua_Init(sol::state& lua)
 {
@@ -87,15 +99,20 @@ void CWorld::Lua_Init(sol::state& lua)
 		lua.new_usertype<DRAWABLE>(
 			LUADOC_T("DRAWABLE"),
 			sol::call_constructor, sol::factories(
-				[](const Vector3D& position, const Vector3D& angles, const int& model) {
-					return DRAWABLE{ position, angles, model };
+				[](const Vector3D& position, const Vector3D& angles, const Vector3D& scale, const int& model) {
+					return DRAWABLE{ position, angles, scale, model };
 				},
 				[](const sol::table& table) {
-					return DRAWABLE{ (Vector3D&)table["position"], (Vector3D&)table["angles"], table["model"] };
+					Vector3D default(1.0f);
+					Vector3D scale = table.get_or<Vector3D>("scale", default);
+					return DRAWABLE{ (Vector3D&)table["position"], (Vector3D&)table["angles"], scale, table["model"] };
 				},
 				[]() { return DRAWABLE{ 0 }; }),
 			LUADOC_P("position", "<vec.vec3>"), 
 			&DRAWABLE::position,
+
+			LUADOC_P("scale", "<vec.vec3>"),
+			&DRAWABLE::scale,
 
 			LUADOC_P("angles", "<vec.vec3> - radian angles"),
 			&DRAWABLE::angles,
@@ -502,11 +519,28 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 	const bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 	
 	CRender_Level::DrawMap(view.position, view.angles.y, frustumVolume);
-
 	GR_SetCullMode(CULL_FRONT);
-	for (usize i = 0; i < CellObjects.size(); i++)
 	{
-		CRender_Level::DrawCellObject(CellObjects[i], view.position, view.angles.y, frustumVolume, driver2Map);
+		const VECTOR_NOPAD cameraPosition = ToFixedVector(view.position);
+		XZPAIR cameraPosCell;
+		g_levMap->WorldPositionToCellXZ(cameraPosCell, cameraPosition);
+
+		const int drawDistInCell = SquareRoot0(g_cellsDrawDistance >> 1);
+
+		for (auto it = CellObjects.begin(); it != CellObjects.end(); ++it)
+		{
+			XZPAIR cell;
+			UnpackXZCell(cell, it.key());
+			if (abs(cameraPosCell.x - cell.x) > drawDistInCell ||
+				abs(cameraPosCell.z - cell.z) > drawDistInCell)
+			{
+				continue;
+			}
+
+			Array<CELL_OBJECT>& objs = *it;
+			for (usize i = 0; i < objs.size(); i++)
+				CRender_Level::DrawCellObject(objs[i], view.position, view.angles.y, frustumVolume, driver2Map);
+		}
 	}
 
 	for (usize i = 0; i < Drawables.size(); i++)
@@ -665,22 +699,8 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 		cell.z = initial.z;
 		for (int j = 0; j < 2; j++)
 		{
-			CWorld::ForEachCellObjectAt(cell, [](int listType, CELL_OBJECT* co) {
-				if (listType != -1) // TODO: check event objects too!
-				{
-					auto& foundCellList = CWorld::CellLists.find(listType);
-					if (foundCellList != CWorld::CellLists.end())
-					{
-						CELL_LIST_DESC& cellList = *foundCellList;
-						if (!cellList.visible)
-							return true;
-					}
-					else
-					{
-						return true;
-					}
-				}
-
+			auto checkAndAddCellObj = [](CELL_OBJECT* co)
+			{
 				const ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
 
 				if (!ref->enabled)
@@ -695,25 +715,45 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 				}
 
 				return true;
+			};
+
+			// add map objects
+			CWorld::ForEachCellObjectAt(cell, [&checkAndAddCellObj](int listType, CELL_OBJECT* co) {
+				if (listType != -1)
+				{
+					auto& foundCellList = CWorld::CellLists.find(listType);
+					if (foundCellList != CWorld::CellLists.end())
+					{
+						CELL_LIST_DESC& cellList = *foundCellList;
+						if (!cellList.visible)
+							return true;
+					}
+					else
+					{
+						return true;
+					}
+				}
+
+				return checkAndAddCellObj(co);
 			}, &iteratorCache);
+
+			// add event cell objects to list
+			const int cellIndex = PackXZCell(cell);
+			auto& cellObjList = CellObjects.find(cellIndex);
+
+			if (cellObjList != CellObjects.end())
+			{
+				Array<CELL_OBJECT>& objs = *cellObjList;
+				for (usize i = 0; i < objs.size(); i++)
+				{
+					checkAndAddCellObj(&objs[i]);
+				}
+			}
 
 			cell.z++;
 		}
 
 		cell.x++;
-	}
-
-	// add event cell objects to list
-	for (usize i = 0; i < CellObjects.size(); i++)
-	{
-		CELL_OBJECT& co = CellObjects[i];
-		const int dx = co.pos.vx - queryPos.vx >> 4;
-		const int dz = co.pos.vz - queryPos.vz >> 4;
-
-		if (abs(dx) > 100 || abs(dz) > 100)
-			continue;
-
-		collisionObjects.append(&co);
 	}
 
 	// check collisions
@@ -783,15 +823,37 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 // any collision checks afterwards will have an effect with it
 int CWorld::PushCellObject(const CELL_OBJECT& object)
 {
-	int num = CellObjects.size();
-	CellObjects.append(object);
-	return num;
+	XZPAIR cell;
+	g_levMap->WorldPositionToCellXZ(cell, object.pos);
+
+	const int cellIndex = PackXZCell(cell);
+	auto& cellObjList = CellObjects.find(cellIndex);
+
+	if (cellObjList != CellObjects.end())
+	{
+		Array<CELL_OBJECT>& objs = *cellObjList;
+		objs.append(object);
+	}
+	else
+	{
+		// alloc new list
+		Array<CELL_OBJECT> objs;
+		objs.append(object);
+
+		CellObjects.insert(cellIndex, objs);
+	}
+
+	return cellIndex;
 }
 
 // purges list of recently added objects by PushCellObject
 void CWorld::PurgeCellObjects()
 {
-	CellObjects.clear();
+	for (auto it = CellObjects.begin(); it != CellObjects.end(); ++it)
+	{
+		Array<CELL_OBJECT>& objs = *it;
+		objs.clear();
+	}
 }
 
 // adds a drawable object for one draw frame
