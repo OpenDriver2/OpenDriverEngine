@@ -21,5 +21,6 @@ return {
     Terminate = Terminate,
 
     Trigger = TriggerEvent,
-    Step = UpdateEvents
+    Step = UpdateEvents,
+    Draw = function() end
 }

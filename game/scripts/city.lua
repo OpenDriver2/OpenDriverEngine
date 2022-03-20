@@ -119,7 +119,7 @@ CityEvents = {
 	end),
 
 	OnStep = AddCallback(function() end),
-
+	OnDraw = AddCallback(function() end),
 	--
 }
 
@@ -155,6 +155,11 @@ local function InitCityEvents()
 		return
 	end
 
+	if type(eventsTable.Draw) ~= "function" then
+		error("City events " .. CurrentCityInfo.events .. " doesn't have Draw function!")
+		return
+	end
+
 	CurrentCityEvents = eventsTable
 
 	CurrentCityEvents.Initialize()
@@ -162,8 +167,11 @@ local function InitCityEvents()
 	CurrentCityEvents.Terminate = function()
 		terminateFunc()
 		RemoveCallback(CurrentCityEvents.Terminate, CityEvents.OnUnloading)
+		RemoveCallback(CurrentCityEvents.Step, CityEvents.OnStep)
+		RemoveCallback(CurrentCityEvents.Draw, CityEvents.OnDraw)
 	end
 	AddCallback(CurrentCityEvents.Step, CityEvents.OnStep)
+	AddCallback(CurrentCityEvents.Draw, CityEvents.OnDraw)
 	AddCallback(CurrentCityEvents.Terminate, CityEvents.OnUnloading)
 end
 

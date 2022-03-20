@@ -97,6 +97,7 @@ local function StepSim(dt)
 	end
 
 	DrawSmashables()
+	CityEvents.OnDraw(dt)
 
 	if testGameCamera then
 		testGame.UpdateCamera(dt)

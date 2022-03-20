@@ -1,5 +1,8 @@
 local world = engine.World						-- collision and rendering world
 
+------------------------------------------------------------------------
+-- LIFTING BRIDGES
+
 local LiftingBridges = {
 	-- 1
     {
@@ -139,6 +142,92 @@ local function UpdateBridges()
     end
 end
 
+------------------------------------------------------------------------
+-- FERRIS WHEEL
+
+local FerrisWheel = {
+    position = fix.VECTOR(195264, 3728, 74752),
+    hubModel = nil,
+    carModel = nil,
+    frameModel = nil,
+
+    rotation = 0,
+}
+
+local function InitFerrisWheel()
+    FerrisWheel.hubModel = world.GetModelByName("HUB")
+    FerrisWheel.carModel = world.GetModelByName("CAR")
+    FerrisWheel.frameModel = world.GetModelByName("FRAME")
+
+
+end
+
+local function UpdateFerrisWheel()
+
+    
+end
+
+local function DrawFerrisWheel(dt)
+    FerrisWheel.rotation = FerrisWheel.rotation + 32 * dt
+
+    local spoke = {
+		vec.vec3(0, 0, 2677 / fix.ONE),
+		vec.vec3(0, 2677 / fix.ONE, 0)
+	}
+
+    -- draw ferris cars
+    for i=0,4 do
+        local angle = FerrisWheel.rotation + i * 410
+
+		local sn = math.sin(angle * fix.toRadian);
+		local cs = math.cos(angle * fix.toRadian);
+        
+        local offset = vec.vec3(0)
+		offset.x = spoke[1].x * sn + spoke[2].x * cs;
+		offset.y = spoke[1].y * sn + spoke[2].y * cs;
+		offset.z = spoke[1].z * sn + spoke[2].z * cs;
+
+        world.AddDrawable(DRAWABLE({
+            position = fix.FromFixedVector(FerrisWheel.position) + offset,
+            angles = vec.vec3(0.0,0.0,0.0),
+            model = FerrisWheel.carModel.index,
+        }))
+
+        -- draw car on other side
+        world.AddDrawable(DRAWABLE({
+            position = fix.FromFixedVector(FerrisWheel.position) - offset,
+            angles = vec.vec3(0.0,0.0,0.0),
+            model = FerrisWheel.carModel.index,
+        }))
+    end
+
+    -- draw hub
+    world.AddDrawable(DRAWABLE({
+        position = fix.FromFixedVector(FerrisWheel.position),
+        angles = vec.vec3(0.0,0.0,0.0),
+        model = FerrisWheel.hubModel.index,
+    }))
+    
+    local rotationRad = -FerrisWheel.rotation * fix.toRadian
+
+    -- draw wheel
+    world.AddDrawable(DRAWABLE({
+        position = fix.FromFixedVector(FerrisWheel.position),
+        angles = vec.vec3(rotationRad,0.0,0.0),
+        model = FerrisWheel.frameModel.index,
+    }))
+
+    -- add another wheel instance
+    world.AddDrawable(DRAWABLE({
+        position = fix.FromFixedVector(FerrisWheel.position),
+        angles = vec.vec3(rotationRad,0.0,0.0),
+        model = FerrisWheel.frameModel.index,
+        scale = vec.vec3(-1, 1, -1)
+    }))
+end
+
+------------------------------------------------------------------------
+
 local function Terminate()
 end
 
@@ -146,9 +235,16 @@ local function TriggerEvent(name)
 end
 
 return {
-    Initialize = MakeBridges,
+    Initialize = function()
+        MakeBridges()
+        InitFerrisWheel()
+    end,
     Terminate = Terminate,
 
     Trigger = TriggerEvent,
-    Step = UpdateBridges
+    Step = function()
+        UpdateBridges()
+        UpdateFerrisWheel()
+    end,
+    Draw = DrawFerrisWheel
 }
