@@ -303,7 +303,7 @@ struct PACKED_CELL_OBJECT {
 };
 
 struct CELL_OBJECT {
-	struct VECTOR_NOPAD		pos;
+	VECTOR_NOPAD			pos;
 	ubyte					pad; // just to be aligned in PSX memory
 	ubyte					yang;
 	ushort					type;

@@ -245,14 +245,11 @@ CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, ECarControlType contro
 	cp->m_ap.qw = 0;
 	cp->m_cosmetics = cosmetic;
 
-	tmpStart.vx = positionInfo.position.vx;
-	tmpStart.vy = positionInfo.position.vy;
-	tmpStart.vz = positionInfo.position.vz;
-
+	tmpStart = positionInfo.position;
 	tmpStart.vy = CWorld::MapHeight(tmpStart) - cp->m_cosmetics.wheelDisp[0].vy;
 
 	cp->InitWheelModels();
-	cp->InitCarPhysics((LONGVECTOR4*)&tmpStart, positionInfo.direction);
+	cp->InitCarPhysics(tmpStart, positionInfo.direction);
 	cp->m_controlType = control;
 
 	switch (control)

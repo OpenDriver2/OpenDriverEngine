@@ -58,7 +58,7 @@ MATRIX* MulMatrix0(MATRIX* m0, MATRIX* m1, MATRIX* m2)
 
 // Applies matrix rotation to vector
 // v1 = m x v0
-VECTOR_NOPAD* ApplyMatrix(MATRIX* m, SVECTOR* v0, VECTOR_NOPAD* v1)
+VECTOR_NOPAD* ApplyMatrix(MATRIX* m, SVECTOR_NOPAD* v0, VECTOR_NOPAD* v1)
 {
 	APPLYMATRIX(m, v0, v1)
 	return v1;
@@ -66,7 +66,7 @@ VECTOR_NOPAD* ApplyMatrix(MATRIX* m, SVECTOR* v0, VECTOR_NOPAD* v1)
 
 // Applies matrix rotation to short vector
 //	v1 = m x v0
-SVECTOR* ApplyMatrixSV(MATRIX* m, SVECTOR* v0, SVECTOR* v1)
+SVECTOR_NOPAD* ApplyMatrixSV(MATRIX* m, SVECTOR_NOPAD* v0, SVECTOR_NOPAD* v1)
 {
 	APPLYMATRIX(m, v0, v1)
 	return v1;
@@ -82,7 +82,7 @@ VECTOR_NOPAD* ApplyMatrixLV(MATRIX* m, VECTOR_NOPAD* v0, VECTOR_NOPAD* v1)
 
 // creates a rotation matrix
 // m = [r->vx] x [r->vy] x [r->vz]
-MATRIX* RotMatrix(SVECTOR* r, MATRIX* m)
+MATRIX* RotMatrix(SVECTOR_NOPAD* r, MATRIX* m)
 {
 	int c0, c1, c2;
 	int s0, s1, s2;

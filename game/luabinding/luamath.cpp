@@ -1,14 +1,19 @@
 #include "game/pch.h"
 #include "luamath.h"
 
-#define VEC_OPERATORS(vec_type, name) \
+
+#define VEC_OPERATORS_ONLY(vec_type, name) \
 	/* vec - vec */\
 	sol::meta_function::addition, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator+),\
 	sol::meta_function::subtraction, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator-),\
 	sol::meta_function::multiplication, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator*),\
 	sol::meta_function::division, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator/),\
 	/* negate */\
-	sol::meta_function::unary_minus, sol::resolve<vec_type(const vec_type&)>(&operator-),\
+	sol::meta_function::unary_minus, sol::resolve<vec_type(const vec_type&)>(&operator-)
+
+
+#define VEC_OPERATORS(vec_type, name) \
+	VEC_OPERATORS_ONLY(vec_type, name),\
 	/* common functions */ \
 	LUADOC_M("dot", "(a: " name ", b: " name "): float"), sol::resolve<float(const vec_type&, const vec_type&)>(dot),\
 	LUADOC_M("normalize", "(v: " name "): " name), sol::resolve<vec_type(const vec_type&)>(normalize),\
@@ -306,6 +311,9 @@ void Math_Lua_Init(sol::state& lua)
 		LUADOC_NAMESPACE("fix");
 		auto& fix = lua["fix"].get_or_create<sol::table>();
 
+		VECTOR_NOPAD test = (VECTOR_NOPAD{ 0, 10, 0 }) + (VECTOR_NOPAD{ 15, 5, 0 });
+		test += VECTOR_NOPAD{ 1, 4, 1 };
+
 		//
 		// Fixed Vector 3D
 		//
@@ -322,10 +330,26 @@ void Math_Lua_Init(sol::state& lua)
 						[](const sol::table& table) {
 							return VECTOR_NOPAD{ table["x"], table["y"], table["z"] };
 						},
+						[](const SVECTOR& vec) {
+							return VECTOR_NOPAD{ vec.vx, vec.vy, vec.vz };
+						},
 						[]() { return VECTOR_NOPAD{ 0 }; }),
 					LUADOC_P("vx"), &VECTOR_NOPAD::vx,
 					LUADOC_P("vy"), &VECTOR_NOPAD::vy,
-					LUADOC_P("vz"), &VECTOR_NOPAD::vz
+					LUADOC_P("vz"), &VECTOR_NOPAD::vz,
+					/* vec - vec */
+					sol::meta_function::addition, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator+),
+					sol::meta_function::subtraction, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator-),
+					sol::meta_function::multiplication, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator*),
+					sol::meta_function::division, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator/),
+					/* negate */
+					sol::meta_function::unary_minus, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&)>(&operator-),
+					/* bit shifts*/
+					sol::meta_function::bitwise_left_shift, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator<<),
+					sol::meta_function::bitwise_right_shift, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator>>),
+					sol::meta_function::bitwise_and, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const int&)>(&(operator&)),
+					sol::meta_function::bitwise_or, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const int&)>(&(operator|)),
+					sol::meta_function::bitwise_xor, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&(operator^))
 				);
 			}
 
@@ -337,12 +361,12 @@ void Math_Lua_Init(sol::state& lua)
 					LUADOC_T("SVECTOR", "Three dimensional vector (16 bit)"),
 					sol::call_constructor, sol::factories(
 						[](const short& x, const short& y, const short& z) {
-							return SVECTOR{ x, y, z };
+							return SVECTOR{ x, y, z, 0 };
 						},
 						[](const sol::table& table) {
-							return SVECTOR{ table["x"], table["y"], table["z"] };
+							return SVECTOR{ (short)table["x"], (short)table["y"], (short)table["z"], 0 };
 						},
-							[]() { return SVECTOR{ 0 }; }),
+						[]() { return SVECTOR{ 0 }; }),
 					LUADOC_P("vx"), &SVECTOR::vx,
 					LUADOC_P("vy"), &SVECTOR::vy,
 					LUADOC_P("vz"), &SVECTOR::vz

@@ -64,9 +64,9 @@ void GTE_RTV();
 	_vr3 = _vr2;								\
 	_vr2 = _vr1;								\
 	_vr1 = _vr0;								\
-	_vr0.vx = ( ( SVECTOR * )( x ) )->vx;	\
-	_vr0.vy = ( ( SVECTOR * )( x ) )->vy;	\
-	_vr0.vz = ( ( SVECTOR * )( x ) )->vz
+	_vr0.vx = ( ( SVECTOR_NOPAD * )( x ) )->vx;	\
+	_vr0.vy = ( ( SVECTOR_NOPAD * )( x ) )->vy;	\
+	_vr0.vz = ( ( SVECTOR_NOPAD * )( x ) )->vz
 
 // load long vector
 #define gte_ldlvl(x) \

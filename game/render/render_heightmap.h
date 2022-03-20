@@ -2,7 +2,7 @@
 #define RENDERHEIGHTMAP_H
 
 #include "math/Vector.h"
-struct VECTOR_NOPAD;
+#include "math/psx_math_types.h"
 
 void DebugDrawDriver2HeightmapCell(const VECTOR_NOPAD& cellPos, const ColorRGBA& color);
 

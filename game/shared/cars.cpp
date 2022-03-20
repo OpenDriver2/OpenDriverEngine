@@ -612,7 +612,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	WHEEL* wheel;
 	int friction_coef;
 	int oldSpeed, wheelspd;
-	LONGVECTOR4 wheelPos, surfacePoint, surfaceNormal;
+	VECTOR_NOPAD wheelPos, surfacePoint, surfaceNormal;
 	VECTOR_NOPAD force;
 	LONGVECTOR4 pointVel;
 	int frontFS;
@@ -654,10 +654,10 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		gte_ldv0(&m_cosmetics.wheelDisp[i]);
 
 		gte_rtv0tr();
-		gte_stlvnl(wheelPos);
+		gte_stlvnl(&wheelPos);
 
 		int surfaceFactor = 4096;
-		CWorld::FindSurface(*(VECTOR_NOPAD*)&wheelPos, *(VECTOR_NOPAD*)&surfaceNormal, *(VECTOR_NOPAD*)&surfacePoint, Surface);
+		CWorld::FindSurface(wheelPos, surfaceNormal, surfacePoint, Surface);
 
 		if (Surface.surfaceType == (int)SurfaceType::Grass)
 		{
@@ -1505,16 +1505,14 @@ void CCar::ControlCarRevs()
 
 void CCar::InitOrientedBox()
 {
-	SVECTOR boxDisp;
+	SVECTOR_NOPAD boxDisp;
 
 	short length;
 
 	gte_SetRotMatrix(&m_hd.where);
 	gte_SetTransMatrix(&m_hd.where);
 
-	boxDisp.vx = -m_cosmetics.cog.vx;
-	boxDisp.vy = -m_cosmetics.cog.vy;
-	boxDisp.vz = -m_cosmetics.cog.vz;
+	boxDisp = -m_cosmetics.cog.p();
 
 	gte_ldv0(&boxDisp);
 	gte_rtv0tr();
@@ -1805,7 +1803,7 @@ void CCar::NoseDown()
 	m_st.n.angularVelocity[2] += m_hd.where.m[2][0] * 50;
 }
 
-void CCar::DamageCar(CDATA2D* cd, CRET2D* collisionResult, int strikeVel)
+void CCar::DamageCar(CDATA2D* cd, const CRET2D& collisionResult, int strikeVel)
 {
 	// UNIMPLEMENTED
 
@@ -1815,7 +1813,7 @@ void CCar::DamageCar(CDATA2D* cd, CRET2D* collisionResult, int strikeVel)
 	}
 }
 
-bool CCar::DamageCar3D(LONGVECTOR4* delta, int strikeVel, CCar* pOtherCar)
+bool CCar::DamageCar3D(const VECTOR_NOPAD& delta, int strikeVel, CCar* pOtherCar)
 {
 	// UNIMPLEMENTED
 
@@ -1835,7 +1833,7 @@ bool CCar::DamageCar3D(LONGVECTOR4* delta, int strikeVel, CCar* pOtherCar)
 	return true;
 }
 
-void CCar::InitCarPhysics(LONGVECTOR4* startpos, int direction)
+void CCar::InitCarPhysics(const VECTOR_NOPAD& startpos, int direction)
 {
 	int ty;
 	int odz;
@@ -1858,9 +1856,9 @@ void CCar::InitCarPhysics(LONGVECTOR4* startpos, int direction)
 	m_st.n.orientation[2] = FIXEDH(sn * ty);
 	m_st.n.orientation[3] = cs;
 
-	m_st.n.fposition[0] = (*startpos)[0] << 4;
-	m_st.n.fposition[1] = (*startpos)[1] << 4;
-	m_st.n.fposition[2] = (*startpos)[2] << 4;
+	m_st.n.fposition[0] = startpos[0] << 4;
+	m_st.n.fposition[1] = startpos[1] << 4;
+	m_st.n.fposition[2] = startpos[2] << 4;
 
 	m_st.n.linearVelocity[0] = 0;
 	m_st.n.linearVelocity[1] = 0;
@@ -2271,8 +2269,8 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 	int chan;
 	MODEL* model;
 	VECTOR_NOPAD tempwhere, velocity;
-	SVECTOR boxDisp;
-	LONGVECTOR4 pointVel, reaction, lever;
+	SVECTOR_NOPAD boxDisp;
+	VECTOR_NOPAD pointVel, reaction, lever;
 	VECTOR_NOPAD LeafPosition, lamp_velocity;
 	int debris_colour;
 	int displacement, denom;
@@ -2341,10 +2339,7 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 			gte_SetRotMatrix(&m_hd.where);
 			gte_SetTransMatrix(&m_hd.where);
 
-			boxDisp.vx = -m_cosmetics.cog.vx;
-			boxDisp.vy = -m_cosmetics.cog.vy;
-			boxDisp.vz = -m_cosmetics.cog.vz;
-
+			boxDisp = -m_cosmetics.cog.p();
 			gte_ldv0(&boxDisp);
 
 			gte_rtv0tr();
@@ -2581,7 +2576,7 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 					}
 #endif
 
-					DamageCar(cd, &collisionResult, strikeVel);
+					DamageCar(cd, collisionResult, strikeVel);
 
 					displacement = FIXEDH(lever[0] * collisionResult.surfNormal.vx + lever[1] * collisionResult.surfNormal.vy + lever[2] * collisionResult.surfNormal.vz);
 					displacement = FIXEDH(((lever[0] * lever[0] + lever[2] * lever[2]) - displacement * displacement) * m_cosmetics.twistRateY) + 4096;
@@ -2650,7 +2645,7 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 {
 	int do1, do2;
 	int strikeVel, strength;
-	LONGVECTOR4 lever0, lever1, torque, pointVel0;
+	VECTOR_NOPAD lever0, lever1, torque, pointVel0;
 	/*
 	// Lua interaction
 	if (m_carEvents.valid())
@@ -2722,10 +2717,10 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 
 	if (howHard > 0 && RKstep > -1)
 	{
-		if (c1->DamageCar3D(&lever1, howHard >> 1, cp))
+		if (c1->DamageCar3D(lever1, howHard >> 1, cp))
 			c1->m_ap.needsDenting = 1;
 
-		if (cp->DamageCar3D(&lever0, howHard >> 1, c1))
+		if (cp->DamageCar3D(lever0, howHard >> 1, c1))
 			cp->m_ap.needsDenting = 1;
 
 		if (howHard > 2048 * 100)
@@ -2847,9 +2842,7 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	CollisionResponse(cpDelta, other, strikeVel, do1, c1InfiniteMass, lever0, collResult);
 
 	// don't forget to invert normal
-	collResult.normal.vx = -collResult.normal.vx;
-	collResult.normal.vy = -collResult.normal.vy;
-	collResult.normal.vz = -collResult.normal.vz;
+	collResult.normal = -collResult.normal;
 
 	other->CollisionResponse(c1Delta, this, strikeVel, do2, c2InfiniteMass, lever1, collResult);
 
@@ -2867,7 +2860,7 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	return true;
 }
 
-void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const LONGVECTOR4& lever, const CRET3D& collResult)
+void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const VECTOR_NOPAD& lever, const CRET3D& collResult)
 {
 	// Lua interaction
 	if (m_carEventsLua.valid())
@@ -2906,9 +2899,7 @@ void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, 
 		strength1 = FIXEDH(strength1) * doFactor >> 3;
 
 		VECTOR_NOPAD velocity;
-		velocity.vx = (collResult.normal.vx >> 3) * strength1 >> 6;
-		velocity.vy = (collResult.normal.vy >> 3) * strength1 >> 6;
-		velocity.vz = (collResult.normal.vz >> 3) * strength1 >> 6;
+		velocity = (collResult.normal >> 3) * strength1 >> 6;
 
 		delta.n.linearVelocity[0] -= velocity.vx;
 		delta.n.linearVelocity[1] -= velocity.vy;

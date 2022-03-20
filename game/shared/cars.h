@@ -3,7 +3,6 @@
 
 #include "audio/IAudioSystem.h"
 
-typedef short	SHORTVECTOR4[4];
 typedef int		LONGVECTOR3[3];
 typedef int		LONGVECTOR4[4];
 typedef int		LONGQUATERNION[4];
@@ -106,8 +105,8 @@ struct OrientedBox
 struct HANDLING_DATA
 {
 	MATRIX where;
-	LONGVECTOR4 acc;
-	LONGVECTOR4 aacc;
+	VECTOR_NOPAD acc;
+	VECTOR_NOPAD aacc;
 	WHEEL wheel[4];
 	int speed;
 	int front_wheel_speed, wheel_speed;
@@ -274,7 +273,7 @@ public:
 	void					StopSounds();
 
 	// handling
-	void					InitCarPhysics(LONGVECTOR4* startpos, int direction);
+	void					InitCarPhysics(const VECTOR_NOPAD& startpos, int direction);
 	void					TempBuildHandlingMatrix(int init);
 	void					StepCarPhysics();
 
@@ -342,8 +341,8 @@ protected:
 	void				NoseDown();
 
 	// collision
-	void				DamageCar(struct CDATA2D* cd, struct CRET2D* collisionResult, int strikeVel);
-	bool				DamageCar3D(LONGVECTOR4* delta, int strikeVel, CCar* pOtherCar);
+	void				DamageCar(struct CDATA2D* cd, const struct CRET2D& collisionResult, int strikeVel);
+	bool				DamageCar3D(const VECTOR_NOPAD& delta, int strikeVel, CCar* pOtherCar);
 
 	// game sound
 	uint16				GetEngineRevs();
@@ -365,7 +364,7 @@ protected:
 	void				StartStaticSound(const char* type, float refDist, float volume, float pitch);
 
 	void				CollisionSound(int impact, bool car_vs_car);
-	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const LONGVECTOR4& lever, const struct CRET3D& collResult);
+	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const VECTOR_NOPAD& lever, const struct CRET3D& collResult);
 
 	static void			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
 	static void			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
