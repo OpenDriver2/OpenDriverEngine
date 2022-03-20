@@ -5,6 +5,9 @@
 // Description: Streamed WAVe source
 //////////////////////////////////////////////////////////////////////////////////
 
+#ifndef SND_WAV_STREAM_H
+#define SND_WAV_STREAM_H
+
 #include "snd_wav_source.h"
 
 class CSoundSource_WaveStream : public CSoundSource_Wave
@@ -28,3 +31,5 @@ private:
 
 	CRIFF_Parser*	m_reader;
 };
+
+#endif // SND_WAV_STREAM_H

@@ -61,8 +61,8 @@ local BankDriver2 = {
 		Chase 		= "music/Driver6_chase.ogg",
 	},
 	{
-		Drive 		= "music/Driver7_drive.ogg",
-		Chase 		= "music/Driver7_chase.ogg",
+		Drive 		= "music/music_song6.xm", 	-- "music/Driver7_drive.ogg",
+		Chase 		= "music/music_song6.xm#8" 	-- "music/Driver7_chase.ogg",
 	},
 	{
 		Drive 		= "music/Driver8_drive.ogg",

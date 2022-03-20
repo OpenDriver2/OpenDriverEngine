@@ -1,6 +1,7 @@
 -- premake5.lua
 
-require "premake_modules/usage"
+require ".premake_modules/usage"
+require ".premake_modules/unitybuild"
 
 -- you can redefine dependencies
 SDL2_DIR = os.getenv("SDL2_DIR") or "dependencies/SDL2"
@@ -54,7 +55,7 @@ group "Dependencies"
 -- NoSTD
 project "libnstd"
 	kind "StaticLib"
-	
+
 	filter "system:Windows"
 		defines { "__PLACEMENT_NEW_INLINE" }
 	
@@ -72,6 +73,35 @@ usage "libnstd"
 		"dependencies/libnstd/include"
 	}
 	links "libnstd"
+
+-- libXM
+project "libxm"
+	kind "StaticLib"
+
+	defines{
+		"XM_DEBUG=0", 						-- Enable debug symbols and print debugging messages to stderr
+		"XM_DEFENSIVE=1", 					-- Defensively check XM data for errors/inconsistencies
+		"XM_BIG_ENDIAN=0", 					-- Use big endian byte order (unfinished)
+		"XM_LINEAR_INTERPOLATION=1", 		-- Use linear interpolation (CPU hungry)
+		"XM_RAMPING=1", 					-- Enable ramping (smooth volume/panning transitions, CPU hungry)
+		"XM_STRINGS=1", 					-- Store module, instrument and sample names in context
+		"XM_LIBXMIZE_DELTA_SAMPLES=1", 		-- Delta-code samples in libxmize format
+	}
+
+	includedirs {
+		"dependencies/libxm/include"
+	}
+	
+	files {
+		"dependencies/libxm/src/**.c",
+		"dependencies/libxm/src/**.h",
+	}
+	
+usage "libxm"
+	includedirs {
+		"dependencies/libxm/include"
+	}
+	links "libxm"
 	
 -- GLAD
 project "glad"
@@ -97,6 +127,7 @@ usage "glad"
 project "ImGui"
 	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
+	unitybuild "on"
 
 	uses {"SDL2", "glad"}
 	
@@ -153,11 +184,10 @@ group "Game"
 project "frameworkLib"
 	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
-	
 	uses { 
 		"libnstd",
 		"glad", "SDL2",
-		"openal-soft", "libvorbis", "libogg"
+		"openal-soft", "libvorbis", "libogg", "libxm"
 	}
 	
 	files {
@@ -177,7 +207,7 @@ project "frameworkLib"
 project "driverLib"
 	kind "StaticLib"
 	targetdir "bin/%{cfg.buildcfg}"
-	
+	unitybuild "on"
 	uses { 
 		"libnstd", 
 	}

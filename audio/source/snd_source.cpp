@@ -16,6 +16,7 @@
 
 #include "snd_ogg_cache.h"
 #include "snd_ogg_stream.h"
+#include "snd_xm_stream.h"
 
 #define STREAM_THRESHOLD    (1024*1024)     // 1mb
 
@@ -24,6 +25,7 @@
 ISoundSource* ISoundSource::CreateSound( const char* szFilename )
 {
 	String fileExt = File::extension(String::fromCString(szFilename));
+	fileExt.replace('#', '\0');
 
 	ISoundSource* pSource = nullptr;
 
@@ -48,6 +50,10 @@ ISoundSource* ISoundSource::CreateSound( const char* szFilename )
 			pSource = (ISoundSource*)new CSoundSource_OggStream;
 		else
 			pSource = (ISoundSource*)new CSoundSource_OggCache;
+	}
+	else if (!fileExt.compareIgnoreCase("xm"))
+	{
+		pSource = (ISoundSource*)new CSoundSource_ExtendedModule;
 	}
 	else
 		MsgError( "Unknown sound format: %s\n", szFilename );

@@ -655,27 +655,28 @@ uint		toRGBA(const ColorRGBA &u);
 uint		toBGRA(const ColorRGBA &u);
 
 template <typename CHAR_T>
-ColorRGB	hexToColor3(unsigned char* rgb);
+ColorRGB	hexToColor3(CHAR_T* rgb);
 
 template <typename CHAR_T>
-ColorRGBA	hexToColor4(unsigned char* rgba);
+ColorRGBA	hexToColor4(CHAR_T* rgba);
 
 ColorRGB	rgbeToRGB(unsigned char *rgbe);
 uint		rgbToRGBE8(const ColorRGB &rgb);
 uint		rgbToRGB9E5(const ColorRGB &rgb);
 
-// as quake's vec3_origin, but for all vector types
-#define vec2_zero TVec2D<float>(0.0f)
-#define vec3_zero TVec3D<float>(0.0f)
-#define vec4_zero TVec4D<float>(0.0f)
+static const TVec2D<float> vec2_zero = TVec2D<float>(0.0f);
+static const TVec3D<float> vec3_zero = TVec3D<float>(0.0f);
+static const TVec4D<float> vec4_zero = TVec4D<float>(0.0f);
+static const TVec4D<float> vec4_undef = TVec4D<float>(88888.888f);
+static const TVec4D<float> vec4_infinity = TVec4D<float>(9000000.0f);
 
-#define vec3_right	 TVec3D<float>(1.0f, 0.0f, 0.0f)
-#define vec3_up		 TVec3D<float>(0.0f, 1.0f, 0.0f)
-#define vec3_forward TVec3D<float>(0.0f, 0.0f, 1.0f)
+static const TVec3D<float> vec3_right = TVec3D<float>(1.0f, 0.0f, 0.0f);
+static const TVec3D<float> vec3_up = TVec3D<float>(0.0f, 1.0f, 0.0f);
+static const TVec3D<float> vec3_forward = TVec3D<float>(0.0f, 0.0f, 1.0f);
 
 // white (default) colors
-#define color3_white ColorRGB(1.0f)
-#define color4_white ColorRGBA(1.0f)
+static const ColorRGB color3_white = ColorRGB(1.0f);
+static const ColorRGBA color4_white = ColorRGBA(color3_white, 1.0f);
 
 #include "Vector.inl"
 
