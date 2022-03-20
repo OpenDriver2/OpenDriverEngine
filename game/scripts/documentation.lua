@@ -24,21 +24,21 @@ function PrintDocumentation()
 	end
 end
 
-ShowDocumentation = false
+documentationWindowShown = false
 local DocPropType = {
 	[0] = "function",
 	[1] = "member",
 	[2] = "enum"
 }
 
-function DisplayDocumentationWindow()
+function ShowDocumentationWindow()
 
-	if ShowDocumentation == false then
-		return
-	end
+	local open, draw = ImGui.Begin("Lua documentation", documentationWindowShown)
+	documentationWindowShown = open
+	
+	if draw then
+		ImGui.SetNextWindowSize(500, 400, ImGuiCond.FirstUseEver)
 
-	ImGui.SetNextWindowSize(500, 400, ImGuiCond.FirstUseEver)
-	if ImGui.Begin("Lua documentation") then
 		for namespace in orderedPairs(docs) do
 			local docTbl = docs[namespace]
 			local tbl = {}

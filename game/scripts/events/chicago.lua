@@ -179,13 +179,11 @@ local function DrawFerrisWheel(dt)
     for i=0,4 do
         local angle = FerrisWheel.rotation + i * 410
 
-		local sn = math.sin(angle * fix.toRadian);
-		local cs = math.cos(angle * fix.toRadian);
+		local sn = vec.vec3(math.sin(angle * fix.toRadian))
+		local cs = vec.vec3(math.cos(angle * fix.toRadian))
         
         local offset = vec.vec3(0)
-		offset.x = spoke[1].x * sn + spoke[2].x * cs;
-		offset.y = spoke[1].y * sn + spoke[2].y * cs;
-		offset.z = spoke[1].z * sn + spoke[2].z * cs;
+		offset = spoke[1] * sn + spoke[2] * cs;
 
         world.AddDrawable(DRAWABLE({
             position = fix.FromFixedVector(FerrisWheel.position) + offset,

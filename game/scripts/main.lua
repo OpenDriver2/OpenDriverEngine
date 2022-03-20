@@ -16,13 +16,18 @@ local eventModels = dofile("scripts/test_eventmodels.lua")
 local testGame = dofile("scripts/test_game.lua")
 
 local forceShowUI = false
-local testGameCamera = false					-- See: RenderUI
+local testGameCamera = true					-- See: RenderUI
 
+-- TODO: mission.lua
 local oldPauseState = false
 local pauseState = false
 
 local fixed_timestep <const> = 1.0 / 30.0
 local timeAccumulator = 0.0
+
+local function IsGameCameraEnabled()
+	return testGameCamera and players.localPlayer.currentCar ~= nil
+end
 
 ---
 --- ControlMap: spool regions from player car position
@@ -99,7 +104,7 @@ local function StepSim(dt)
 	DrawSmashables()
 	CityEvents.OnDraw(dt)
 
-	if testGameCamera then
+	if IsGameCameraEnabled() then
 		testGame.UpdateCamera(dt)
 
 		-- take the main view position
@@ -115,7 +120,7 @@ end
 local function GameLoop(dt)
 
 	FreeCamera.UpdateCameraMovement(dt)
-	if testGameCamera == false then
+	if IsGameCameraEnabled() == false then
 		InitCamera({
 			position = FreeCamera.Position,
 			angles = FreeCamera.Angles,
@@ -208,6 +213,11 @@ local function ShowCellObjectDebugListWindow()
 	if draw then
 		local stats = engine.Stats
 
+		local selected,activated = ImGui.Checkbox("Enable debug display", levRenderProps.displayAllCellLevels)
+		if activated then
+			levRenderProps.displayAllCellLevels = not levRenderProps.displayAllCellLevels
+		end
+
 		local newVal, changed = ImGui.InputInt("Index", levRenderProps.displayCellObjectList);
 		levRenderProps.displayCellObjectList = math.max(newVal, -1)
 
@@ -247,8 +257,6 @@ local function RenderUI()
 
 		ImGui.End()
 	end
-	
-	DisplayDocumentationWindow()
 
 	if ImGui.BeginMainMenuBar() then
 		if ImGui.BeginMenu("Level") then
@@ -260,24 +268,7 @@ local function RenderUI()
 				end
 				ImGui.EndMenu()
 			end
-		
-			ImGui.Separator()
-			
-			if ImGui.BeginMenu("Change weather type") then
-				local num = 1
-				for k,v in pairs(SkyType) do
 
-					if ImGui.MenuItem(k, tostring(num)) then
-						ChangeCity(nil, CurrentCityType, v)
-					end
-					
-					num = num + 1
-				end
-				ImGui.EndMenu()
-			end
-			
-			ImGui.Separator()
-		
 			if ImGui.MenuItem("Spool all regions") then
 				SpoolRegions()
 			end
@@ -291,7 +282,7 @@ local function RenderUI()
 
 		if ImGui.BeginMenu("View") then
 
-			local selected,activated;
+			local selected,activated
 			
 			selected,activated = ImGui.MenuItem("Disable LODs", "", levRenderProps.noLod)
 			if activated then
@@ -300,73 +291,90 @@ local function RenderUI()
 
 			ImGui.Separator()
 
-			selected,activated = ImGui.MenuItem("Display collision boxes", "", levRenderProps.displayCollisionBoxes)
-			if activated then
-				levRenderProps.displayCollisionBoxes = not levRenderProps.displayCollisionBoxes
-			end
-
-			selected,activated = ImGui.MenuItem("Display heightmap", "", levRenderProps.displayHeightMap)
-			if activated then
-				levRenderProps.displayHeightMap = not levRenderProps.displayHeightMap
-			end
-
-			selected,activated = ImGui.MenuItem("Display hidden objects", "", levRenderProps.displayAllCellLevels)
-			if activated then
-				levRenderProps.displayAllCellLevels = not levRenderProps.displayAllCellLevels
-			end
-
-			if ImGui.MenuItem("Cell object list debug") then
-				cellObjectWindowShown = not cellObjectWindowShown
-			end
-
-			ImGui.Separator();
-
 			if ImGui.MenuItem("Camera properties") then
 				cameraWindowShown = not cameraWindowShown
 			end
 			ImGui.EndMenu();
 		end
-		
-		if world.IsLevelLoaded() and ImGui.BeginMenu("Game") then
-			local selected,activated;
-			if ImGui.MenuItem("Begin game") then
-				testGame.Init()
-			end
-			
-			selected,activated = ImGui.MenuItem("Game camera", "", testGameCamera)
-			if activated then
-				testGameCamera = not testGameCamera
-			end
 
-			selected,activated = ImGui.MenuItem("Pause", "", pauseState)
-			if activated then
-				pauseState = not pauseState
+		if world.IsLevelLoaded() then
+			if ImGui.BeginMenu("World") then
+				local selected,activated
+	
+				if ImGui.BeginMenu("Change sky type") then
+					local num = 1
+					for k,v in pairs(SkyType) do
+	
+						if ImGui.MenuItem(k, tostring(num)) then
+							ChangeCity(nil, CurrentCityType, v)
+						end
+						
+						num = num + 1
+					end
+					ImGui.EndMenu()
+				end
+	
+				ImGui.Separator();
+	
+				selected,activated = ImGui.MenuItem("Display collision boxes", "", levRenderProps.displayCollisionBoxes)
+				if activated then
+					levRenderProps.displayCollisionBoxes = not levRenderProps.displayCollisionBoxes
+				end
+	
+				selected,activated = ImGui.MenuItem("Display heightmap", "", levRenderProps.displayHeightMap)
+				if activated then
+					levRenderProps.displayHeightMap = not levRenderProps.displayHeightMap
+				end
+	
+				if ImGui.MenuItem("Cell object list debug") then
+					cellObjectWindowShown = not cellObjectWindowShown
+				end
+	
+				ImGui.EndMenu();
 			end
 			
-			if ImGui.BeginMenu("Change car") then
-				
-				for i,model in ipairs(cars.carModels) do
-					if ImGui.MenuItem(tostring(model.index)) then
-						testGame.Init(model.index)
-					end
+			if ImGui.BeginMenu("Game") then
+				local selected,activated;
+				if ImGui.MenuItem("Begin game") then
+					testGame.Init()
 				end
+				
+				selected,activated = ImGui.MenuItem("Game camera", "", testGameCamera)
+				if activated then
+					testGameCamera = not testGameCamera
+				end
+	
+				selected,activated = ImGui.MenuItem("Pause", "", pauseState)
+				if activated then
+					pauseState = not pauseState
+				end
+				
+				if ImGui.BeginMenu("Change car") then
+					
+					for i,model in ipairs(cars.carModels) do
+						if ImGui.MenuItem(tostring(model.index)) then
+							testGame.Init(model.index)
+						end
+					end
+					ImGui.EndMenu()
+				end
+
+				ImGui.Separator();
+
+				if ImGui.BeginMenu("Replay") then
+					if ImGui.MenuItem("Start replay") then
+						testGame.StartReplay()
+					end
+					ImGui.EndMenu()
+				end
+				
 				ImGui.EndMenu()
 			end
-			
-			ImGui.EndMenu()
-		end
-
-		if world.IsLevelLoaded() and ImGui.BeginMenu("Replay") then
-			if ImGui.MenuItem("Start replay") then
-				testGame.StartReplay()
-			end
-			ImGui.EndMenu()
 		end
 		
 		if ImGui.BeginMenu("Help") then
-			selected,activated = ImGui.MenuItem("API documentation", "", ShowDocumentation)
-			if activated then
-				ShowDocumentation = not ShowDocumentation
+			if ImGui.MenuItem("API documentation") then
+				documentationWindowShown = not documentationWindowShown
 			end
 			ImGui.EndMenu()
 		end
@@ -376,6 +384,7 @@ local function RenderUI()
 
 	ShowCellObjectDebugListWindow()
 	ShowFreeCameraWindow()
+	ShowDocumentationWindow()
 end
 
 -------------------------------------------------
@@ -411,7 +420,7 @@ EngineHost = {
 	
 	MouseMove = function( x, y, xrel, yrel)
 		xpcall(function() 
-			if testGameCamera == false then
+			if IsGameCameraEnabled() == false then
 				FreeCamera.MouseMove(xrel, yrel)
 			end
 		end, errorHandler)
@@ -428,12 +437,16 @@ EngineHost = {
 	
 	KeyPress = function( num, down )
 		xpcall(function() 
-			if testGameCamera == false then
+			if IsGameCameraEnabled() == false then
 				FreeCamera.KeyPress(num, down)
 			end
 			
 			if num == SDL.Scancode.Escape and down then
 				forceShowUI = not forceShowUI
+			end
+
+			if num == SDL.Scancode.P and down then
+				pauseState = not pauseState
 			end
 			
 			JustPressed[num] = down
