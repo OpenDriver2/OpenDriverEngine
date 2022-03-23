@@ -104,21 +104,11 @@ bool CSoundSource_ExtendedModule::Load(const char* szFilename)
 
 	Memory::free(xmData);
 
+	m_numSamples = INT_MAX;
+
 	if (m_xmCtx)
 	{
 		xm_seek(m_xmCtx, m_startPat, 0, 0);
-
-		// determine length of XM
-		while (xm_get_loop_count(m_xmCtx) == 0)
-		{
-			float buffer[512];
-			xm_generate_samples(m_xmCtx, buffer, 256);
-
-			uint64_t sampleCnt;
-			xm_get_position(m_xmCtx, nullptr, nullptr, nullptr, &sampleCnt);
-
-			m_numSamples += sampleCnt;
-		}
 	}
 
 	return m_xmCtx != nullptr;
