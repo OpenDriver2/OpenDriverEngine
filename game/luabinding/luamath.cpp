@@ -56,6 +56,12 @@ void Math_Lua_Init(sol::state& lua)
 					[](const sol::table& table) {
 						return Vector2D(table["x"], table["y"]);
 					}),
+				LUADOC_P("set"), sol::overload(
+					[](Vector2D& self, const float& v) { self.x = self.y = v; },
+					[](Vector2D& self, const float& x, const float& y) { self.x = x; self.y = y; },
+					[](Vector2D& self, const Vector2D& other) { self = other; },
+					[](Vector2D& self, const sol::table& table) { self = Vector2D(table["x"], table["y"]); }
+				),
 				VEC_OPERATORS(Vector2D, "vec2")
 				LUADOC_P("x"), &Vector2D::x,
 				LUADOC_P("y"), &Vector2D::y);
@@ -74,12 +80,19 @@ void Math_Lua_Init(sol::state& lua)
 						return Vector3D(table["x"], table["y"], table["z"]);
 					}),
 				sol::call_constructor, sol::constructors<Vector3D(const float&, const float&, const float&), Vector3D(const float&)>(),
+				LUADOC_P("set"), sol::overload(
+					[](Vector3D& self, const float& v) { self.x = self.y = self.z  = v; },
+					[](Vector3D& self, const float& x, const float& y, const float& z) { self.x = x; self.y = y; self.z = z; },
+					[](Vector3D& self, const Vector3D& other) { self = other; },
+					[](Vector3D& self, const sol::table& table) { self = Vector3D(table["x"], table["y"], table["z"]); }
+				),
 				VEC_OPERATORS(Vector3D, "vec3")
 				LUADOC_M("cross", "(a: vec3, b: vec3) : vec3"), sol::resolve<Vector3D(const Vector3D&, const Vector3D&)>(cross),
 				// members
 				LUADOC_P("x"), &Vector3D::x,
 				LUADOC_P("y"), &Vector3D::y,
-				LUADOC_P("z"), &Vector3D::z);
+				LUADOC_P("z"), &Vector3D::z
+			);
 		}
 
 		//
@@ -94,13 +107,20 @@ void Math_Lua_Init(sol::state& lua)
 					[](const sol::table& table) {
 						return Vector4D(table["x"], table["y"], table["z"], table["w"]);
 					}),
-				sol::call_constructor, sol::constructors<Vector3D(const float&), Vector4D(const float&, const float&, const float&, const float&)>(),
+				sol::call_constructor, sol::constructors<Vector4D(const float&), Vector4D(const float&, const float&, const float&, const float&)>(),
+				LUADOC_P("set"), sol::overload(
+					[](Vector4D& self, const float& v) { self.x = self.y = self.z = self.w = v; },
+					[](Vector4D& self, const float& x, const float& y, const float& z, const float& w) { self.x = x; self.y = y; self.z = z; self.w = w; },
+					[](Vector4D& self, const Vector4D& other) { self = other; },
+					[](Vector4D& self, const sol::table& table) { self = Vector4D(table["x"], table["y"], table["z"], table["w"]); }
+				),
 				VEC_OPERATORS(Vector4D, "vec4")
 				// members
 				"x", &Vector4D::x,
 				"y", &Vector4D::y,
 				"z", &Vector4D::z,
-				"w", &Vector4D::w);
+				"w", &Vector4D::w
+			);
 		}
 
 		//----------------------------------------------------
