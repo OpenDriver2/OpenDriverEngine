@@ -18,10 +18,11 @@
 
 #define SKY_FRAGMENT_SHADER \
 	"	uniform sampler2D s_texture;\n"\
+	"	uniform vec4 u_skyColor;"\
 	"	void main() {\n"\
 	"		vec4 lighting;\n"\
 	"		vec4 color = texture2D(s_texture, v_texcoord.xy);\n"\
-	"		fragColor = color * v_color;\n"\
+	"		fragColor = color * v_color * u_skyColor;\n"\
 	"	}\n"
 
 const char* sky_shader =
@@ -49,6 +50,7 @@ const int SKY_TEX_CHANNELS = 4;
 
 TextureID g_skyTexture = 0;
 ShaderID g_skyShader = 0;
+int g_skyColorConstantId = -1;
 
 UV g_skytexuv[28] = { 0 };
 short g_skytpage[28][2] = { 0 };
@@ -335,9 +337,14 @@ void GenerateSkyUVs()
 	}
 }
 
+//----------------------------------------------------
+
+ColorRGB CSky::Color(1.0f);
+
 void CSky::Init()
 {
 	g_skyShader = GR_CompileShader(sky_shader);
+	g_skyColorConstantId = GR_GetShaderConstantIndex(g_skyShader, "u_skyColor");
 }
 
 void CSky::Lua_Init(sol::state& lua)
@@ -355,6 +362,9 @@ void CSky::Lua_Init(sol::state& lua)
 
 		sky[LUADOC_M("Unload", "(void)")]
 			= &Unload;
+
+		sky[LUADOC_P("color", "(vec3)")]
+			= &Color;
 	}
 }
 
@@ -375,8 +385,8 @@ bool CSky::Load(const char* filename, int skyNumber)
 
 	GenerateSkyUVs();
 
+	// TODO: handle D1 sky texture files
 	int64 fileSize = file.size();
-
 	ubyte* data = new ubyte[fileSize];
 
 	file.read(data, fileSize);
@@ -425,6 +435,7 @@ void CSky::Draw(const CameraViewParams& view)
 	_view.position = vec3_up * -sky_y_offset;
 
 	CCamera::SetupViewAndMatrices(_view, dummy);
+	GR_SetShaderConstantVector4D(g_skyColorConstantId, Vector4D(Color, 1.0f));
 
 	GR_SetDepthMode(0, 0);
 	GR_SetCullMode(CULL_FRONT);

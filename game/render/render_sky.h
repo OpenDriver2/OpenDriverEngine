@@ -18,6 +18,8 @@ public:
 	static void				Draw(const CameraViewParams& view);
 
 	static void				Lua_Init(sol::state& lua);
+
+	static ColorRGB			Color;
 };
 
 #endif // RENDER_SKY_H
