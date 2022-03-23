@@ -6,6 +6,8 @@ extern CBaseLevelMap* g_levMap;
 static CManager_Cars s_carManagerInstance;
 CManager_Cars* g_cars = &s_carManagerInstance;
 
+const int64 targetMinFrameTime = (1.0f / 240.0f) * 1000000;
+
 /*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
 {
 	CCar::Lua_Init(lua);
@@ -804,8 +806,10 @@ void CManager_Cars::StepCars()
 
 double CManager_Cars::GetInterpTime() const
 {
+	const int64 frameDiff = m_curUpdateTime - m_lastUpdateTime;
+
 	const double ticks_to_ms = 1.0 / 1000000.0;
-	return double(m_curUpdateTime - m_lastUpdateTime) * ticks_to_ms;
+	return double(frameDiff) * ticks_to_ms;
 }
 
 void CManager_Cars::Draw(const CameraViewParams& view)
@@ -820,5 +824,11 @@ void CManager_Cars::Draw(const CameraViewParams& view)
 
 void CManager_Cars::UpdateTime(int64 ticks)
 {
-	g_cars->m_curUpdateTime = ticks;// Time::microTicks();
+	const int64 frameDiff = ticks - g_cars->m_lastUpdateTime;
+	const int64 mappedInterpFrameDiff = frameDiff / targetMinFrameTime * targetMinFrameTime;
+
+	// correct last update time. This reduces jitter
+	g_cars->m_lastUpdateTime += frameDiff - mappedInterpFrameDiff;
+
+	g_cars->m_curUpdateTime = ticks;
 }

@@ -1995,8 +1995,8 @@ void CCar::DentCar()
 
 float CCar::GetLerpValue() const
 {
-	const float factor = 0.5f + clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
-	return factor;
+	const float factor = clamp(m_owner->GetInterpTime() / Car_Fixed_Timestep, 0.0f, 1.0f);
+	return 0.5f + factor;
 }
 
 VECTOR_NOPAD CCar::GetInterpolatedCogPosition() const
