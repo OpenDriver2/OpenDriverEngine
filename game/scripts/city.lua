@@ -263,6 +263,7 @@ function ChangeCity(newCityName, newCityType, newWeather)
 
 	levRenderProps.ambientColor = LightPresets[CurrentSkyType].ambientColor
 	levRenderProps.lightColor = LightPresets[CurrentSkyType].lightColor
+	sky.color:set(LightPresets[CurrentSkyType].skyColor)
 	
 	if triggerLoading then
 		UnloadCity()

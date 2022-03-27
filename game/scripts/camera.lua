@@ -155,13 +155,9 @@ function InitCamera( params )
 	camera.MainView.fov = params.fov
 
 	if params.velocity ~= nil then
-		camera.MainViewVelocity.x = params.velocity.x
-		camera.MainViewVelocity.y = params.velocity.y
-		camera.MainViewVelocity.z = params.velocity.z
+		camera.MainViewVelocity:set(params.velocity)
 	else
-		camera.MainViewVelocity.x = 0
-		camera.MainViewVelocity.y = 0
-		camera.MainViewVelocity.z = 0
+		camera.MainViewVelocity:set(0.0)
 	end
 end
 

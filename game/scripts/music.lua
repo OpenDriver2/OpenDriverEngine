@@ -2,71 +2,71 @@ local audio = engine.Audio
 
 local BankDriver1 = {
 	{
-		Drive 		= "music/nyc_day.ogg",
-		Chase 		= "music/nyc_day_esc.ogg",
+		Drive 		= "music/d1music_song0.xm", 	-- "music/nyc_day.ogg",
+		Chase 		= "music/d1music_song0.xm#11" 	-- "music/nyc_day_esc.ogg",
 	},
 	{
-		Drive 		= "music/nyc_night.ogg",
-		Chase 		= "music/nyc_night_esc.ogg",
+		Drive 		= "music/d1music_song1.xm", 	-- "music/nyc_night.ogg",
+		Chase 		= "music/d1music_song1.xm#12" 	-- "music/nyc_night_esc.ogg",
 	},
 	{
-		Drive 		= "music/la_day.ogg",
-		Chase 		= "music/la_day_esc.ogg",
+		Drive 		= "music/d1music_song2.xm", 	-- "music/la_day.ogg",
+		Chase 		= "music/d1music_song2.xm#11" 	-- "music/la_day_esc.ogg",
 	},
 	{
-		Drive 		= "music/miami_day.ogg",
-		Chase 		= "music/miami_day_esc.ogg",
+		Drive 		= "music/d1music_song3.xm", 	-- "music/miami_day.ogg",
+		Chase 		= "music/d1music_song3.xm#11" 	-- "music/miami_day_esc.ogg",
 	},
 	{
-		Drive 		= "music/miami_night.ogg",
-		Chase 		= "music/miami_night_esc.ogg",
+		Drive 		= "music/d1music_song4.xm", 	-- "music/miami_night.ogg",
+		Chase 		= "music/d1music_song4.xm#8" 	-- "music/miami_night_esc.ogg",
 	},
 	{
-		Drive 		= "music/frisco_day.ogg",
-		Chase 		= "music/frisco_day_esc.ogg",
+		Drive 		= "music/d1music_song5.xm", 	-- "music/frisco_day.ogg",
+		Chase 		= "music/d1music_song5.xm#11" 	-- "music/frisco_day_esc.ogg",
 	},
 	{
-		Drive 		= "music/frisco_night.ogg",
-		Chase 		= "music/frisco_night_esc.ogg",
+		Drive 		= "music/d1music_song6.xm", 	-- "music/frisco_night.ogg",
+		Chase 		= "music/d1music_song6.xm#15" 	-- "music/frisco_night_esc.ogg",
 	},
 	{
-		Drive 		= "music/la_night.ogg",
-		Chase 		= "music/la_night_esc.ogg",
+		Drive 		= "music/d1music_song7.xm", 	-- "music/la_night.ogg",
+		Chase 		= "music/d1music_song7.xm#12" 	-- "music/la_night_esc.ogg",
 	}
 }
 
 local BankDriver2 = {
 	{
-		Drive 		= "music/Driver1_drive.ogg",
-		Chase 		= "music/Driver1_chase.ogg",
+		Drive 		= "music/d2music_song0.xm", 	-- "music/Driver1_drive.ogg",
+		Chase 		= "music/d2music_song0.xm#16" 	-- "music/Driver1_chase.ogg",
 	},
 	{
-		Drive 		= "music/Driver2_drive.ogg",
-		Chase 		= "music/Driver2_chase.ogg",
+		Drive 		= "music/d2music_song1.xm", 	-- "music/Driver2_drive.ogg",
+		Chase 		= "music/d2music_song1.xm#11" 	-- "music/Driver2_chase.ogg",
 	},
 	{
-		Drive 		= "music/Driver3_drive.ogg",
-		Chase 		= "music/Driver3_chase.ogg",
+		Drive 		= "music/d2music_song2.xm", 	--"music/Driver3_drive.ogg",
+		Chase 		= "music/d2music_song2.xm#7" 	--"music/Driver3_chase.ogg",
 	},
 	{
-		Drive 		= "music/Driver4_drive.ogg",
-		Chase 		= "music/Driver4_chase.ogg",
+		Drive 		= "music/d2music_song3.xm", 	-- "music/Driver4_drive.ogg",
+		Chase 		= "music/d2music_song3.xm#18" 	-- "music/Driver4_chase.ogg",
 	},
 	{
-		Drive 		= "music/Driver5_drive.ogg",
-		Chase 		= "music/Driver5_chase.ogg",
+		Drive 		= "music/d2music_song4.xm", 	-- "music/Driver5_drive.ogg",
+		Chase 		= "music/d2music_song4.xm#12" 	-- "music/Driver5_chase.ogg",
 	},
 	{
-		Drive 		= "music/Driver6_drive.ogg",
-		Chase 		= "music/Driver6_chase.ogg",
+		Drive 		= "music/d2music_song5.xm", 	-- "music/Driver6_drive.ogg",
+		Chase 		= "music/d2music_song5.xm#9" 	-- "music/Driver6_chase.ogg",
 	},
 	{
-		Drive 		= "music/music_song6.xm", 	-- "music/Driver7_drive.ogg",
-		Chase 		= "music/music_song6.xm#8" 	-- "music/Driver7_chase.ogg",
+		Drive 		= "music/d2music_song6.xm", 	-- "music/Driver7_drive.ogg",
+		Chase 		= "music/d2music_song6.xm#8" 	-- "music/Driver7_chase.ogg",
 	},
 	{
-		Drive 		= "music/Driver8_drive.ogg",
-		Chase 		= "music/Driver8_chase.ogg",
+		Drive 		= "music/d2music_song7.xm", 	-- "music/Driver8_drive.ogg",
+		Chase 		= "music/d2music_song7.xm#10" 	-- "music/Driver8_chase.ogg",
 	}
 }
 
