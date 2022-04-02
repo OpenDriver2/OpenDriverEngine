@@ -7,9 +7,9 @@ local headAngle = 0
 
 local function GetCameraInput()
 	local input = {
-		lookLeft = ButtonState[SDL.Scancode.A],
-		lookRight = ButtonState[SDL.Scancode.D],
-		lookBack = ButtonState[SDL.Scancode.S],
+		lookLeft = Input.ButtonState[SDL.Scancode.A],
+		lookRight = Input.ButtonState[SDL.Scancode.D],
+		lookBack = Input.ButtonState[SDL.Scancode.S],
 	}
 	return input
 end

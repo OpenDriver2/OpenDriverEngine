@@ -393,8 +393,10 @@ end
 --    unless you know what it is
 -------------------------------------------------
 
-ButtonState = {}
-JustPressed = {}
+Input = {
+	ButtonState = {},
+	JustPressed = {}
+}
 
 local function errorHandler ( errobj )
 	MsgError("ERROR - "..errobj)
@@ -415,7 +417,7 @@ EngineHost = {
 	-- You can draw here ImGUI stuff
 	PostFrame = function( dt )
 		xpcall(RenderUI, errorHandler)
-		JustPressed = {}
+		Input.JustPressed = {}
 	end,
 	
 	MouseMove = function( x, y, xrel, yrel)
@@ -449,8 +451,8 @@ EngineHost = {
 				pauseState = not pauseState
 			end
 			
-			JustPressed[num] = down
-			ButtonState[num] = down
+			Input.JustPressed[num] = down
+			Input.ButtonState[num] = down
 		end, errorHandler)
 
 	end

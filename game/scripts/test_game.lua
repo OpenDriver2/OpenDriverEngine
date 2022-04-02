@@ -113,7 +113,7 @@ local TestGame = {
 
 TestGame.UpdateCamera = function(dt)
 
-	if JustPressed[SDL.Scancode.C] == true then
+	if Input.JustPressed[SDL.Scancode.C] == true then
 		TestGame.CameraNumber = (TestGame.CameraNumber + 1) & 1
 	end
 
@@ -229,31 +229,38 @@ TestGame.Init = function(residentModel)
 	end
 end
 
+local copState = false
+
 TestGame.UpdateCarPads = function()
 	local input = {
-		accel = ButtonState[SDL.Scancode.Up],
-		brake = ButtonState[SDL.Scancode.Down],
-		wheelspin = ButtonState[SDL.Scancode.LeftShift],
-		handbrake = ButtonState[SDL.Scancode.Space],
+		accel = Input.ButtonState[SDL.Scancode.Up],
+		brake = Input.ButtonState[SDL.Scancode.Down],
+		wheelspin = Input.ButtonState[SDL.Scancode.LeftShift],
+		handbrake = Input.ButtonState[SDL.Scancode.Space],
 		steering = 0,
 		fastSteer = false,
 		horn = 0
 	}
 	
-	if ButtonState[SDL.Scancode.Left] then
+	if Input.ButtonState[SDL.Scancode.Left] then
 		input.steering = -1
 	end
 
-	if ButtonState[SDL.Scancode.Right] then
+	if Input.ButtonState[SDL.Scancode.Right] then
 		input.steering = 1
 	end
 	
-	if ButtonState[SDL.Scancode.LeftControl] then
+	if Input.ButtonState[SDL.Scancode.LeftControl] then
 		input.fastSteer = true
 	end
 	
-	if ButtonState[SDL.Scancode.H] then
+	if Input.ButtonState[SDL.Scancode.H] then
 		input.horn = input.horn + 1
+	end
+
+	if Input.JustPressed[SDL.Scancode.T] then
+		copState = not copState
+		Music.FunkUpDaBGMTunez(copState)
 	end
 	
 	-- update local player inputs
