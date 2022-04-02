@@ -174,6 +174,40 @@ void IAudioSystem_Lua_Init(sol::state& lua)
 	engine["Audio"] = IAudioSystem::Instance;
 }
 
+void Engine_Lua_PrintStackTrace(sol::state& lua)
+{
+	lua_State* L = lua;
+	lua_Debug ar;
+	int depth = 0;
+
+	Msg("\nLua stack trace:\n");
+
+	while (lua_getstack(L, depth, &ar))
+	{
+		int status = lua_getinfo(L, "Sln", &ar);
+		assert(status);
+
+		Msg("\t %s:", ar.short_src);
+		if (ar.currentline > 0)
+			Msg("%d:", ar.currentline);
+		if (*ar.namewhat != '\0')  /* is there a name? */
+			Msg(" in function '%s'", ar.name);
+		else
+		{
+			if (*ar.what == 'm')  /* main? */
+				Msg(" in main chunk");
+			else if (*ar.what == 'C' || *ar.what == 't')
+				Msg(" ?");  /* C function or tail call */
+			else
+				Msg(" in function <%s:%d>",
+					ar.short_src, ar.linedefined);
+		}
+		Msg("\n");
+		depth++;
+	}
+	Msg("\n");
+}
+
 void Engine_Lua_Init(sol::state& lua)
 {
 	Math_Lua_Init(lua);

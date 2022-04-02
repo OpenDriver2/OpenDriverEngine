@@ -1,7 +1,9 @@
 #include "game/pch.h"
+#include "core/exception_handler.h"
 
 #include "shared/input.h"
 #include "luabinding/lua_init.h"
+#include "luabinding/luaengine.h"
 
 #include <SDL_events.h>
 
@@ -245,6 +247,11 @@ void MainLoop()
 	} while (!g_quit);
 }
 
+void printLuaStackTrace()
+{
+	Engine_Lua_PrintStackTrace(g_luaState);
+}
+
 //-------------------------------------------------------------
 // Main level viewer
 //-------------------------------------------------------------
@@ -254,9 +261,12 @@ int main(int argc, char* argv[])
 	Install_ConsoleSpewFunction();
 #endif
 
+	set_signal_handler(printLuaStackTrace);
+
 	Msg("---------------\nOpenDriverEngine startup\n---------------\n\n");
 
 	LuaInit(g_luaState);
+
 	UpdateStats(0.0f);
 
 	if (!GR_Init("Driver", 1280, 720, 0))

@@ -189,6 +189,8 @@ project "frameworkLib"
 		"glad", "SDL2",
 		"openal-soft", "libvorbis", "libogg", "libxm"
 	}
+
+	links {"imagehlp"}
 	
 	files {
 		"math/**.cpp",
