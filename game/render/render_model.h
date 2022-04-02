@@ -49,7 +49,9 @@ public:
 
 	static void			DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& position, int rotation);
 	static void			SetupModelShader();
+
 	static void			SetupLightingProperties(float ambientScale = 1.0f, float lightScale = 1.0f);
+
 	static void			InitModelShader();
 
 	// calling it again will regenerate VAO.

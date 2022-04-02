@@ -1,4 +1,4 @@
-#include "game/pch.h"
+#include "game/pch.h"*
 #include "render_model.h"
 #include "render_cars.h"
 
@@ -10,11 +10,15 @@
 	"	uniform mat4 u_Projection;\n"\
 	"	uniform mat4 u_World;\n"\
 	"	uniform mat4 u_WorldViewProj;\n"\
+	"	uniform vec4 u_fogParams;\n"\
 	"	void main() {\n"\
-	"		v_texcoord = vec2(a_position_tu.w, 1.0-a_normal_tv.w);\n"\
+	"		v_texcoord.xy = vec2(a_position_tu.w, 1.0-a_normal_tv.w);\n"\
 	"		v_normal = mat3(u_World) * a_normal_tv.xyz;\n"\
 	"		v_color = a_color;\n"\
 	"		gl_Position = u_WorldViewProj * vec4(a_position_tu.xyz, 1.0);\n"\
+	"		float fogHeight = 1.0 - saturate((u_World * vec4(a_position_tu.xyz, 1.0)).y * u_fogParams.z);\n"\
+	"		float fogDistance = saturate((u_fogParams.x - gl_Position.z) * u_fogParams.y);\n"\
+	"		v_texcoord.z = (1.0 - fogDistance) * fogHeight;\n"\
 	"	}\n"
 
 #define MODEL_FRAGMENT_SHADER \
@@ -22,6 +26,7 @@
 	"	uniform vec3 u_lightDir;\n"\
 	"	uniform vec4 u_ambientColor;\n"\
 	"	uniform vec4 u_lightColor;\n"\
+	"	uniform vec4 u_fogColor;\n"\
 	"	void main() {\n"\
 	"		vec4 lighting;\n"\
 	"		vec4 color = texture2D(s_texture, v_texcoord.xy);\n"\
@@ -29,11 +34,11 @@
 	"		color.rgb *= v_color.rgb;\n"\
 	"		lighting = vec4(color.rgb * u_ambientColor.rgb * u_ambientColor.a, color.a * v_color.a);\n"\
 	"		lighting.rgb += u_lightColor.rgb * u_lightColor.a * color.rgb * max(1.0 - dot(v_normal, u_lightDir), 0);\n"\
-	"		fragColor = lighting;\n"\
+	"		fragColor = mix(lighting, u_fogColor, v_texcoord.z);\n"\
 	"	}\n"
 
 const char* model_shader =
-	"varying vec2 v_texcoord;\n"
+	"varying vec3 v_texcoord;\n"
 	"varying vec3 v_normal;\n"
 	"varying vec4 v_color;\n"
 	"#ifdef VERTEX\n"
@@ -530,10 +535,11 @@ struct ModelShaderInfo
 {
 	ShaderID	shader{ 0 };
 
-	int			ambientColorConstantId{ -1 };
-	int			lightColorConstantId{ -1 };
-
-	int			lightDirConstantId{ -1 };
+	int			cid_ambientColor{ -1 };
+	int			cid_lightColor{ -1 };
+	int			cid_lightDir{ -1 };
+	int			cid_fogParams{ -1 };
+	int			cid_fogColor{ -1 };
 } g_modelShader;
 
 struct WorldRenderProperties
@@ -541,6 +547,9 @@ struct WorldRenderProperties
 	Vector4D ambientColor;
 	Vector4D lightColor;
 	Vector3D lightDir;
+
+	Vector4D fogParams;
+	Vector4D fogColor;
 
 } g_worldRenderProperties;
 
@@ -550,10 +559,12 @@ void CRenderModel::InitModelShader()
 	// create shader
 	g_modelShader.shader = GR_CompileShader(model_shader);
 
-	g_modelShader.ambientColorConstantId = GR_GetShaderConstantIndex(g_modelShader.shader, "u_ambientColor");
-	g_modelShader.lightColorConstantId = GR_GetShaderConstantIndex(g_modelShader.shader, "u_lightColor");
+	g_modelShader.cid_ambientColor = GR_GetShaderConstantIndex(g_modelShader.shader, "u_ambientColor");
+	g_modelShader.cid_lightColor = GR_GetShaderConstantIndex(g_modelShader.shader, "u_lightColor");
+	g_modelShader.cid_lightDir = GR_GetShaderConstantIndex(g_modelShader.shader, "u_lightDir");
 
-	g_modelShader.lightDirConstantId = GR_GetShaderConstantIndex(g_modelShader.shader, "u_lightDir");
+	g_modelShader.cid_fogParams = GR_GetShaderConstantIndex(g_modelShader.shader, "u_fogParams");
+	g_modelShader.cid_fogColor = GR_GetShaderConstantIndex(g_modelShader.shader, "u_fogColor");
 }
 
 // prepares shader for rendering
@@ -561,10 +572,12 @@ void CRenderModel::InitModelShader()
 void CRenderModel::SetupModelShader()
 {
 	GR_SetShader(g_modelShader.shader);
-	GR_SetShaderConstantVector3D(g_modelShader.lightDirConstantId, g_worldRenderProperties.lightDir);
+	GR_SetShaderConstantVector4D(g_modelShader.cid_ambientColor, g_worldRenderProperties.ambientColor);
+	GR_SetShaderConstantVector4D(g_modelShader.cid_lightColor, g_worldRenderProperties.lightColor);
+	GR_SetShaderConstantVector3D(g_modelShader.cid_lightDir, g_worldRenderProperties.lightDir);
 
-	GR_SetShaderConstantVector4D(g_modelShader.ambientColorConstantId, g_worldRenderProperties.ambientColor);
-	GR_SetShaderConstantVector4D(g_modelShader.lightColorConstantId, g_worldRenderProperties.lightColor);
+	GR_SetShaderConstantVector4D(g_modelShader.cid_fogParams, g_worldRenderProperties.fogParams);
+	GR_SetShaderConstantVector4D(g_modelShader.cid_fogColor, g_worldRenderProperties.fogColor);
 }
 
 extern CBaseLevelMap* g_levMap;
@@ -580,7 +593,15 @@ void CRenderModel::SetupLightingProperties(float ambientScale /*= 1.0f*/, float 
 	g_worldRenderProperties.ambientColor = ColorRGBA(CRender_Level::RenderProps.ambientColor, 0.8f * ambientScale * lightLevel);
 	g_worldRenderProperties.lightColor = ColorRGBA(CRender_Level::RenderProps.lightColor, 0.8f * lightScale * lightLevel);
 	g_worldRenderProperties.lightDir = lightVector * Vector3D(1,-1,1);
+
+	const float fogNear = CRender_Level::RenderProps.fogParams.x;
+	const float fogFar = CRender_Level::RenderProps.fogParams.y;
+	const float fogTop = CRender_Level::RenderProps.fogParams.z;
+
+	g_worldRenderProperties.fogParams = Vector4D(fogFar, 1.0f / (fogFar - fogNear), 1.0f / fogTop, 1.0f);
+	g_worldRenderProperties.fogColor = ColorRGBA(CRender_Level::RenderProps.fogColor, 0.0f);
 }
+
 
 //----------------------------------------
 // callbacks for model lump loader

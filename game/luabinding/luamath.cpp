@@ -50,12 +50,11 @@ void Math_Lua_Init(sol::state& lua)
 			LUADOC_TYPE();
 			vec.new_usertype<Vector2D>(
 				LUADOC_T("vec2", "Two-dimensional vector"),
-				sol::meta_function::construct, sol::constructors<Vector2D(float), Vector2D(float, float)>(),
-				// init from table
-				sol::meta_function::construct, sol::factories(
+				sol::call_constructor, sol::factories(
 					[](const sol::table& table) {
 						return Vector2D(table["x"], table["y"]);
 					}),
+				sol::call_constructor, sol::constructors<Vector2D(const float&, const float&), Vector2D(const float&)>(),
 				LUADOC_P("set"), sol::overload(
 					[](Vector2D& self, const float& v) { self.x = self.y = v; },
 					[](Vector2D& self, const float& x, const float& y) { self.x = x; self.y = y; },
@@ -64,7 +63,8 @@ void Math_Lua_Init(sol::state& lua)
 				),
 				VEC_OPERATORS(Vector2D, "vec2")
 				LUADOC_P("x"), &Vector2D::x,
-				LUADOC_P("y"), &Vector2D::y);
+				LUADOC_P("y"), &Vector2D::y
+			);
 		}
 
 		//

@@ -35,27 +35,37 @@ LightPresets =
 	[SkyType.Day] = {
 		ambientColor = vec.vec3(0.8,0.84,0.88),
 		lightColor 	 = vec.vec3(0.95,0.92,0.78),
-		skyColor	 = vec.vec3(1,1,1)
+		skyColor	 = vec.vec3(1,1,1),
+		fogColor	 = vec.vec3(0.8, 0.83, 0.9),
+		fogParams	 = vec.vec3(2.0, 40.0, 2.0)
 	},
 	[SkyType.Night] = {
 		ambientColor = vec.vec3(1,1,1),
 		lightColor 	 = vec.vec3(1,1,1),
-		skyColor	 = vec.vec3(1,1,1)
+		skyColor	 = vec.vec3(1,1,1),
+		fogColor	 = vec.vec3(0.1, 0.1, 0.1),
+		fogParams	 = vec.vec3(2.0, 50.0, 2.0)
 	},
 	[SkyType.Rain] = {
 		ambientColor = vec.vec3(1,1,1),
 		lightColor 	 = vec.vec3(0.35,0.35,0.35),
-		skyColor	 = vec.vec3(1,1,1)
+		skyColor	 = vec.vec3(1,1,1),
+		fogColor	 = vec.vec3(0.6, 0.6, 0.6),
+		fogParams	 = vec.vec3(2.0, 20.0, 3.0)
 	},
 	[SkyType.Dawn] = {
 		ambientColor = vec.vec3(0.7,0.7,0.7),
 		lightColor 	 = vec.vec3(0.5,0.5,0.5), -- TODO: function preset
-		skyColor	 = vec.vec3(1,1,1)
+		skyColor	 = vec.vec3(1,1,1),
+		fogColor	 = vec.vec3(0.2, 0.2, 0.2),
+		fogParams	 = vec.vec3(2.0, 50.0, 2.0)
 	},
 	[SkyType.Dusk] = {
 		ambientColor = vec.vec3(0.7,0.7,0.8),
 		lightColor 	 = vec.vec3(0.35,0.3,0.21), 		 -- TODO: function preset
-		skyColor	 = vec.vec3(1,1,1)
+		skyColor	 = vec.vec3(1,1,1),
+		fogColor	 = vec.vec3(0.2, 0.2, 0.2),
+		fogParams	 = vec.vec3(2.0, 50.0, 2.0)
 	}
 }
 
@@ -261,9 +271,14 @@ function ChangeCity(newCityName, newCityType, newWeather)
 		levRenderProps.lightScale = 1.25 * (CurrentCityInfo.brightnessScale or 1)
 	end
 
-	levRenderProps.ambientColor = LightPresets[CurrentSkyType].ambientColor
-	levRenderProps.lightColor = LightPresets[CurrentSkyType].lightColor
-	sky.color:set(LightPresets[CurrentSkyType].skyColor)
+	local lightPreset = LightPresets[CurrentSkyType]
+
+	levRenderProps.ambientColor = lightPreset.ambientColor
+	levRenderProps.lightColor = lightPreset.lightColor
+	levRenderProps.fogColor = lightPreset.fogColor
+	util.printObject(lightPreset)
+	levRenderProps.fogParams = lightPreset.fogParams
+	sky.color:set(lightPreset.skyColor)
 	
 	if triggerLoading then
 		UnloadCity()

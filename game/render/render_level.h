@@ -9,6 +9,9 @@ struct LevelRenderProps
 	ColorRGB ambientColor{ 0.95f, 0.9f, 1.0f };
 	ColorRGB lightColor{ 0.95f, 0.9f, 0.5f };
 
+	ColorRGB fogColor{ 0.7f, 0.7f, 0.9f };
+	Vector3D fogParams{ 3.0f, 4.0f, 1.0f };		// near, far, top
+
 	int displayCellObjectList{ -1 };
 
 	float nightAmbientScale{ 0.35f };

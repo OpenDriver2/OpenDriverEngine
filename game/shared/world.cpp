@@ -146,8 +146,12 @@ void CWorld::Lua_Init(sol::state& lua)
 		lua.new_usertype<LevelRenderProps>(
 			LUADOC_T("LevelRenderProps"),
 
-			LUADOC_P("ambientColor", "<vec.vec4>"), &LevelRenderProps::ambientColor,
-			LUADOC_P("lightColor", "<vec.vec4>"), &LevelRenderProps::lightColor,
+			LUADOC_P("ambientColor", "<vec.vec3>"), &LevelRenderProps::ambientColor,
+			LUADOC_P("lightColor", "<vec.vec3>"), &LevelRenderProps::lightColor,
+
+			LUADOC_P("fogColor", "<vec.vec3>"), &LevelRenderProps::fogColor,
+			LUADOC_P("fogParams", "<vec.vec3>"), &LevelRenderProps::fogParams,
+
 			LUADOC_P("nightAmbientScale", "<float>"), &LevelRenderProps::nightAmbientScale,
 			LUADOC_P("nightLightScale", "<float>"), &LevelRenderProps::nightLightScale,
 			LUADOC_P("ambientScale", "<float>"), &LevelRenderProps::ambientScale,
