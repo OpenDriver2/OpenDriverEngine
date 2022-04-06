@@ -687,17 +687,20 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 	const OUT_CELL_FILE_HEADER& mapInfo = g_levMap->GetMapInfo();
 	const int squared_reg_size = mapInfo.region_size * mapInfo.region_size;
 
-	XZPAIR initial, cell;
+	XZPAIR initial;
 	g_levMap->WorldPositionToCellXZ(initial, queryPos, XZPAIR{ -squared_reg_size, -squared_reg_size });
 
 	static Array<CELL_OBJECT*> collisionObjects;
+	static Array<const ModelRef_t*> collisionObjectModels;
 	collisionObjects.reserve(32);
+	collisionObjectModels.reserve(32);
 	collisionObjects.clear();
+	collisionObjectModels.clear();
 
 	CELL_ITERATOR_CACHE iteratorCache;
 
 	// collect objects
-	cell.x = initial.x;
+	XZPAIR cell = initial;
 	for (int i = 0; i < 2; i++)
 	{
 		cell.z = initial.z;
@@ -707,15 +710,20 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 			{
 				const ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
 
-				if (!ref->enabled)
+				if (!ref || !ref->enabled)
 					return true;
 
-				if (ref && ref->baseInstance)
+				if (ref->baseInstance)
 					ref = ref->baseInstance;
+
+				// spooled?
+				if (!ref->model)
+					return true;
 
 				if (ref->model && ref->model->GetCollisionBoxCount())
 				{
 					collisionObjects.append(co);
+					collisionObjectModels.append(ref);
 				}
 
 				return true;
@@ -764,30 +772,23 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 	for (usize i = 0; i < collisionObjects.size(); i++)
 	{
 		CELL_OBJECT* co = collisionObjects[i];
-		co->pad = 255;
-		ModelRef_t* ref = g_levModels.GetModelByIndex(co->type);
-
-		if (ref && ref->baseInstance)
-			ref = ref->baseInstance;
+		const ModelRef_t* ref = collisionObjectModels[i];
 
 		if (!ref)
 			continue;
 
 		const MODEL* model = ref->model;
 
-		if (!model)
-			return;
-
-		const int numCollisionBoxes = model->GetCollisionBoxCount();
-
 		const int dx = co->pos.vx - queryPos.vx;
 		const int dz = co->pos.vz - queryPos.vz;
-		const int yang = -co->yang & 63;
 
-		int sphereSq = model->bounding_sphere + queryDist;
+		const int sphereSq = model->bounding_sphere + queryDist;
 
 		if (dx * dx + dz * dz > sphereSq * sphereSq)
 			continue;
+
+		const int yang = -co->yang & 63;
+		const int numCollisionBoxes = model->GetCollisionBoxCount();
 
 		for (int j = 0; j < numCollisionBoxes; j++)
 		{
