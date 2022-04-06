@@ -516,7 +516,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 		Matrix3x3 shadowMat = rotateY3(shadowAngle) * rotateX3(DEG2RAD(90.0f));
 
 		CRenderModel::SetupModelShader();
-		GR_SetPolygonOffset(10.5f);
+		GR_SetPolygonOffset(0.0005f, 0.001f);
 		GR_SetBlendMode(BM_SEMITRANS_ALPHA);
 		GR_SetDepthMode(1, 0);
 
@@ -533,7 +533,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 
 		// restore render states
 		GR_SetDepthMode(1, 1);
-		GR_SetPolygonOffset(0.0f);
+		GR_SetPolygonOffset(0.0f, 0.0f);
 		GR_SetBlendMode(BM_NONE);
 	}
 }

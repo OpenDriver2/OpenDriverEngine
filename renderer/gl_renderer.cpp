@@ -45,6 +45,9 @@ GrVAO*		g_CurrentVAO = nullptr;
 TextureID	g_lastBoundTexture = 0;
 ShaderID	g_CurrentShader = 0;
 
+float		g_polyOfsFactor = 0.0f;
+float		g_polyOfsUnits = 0.0f;
+
 GLint		u_MatrixUniforms[MATRIX_MODES];
 Matrix4x4	g_matrices[MATRIX_MODES];
 
@@ -431,8 +434,12 @@ void GR_SetMatrix(GR_MatrixMode mode, const Matrix4x4& matrix)
 
 void GR_UpdateMatrixUniforms()
 {
+	Matrix4x4 projPolyOfs = g_matrices[MATRIX_PROJECTION];
+	projPolyOfs.rows[2][2] += g_polyOfsFactor;
+	projPolyOfs.rows[2][3] -= g_polyOfsUnits;
+
 	// rebuild WVP
-	g_matrices[MATRIX_WORLDVIEWPROJECTION] = identity4() * g_matrices[MATRIX_PROJECTION] * (g_matrices[MATRIX_VIEW] * g_matrices[MATRIX_WORLD]);
+	g_matrices[MATRIX_WORLDVIEWPROJECTION] = identity4() * projPolyOfs * (g_matrices[MATRIX_VIEW] * g_matrices[MATRIX_WORLD]);
 	
 	for(int i = 0; i < MATRIX_MODES; i++)
 		glUniformMatrix4fv(u_MatrixUniforms[i], 1, GL_TRUE, g_matrices[i]);
@@ -532,17 +539,12 @@ void GR_SetViewPort(int x, int y, int width, int height)
 
 //--------------------------------------------------------------------------
 
-void GR_SetPolygonOffset(float ofs)
+void GR_SetPolygonOffset(float factor, float units)
 {
-	if (ofs == 0.0f)
-	{
-		glDisable(GL_POLYGON_OFFSET_FILL);
-	}
-	else
-	{
-		glEnable(GL_POLYGON_OFFSET_FILL);
-		glPolygonOffset(0.0f, ofs);
-	}
+	// glPolygonOffset doesn't work.
+
+	g_polyOfsFactor = factor;
+	g_polyOfsUnits = units;
 }
 
 void GR_SetDepthMode(int test, int write)

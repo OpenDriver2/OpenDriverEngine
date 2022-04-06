@@ -1,4 +1,4 @@
-#include "game/pch.h"*
+#include "game/pch.h"
 #include "render_model.h"
 #include "render_cars.h"
 

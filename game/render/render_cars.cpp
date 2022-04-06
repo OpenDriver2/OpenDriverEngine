@@ -122,8 +122,8 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars, const CameraViewParams& view)
 {
 	if (!ShadowDetail)
 		return;
-	CMeshBuilder carShadow(ShadowVAO);
 
+	CMeshBuilder carShadow(ShadowVAO);
 	carShadow.Begin(PRIM_TRIANGLE_STRIP);
 
 	for (usize i = 0; i < cars.size(); i++)
@@ -139,7 +139,7 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars, const CameraViewParams& view)
 
 	TextureID carShadowPage = CWorld::GetHWTexture(ShadowDetail->pageNum, 0);
 	CRenderModel::SetupModelShader();
-	GR_SetPolygonOffset(10.5f);
+	GR_SetPolygonOffset(0.0005f, 0.001f);
 	GR_SetBlendMode(BM_SUBTRACT);
 	GR_SetDepthMode(1, 0);
 	GR_SetTexture(carShadowPage);
@@ -150,7 +150,7 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars, const CameraViewParams& view)
 
 	// restore render states
 	GR_SetDepthMode(1, 1);
-	GR_SetPolygonOffset(0.0f);
+	GR_SetPolygonOffset(0.0f, 0.0f);
 }
 
 
@@ -186,7 +186,7 @@ void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float dist
 	else
 	{
 		for (int i = 0; i < 4; i++)
-			verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 10) / ONE_F;
+			verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 4) / ONE_F;
 
 		meshBuilder.TexturedQuad3(verts[0], verts[1], verts[2], verts[3],
 									uvs[0], uvs[1], uvs[2], uvs[3]);

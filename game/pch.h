@@ -54,10 +54,11 @@
 #include "luabinding/luadocs.h"
 #include "luabinding/luarefvalue.h" 
 
-#include "shared/world.h"
 #include "shared/manager_cars.h"
 #include "shared/cars.h"
 #include "shared/players.h"
 #include "shared/bcoll3d.h"
 #include "shared/bcollide.h"
+#include "shared/effects.h"
 #include "shared/replay.h"
+#include "shared/world.h"
