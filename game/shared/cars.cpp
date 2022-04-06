@@ -571,6 +571,12 @@ void CCar::StartStaticSound(const char* type, float refDist, float volume, float
 
 void CCar::CollisionSound(int impact, bool car_vs_car)
 {
+	if (m_crashTimer > 0)
+		return;
+
+	if (impact < 25)
+		return;
+
 	const char* soundType = "Hit_Car_1";
 
 	int refDist = 256;
@@ -597,49 +603,29 @@ void CCar::CollisionSound(int impact, bool car_vs_car)
 	}
 
 	StartStaticSound(soundType, refDist / ONE_F, 1.0f, 1.0f);
+	m_crashTimer = 2;
 }
 
 void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 {
-	int oldCompression, newCompression;
-	int dir;
-	int forcefac;
-	int angle;
-	int lfx, lfz;
-	int sidevel, slidevel;
-	int susForce;
-	int chan;
-	WHEEL* wheel;
-	int friction_coef;
-	int oldSpeed, wheelspd;
-	VECTOR_NOPAD wheelPos, surfacePoint, surfaceNormal;
-	VECTOR_NOPAD force;
-	LONGVECTOR4 pointVel;
-	int frontFS;
-	int rearFS;
-	sdPlane Surface;
-	int i;
-	int cdx, cdz;
-	int sdx, sdz;
-	int player_id;
-
-	oldSpeed = m_hd.speed * 3 >> 1;
+	int oldSpeed = m_hd.speed * 3 >> 1;
 
 	if (oldSpeed < 32)
 		oldSpeed = oldSpeed * -72 + 3696;
 	else
 		oldSpeed = 1424 - oldSpeed;
 
-	dir = m_hd.direction;
-	cdx = isin(dir);
-	cdz = icos(dir);
+	int dir = m_hd.direction;
+	const int cdx = isin(dir);
+	const int cdz = icos(dir);
 
 	dir += m_wheel_angle;
-	sdx = isin(dir);
-	sdz = icos(dir);
+	const int sdx = isin(dir);
+	const int sdz = icos(dir);
 
-	//player_id = GetPlayerId(cp);
+	//int player_id = GetPlayerId(cp);
 
+	int frontFS, rearFS;
 	GetFrictionScalesDriver1(cl, frontFS, rearFS);
 
 	m_hd.front_vel = 0;
@@ -648,9 +634,12 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 	if (oldSpeed > 3300)
 		oldSpeed = 3300;
 
-	i = 3;
-	wheel = m_hd.wheel + 3;
-	do {
+	for (int i = 3; i >= 0; i--)
+	{
+		WHEEL* wheel = &m_hd.wheel[i];
+
+		sdPlane Surface;
+		VECTOR_NOPAD wheelPos, surfacePoint, surfaceNormal;
 		gte_ldv0(&m_cosmetics.wheelDisp[i]);
 
 		gte_rtv0tr();
@@ -671,8 +660,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 			surfaceFactor >>= 1;
 		}
 
-
-		friction_coef = (surfaceFactor * (32400 - wetness) >> 15) + 500;
+		int friction_coef = (surfaceFactor * (32400 - wetness) >> 15) + 500;
 
 		wheel->onGrass = Surface.surfaceType == (short)SurfaceType::Grass;
 		wheel->surface = 0;
@@ -709,8 +697,8 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 			}
 		}
 
-		oldCompression = wheel->susCompression;
-		newCompression = FIXEDH((surfacePoint[1] - wheelPos[1]) * surfaceNormal[1]) + 14;
+		const int oldCompression = wheel->susCompression;
+		int newCompression = FIXEDH((surfacePoint[1] - wheelPos[1]) * surfaceNormal[1]) + 14;
 
 		if (newCompression < 0)
 			newCompression = 0;
@@ -722,7 +710,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		// and apply vibration to player controller
 		if (m_controlType == CONTROL_TYPE_PLAYER)
 		{
-			int compressionDiff = abs(newCompression - oldCompression);
+			const int compressionDiff = abs(newCompression - oldCompression);
 			if (compressionDiff > 12 && (i & 1U) != 0)
 			{
 				StartStaticSound("HitCurb", 128 / ONE_F, 0.7f, 400 / ONE_F);
@@ -766,19 +754,21 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 		}
 		else
 		{
-			wheelPos[2] = wheelPos[2] - m_hd.where.t[2];
-			wheelPos[1] = wheelPos[1] - m_hd.where.t[1];
-			wheelPos[0] = wheelPos[0] - m_hd.where.t[0];
+			VECTOR_NOPAD force, pointVel;
 
-			force.vz = 0;
-			force.vx = 0;
+			wheelPos[0] -= m_hd.where.t[0];
+			wheelPos[1] -= m_hd.where.t[1];
+			wheelPos[2] -= m_hd.where.t[2];
+
+			force = 0;
 
 			pointVel[0] = FIXEDH(cl.avel[1] * wheelPos[2] - cl.avel[2] * wheelPos[1]) + cl.vel[0];
 			pointVel[2] = FIXEDH(cl.avel[0] * wheelPos[1] - cl.avel[1] * wheelPos[0]) + cl.vel[2];
 
 			// that's our spring
-			susForce = newCompression * 230 - oldCompression * 100;
+			const int susForce = newCompression * 230 - oldCompression * 100;
 
+			int lfx, lfz;
 			if (wheel->locked)
 			{
 				dir = ratan2(pointVel[0] >> 6, pointVel[2] >> 6);
@@ -807,8 +797,9 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				}
 			}
 
-			slidevel = (pointVel[0] / 64) * (lfx / 64) + (pointVel[2] / 64) * (lfz / 64);
-			wheelspd = abs((oldSpeed / 64) * (slidevel / 64));
+			int sidevel;
+			int slidevel = (pointVel[0] / 64) * (lfx / 64) + (pointVel[2] / 64) * (lfz / 64);
+			int wheelspd = abs((oldSpeed / 64) * (slidevel / 64));
 
 			if (slidevel > 50000)
 			{
@@ -829,7 +820,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 					slidevel = -12500;
 			}
 
-			if ((i & 1U) != 0)
+			if (i & 1)
 			{
 				// rear wheels
 				if (wheel->locked == 0)
@@ -859,7 +850,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				{
 					sidevel = (frontFS * slidevel + 2048 >> 13) + sidevel >> 1;
 
-					forcefac = FixDivHalfRound(FIXEDH(-sidevel * lfx) * sdz - FIXEDH(-sidevel * lfz) * sdx, 11);
+					int forcefac = FixDivHalfRound(FIXEDH(-sidevel * lfx) * sdz - FIXEDH(-sidevel * lfz) * sdx, 11);
 
 					force.vx = forcefac * sdz;
 					force.vz = -forcefac * sdx;
@@ -888,7 +879,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				force.vz -= cl.vel[2] * 75;
 			}
 
-			angle = m_hd.where.m[1][1];
+			int angle = m_hd.where.m[1][1];
 
 			if (angle < 2048)
 			{
@@ -922,9 +913,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				wheelPos[1] = 5 * wheelPos[1] / 16;
 			}
 
-			m_hd.acc[0] += force.vx;
-			m_hd.acc[1] += force.vy;
-			m_hd.acc[2] += force.vz;
+			m_hd.acc += force;
 
 			m_hd.aacc[0] += FIXEDH(wheelPos[1] * force.vz - wheelPos[2] * force.vy);
 			m_hd.aacc[1] += FIXEDH(wheelPos[2] * force.vx - wheelPos[0] * force.vz);
@@ -932,9 +921,7 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 
 			wheel->susCompression = newCompression;
 		}
-		wheel--;
-		i--;
-	} while (i >= 0);
+	}
 
 	int wheelSpeed = cdz / 64 * (cl.vel[2] / 64) + cdx / 64 * (cl.vel[0] / 64);;
 
@@ -1942,6 +1929,9 @@ void CCar::StepCarPhysics()
 		m_backWheelRotation += backWheelSpeed;
 		m_backWheelRotation &= 0xfff;
 	}
+
+	if(m_crashTimer)
+		m_crashTimer--;
 }
 
 //----------------------------------------------------------
@@ -2259,27 +2249,22 @@ void CCar::DrawCar()
 	}
 }
 
-bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int flags)
+bool CCar::CarBuildingCollision(const BUILDING_BOX& building, CELL_OBJECT* cop, int flags)
 {
-	int temp;
-	int strikeVel;
-	int boxDiffY;
-	bool collided;
-	short scale;
-	int chan;
-	MODEL* model;
-	VECTOR_NOPAD tempwhere, velocity;
-	SVECTOR_NOPAD boxDisp;
-	VECTOR_NOPAD pointVel, reaction, lever;
-	VECTOR_NOPAD LeafPosition, lamp_velocity;
-	int debris_colour;
-	int displacement, denom;
-	int buildingHeightY;
+	CDATA2D cd[2] = { 0 };
+	CRET2D collisionResult = { 0 };
 
-	CDATA2D cd[2] = { 0 }; // offset 0x0
-	CRET2D collisionResult = { 0 }; // offset 0xd0
+	MODEL* model = building.modelRef->model;
 
-	model = building.modelRef->model;
+	const int boxDiffY = abs(m_hd.oBox.location.vy + building.pos.vy);
+	const int buildingHeightY = building.height >> 1;
+
+	if (boxDiffY >= buildingHeightY + (m_hd.oBox.length[1] >> 1) ||
+		(model->shape_flags & SHAPE_FLAG_NOCOLLIDE) ||
+		(cop->pos.vx == OBJECT_SMASHED_MARK))
+	{
+		return false;
+	}
 
 	cd[0].isCameraOrTanner = (m_controlType == CONTROL_TYPE_TANNERCOLLIDER || m_controlType == CONTROL_TYPE_CAMERACOLLIDER);
 
@@ -2288,132 +2273,166 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 
 	cd[1].isCameraOrTanner = (model->flags2 & MODEL_FLAG_BARRIER) == 0;
 
-	boxDiffY = m_hd.oBox.location.vy + building.pos.vy;
-	boxDiffY = abs(boxDiffY);
+	bool collided = false;
+	int debris_colour = 0;// GetDebrisColour(cp);
 
-	collided = false;
-
-	buildingHeightY = building.height >> 1;
-
-	if (boxDiffY <= buildingHeightY + (m_hd.oBox.length[1] >> 1) && 
-		(model->shape_flags & SHAPE_FLAG_NOCOLLIDE) == 0 && 
-		(cop->pos.vx != OBJECT_SMASHED_MARK))
-	{
-		tempwhere.vx = m_hd.where.t[0];
-		tempwhere.vz = m_hd.where.t[2];
-
-		debris_colour = 0;// GetDebrisColour(cp);
-
-		cd[0].theta = m_hd.direction;
+	cd[0].theta = m_hd.direction;
 #if 0
-		if (m_controlType == CONTROL_TYPE_TANNERCOLLIDER)
-		{
-			cd[0].x.vx = m_hd.where.t[0];
-			cd[0].x.vy = m_hd.where.t[1];
-			cd[0].x.vz = m_hd.where.t[2];
+	if (m_controlType == CONTROL_TYPE_TANNERCOLLIDER)
+	{
+		cd[0].x.vx = m_hd.where.t[0];
+		cd[0].x.vy = m_hd.where.t[1];
+		cd[0].x.vz = m_hd.where.t[2];
 
-			cd[0].vel.vx = FIXEDH(m_st.n.linearVelocity[0]);
-			cd[0].vel.vz = FIXEDH(m_st.n.linearVelocity[2]);
+		cd[0].vel.vx = FIXEDH(m_st.n.linearVelocity[0]);
+		cd[0].vel.vz = FIXEDH(m_st.n.linearVelocity[2]);
 
-			m_hd.where.t[0] += cd[0].vel.vx;
-			m_hd.where.t[2] += cd[0].vel.vz;
+		cd[0].length[0] = 90;
+		cd[0].length[1] = 90;
+	}
+	else if (m_controlType == CONTROL_TYPE_CAMERACOLLIDER)
+	{
 
-			cd[0].length[0] = 90;
-			cd[0].length[1] = 90;
-		}
-		else if (m_controlType == CONTROL_TYPE_CAMERACOLLIDER)
-		{
+		cd[0].x.vx = m_hd.where.t[0];
+		cd[0].x.vy = m_hd.where.t[1];
+		cd[0].x.vz = m_hd.where.t[2];
 
-			cd[0].x.vx = m_hd.where.t[0];
-			cd[0].x.vy = m_hd.where.t[1];
-			cd[0].x.vz = m_hd.where.t[2];
-
-			cd[0].vel.vx = 0;
-			cd[0].vel.vz = 0;
-			cd[0].length[1] = 5;
-			cd[0].length[0] = gCameraDistance / 2;
-		}
-		else
+		cd[0].vel.vx = 0;
+		cd[0].vel.vz = 0;
+		cd[0].length[1] = 5;
+		cd[0].length[0] = gCameraDistance / 2;
+	}
+	else
 #endif
+	{
+		gte_SetRotMatrix(&m_hd.where);
+		gte_SetTransMatrix(&m_hd.where);
+
+		SVECTOR_NOPAD boxDisp = -m_cosmetics.cog.p();
+		gte_ldv0(&boxDisp);
+		gte_rtv0tr();
+		gte_stlvnl(&cd[0].x);
+
+		cd[0].vel.vx = FIXEDH(m_st.n.linearVelocity[0]);
+		cd[0].vel.vz = FIXEDH(m_st.n.linearVelocity[2]);
+
+		cd[0].length[0] = m_cosmetics.colBox.vz + 15;
+		cd[0].length[1] = m_cosmetics.colBox.vx + 15;
+
+		if (m_cosmetics.handlingType.fourWheelDrive == 1 || m_hndType == 5)
+			cd[0].length[1] = (cd[0].length[1] * 13) / 16;
+	}
+
+	VECTOR_NOPAD tempwhere;
+	tempwhere.vx = m_hd.where.t[0];
+	tempwhere.vz = m_hd.where.t[2];
+
+	cd[0].avel = FIXEDH(m_st.n.angularVelocity[1]) * 5 >> 5;
+
+	m_hd.where.t[0] += cd[0].vel.vx;
+	m_hd.where.t[2] += cd[0].vel.vz;
+
+	cd[1].x.vx = m_hd.where.t[0] + (((building.pos.vx - m_hd.where.t[0]) << 0x10) >> 0x10);
+	cd[1].x.vz = m_hd.where.t[2] + (((building.pos.vz - m_hd.where.t[2]) << 0x10) >> 0x10);
+
+	cd[1].theta = building.theta;
+	cd[1].length[0] = building.xsize;
+	cd[1].length[1] = building.zsize;
+	cd[1].vel.vx = 0;
+	cd[1].vel.vz = 0;
+	cd[1].avel = 0;
+
+	if (m_controlType == CONTROL_TYPE_CAMERACOLLIDER)
+	{
+		collided = false;// bcollided2d(cd, &gCameraBoxOverlap);
+	}
+	else
+	{
+		collided = bcollided2d(cd);
+
+		if (collided)
 		{
-			gte_SetRotMatrix(&m_hd.where);
-			gte_SetTransMatrix(&m_hd.where);
+			bFindCollisionTime(cd, collisionResult);
+			bFindCollisionPoint(cd, collisionResult);
 
-			boxDisp = -m_cosmetics.cog.p();
-			gte_ldv0(&boxDisp);
+			collisionResult.surfNormal.vx = -collisionResult.surfNormal.vx;
+			collisionResult.surfNormal.vy = 0;
+			collisionResult.surfNormal.vz = -collisionResult.surfNormal.vz;
 
-			gte_rtv0tr();
+			collisionResult.hit.vy = m_hd.where.t[1] + 41;
 
-			gte_stlvnl(&cd[0].x);
+			// perform error correction
+			m_hd.where.t[0] += FIXEDH(collisionResult.penetration * collisionResult.surfNormal.vx);
+			m_hd.where.t[2] += FIXEDH(collisionResult.penetration * collisionResult.surfNormal.vz);
 
-			cd[0].vel.vx = FIXEDH(m_st.n.linearVelocity[0]);
-			cd[0].vel.vz = FIXEDH(m_st.n.linearVelocity[2]);
+			VECTOR_NOPAD pointVel, reaction, lever;
 
-			m_hd.where.t[0] += cd[0].vel.vx;
-			m_hd.where.t[2] += cd[0].vel.vz;
+			lever[0] = collisionResult.hit.vx - m_hd.where.t[0];
+			lever[1] = collisionResult.hit.vy - m_hd.where.t[1];
+			lever[2] = collisionResult.hit.vz - m_hd.where.t[2];
 
-			cd[0].length[0] = m_cosmetics.colBox.vz + 15;
-			cd[0].length[1] = m_cosmetics.colBox.vx + 15;
+			pointVel[0] = FIXEDH(m_st.n.angularVelocity[1] * lever[2] - m_st.n.angularVelocity[2] * lever[1]) + m_st.n.linearVelocity[0];
+			pointVel[1] = FIXEDH(m_st.n.angularVelocity[2] * lever[0] - m_st.n.angularVelocity[0] * lever[2]) + m_st.n.linearVelocity[1];
+			pointVel[2] = FIXEDH(m_st.n.angularVelocity[0] * lever[1] - m_st.n.angularVelocity[1] * lever[0]) + m_st.n.linearVelocity[2];
 
-			if (m_cosmetics.handlingType.fourWheelDrive == 1 || m_hndType == 5)
-				cd[0].length[1] = (cd[0].length[1] * 13) / 16;
-		}
-
-		cd[0].avel = FIXEDH(m_st.n.angularVelocity[1]) * 5 >> 5;
-
-		cd[1].x.vx = m_hd.where.t[0] + (((building.pos.vx - m_hd.where.t[0]) << 0x10) >> 0x10);
-		cd[1].x.vz = m_hd.where.t[2] + (((building.pos.vz - m_hd.where.t[2]) << 0x10) >> 0x10);
-
-		cd[1].theta = building.theta;
-		cd[1].length[0] = building.xsize;
-		cd[1].length[1] = building.zsize;
-		cd[1].vel.vx = 0;
-		cd[1].vel.vz = 0;
-		cd[1].avel = 0;
-
-		if (m_controlType == CONTROL_TYPE_CAMERACOLLIDER)
-		{
-			collided = false;// bcollided2d(cd, &gCameraBoxOverlap);
-		}
-		else
-		{
-			collided = bcollided2d(cd);
-
-			if (collided)
+			/*
+			if (flags & CollisionCheckFlag_IsVegasMovingTrain) // [A] Vegas train velocity - added here
 			{
-				bFindCollisionTime(cd, collisionResult);
-				bFindCollisionPoint(cd, collisionResult);
+				pointVel[2] += 700000;
+			}*/
 
-				collisionResult.surfNormal.vx = -collisionResult.surfNormal.vx;
-				collisionResult.surfNormal.vy = 0;
-				collisionResult.surfNormal.vz = -collisionResult.surfNormal.vz;
+			int strikeVel = -((pointVel[0] / 256) * (collisionResult.surfNormal.vx / 16) +
+							(pointVel[1] / 256) * (collisionResult.surfNormal.vy / 16) +
+							(pointVel[2] / 256) * (collisionResult.surfNormal.vz / 16));
 
-				collisionResult.hit.vy = m_hd.where.t[1] + 41;
-
-				// perform error correction
-				m_hd.where.t[0] += FIXEDH(collisionResult.penetration * collisionResult.surfNormal.vx);
-				m_hd.where.t[2] += FIXEDH(collisionResult.penetration * collisionResult.surfNormal.vz);
-
-				lever[0] = collisionResult.hit.vx - m_hd.where.t[0];
-				lever[1] = collisionResult.hit.vy - m_hd.where.t[1];
-				lever[2] = collisionResult.hit.vz - m_hd.where.t[2];
-
-				pointVel[0] = FIXEDH(m_st.n.angularVelocity[1] * lever[2] - m_st.n.angularVelocity[2] * lever[1]) + m_st.n.linearVelocity[0];
-				pointVel[1] = FIXEDH(m_st.n.angularVelocity[2] * lever[0] - m_st.n.angularVelocity[0] * lever[2]) + m_st.n.linearVelocity[1];
-				pointVel[2] = FIXEDH(m_st.n.angularVelocity[0] * lever[1] - m_st.n.angularVelocity[1] * lever[0]) + m_st.n.linearVelocity[2];
-
-				/*
-				if (flags & CollisionCheckFlag_IsVegasMovingTrain) // [A] Vegas train velocity - added here
+			if (strikeVel > 0)
+			{
+				// Lua interaction
+				if (m_carEventsLua.valid())
 				{
-					pointVel[2] += 700000;
-				}*/
+					try {
+						sol::state_view sv(m_carEventsLua.lua_state());
+						sol::table tbl = sv.create_table_with(
+							"model", building.modelRef,
+							"cellObject", cop,
+							"position", LuaPropertyRef(collisionResult.hit),
+							"normal", LuaPropertyRef(collisionResult.surfNormal),
+							"strikeVel", LuaPropertyRef(strikeVel)
+						);
+						m_carEventsLua.call(this, "HitCellObject", tbl);
+					}
+					catch (const sol::error& e)
+					{
+						MsgError("CCar event call error: %s\n", e.what());
+					}
+				}
 
-				strikeVel = -((pointVel[0] / 256) * (collisionResult.surfNormal.vx / 16) +
-							  (pointVel[1] / 256) * (collisionResult.surfNormal.vy / 16) +
-							  (pointVel[2] / 256) * (collisionResult.surfNormal.vz / 16));
-
-				if (strikeVel > 0)
+#if 0
+				if (m_controlType == CONTROL_TYPE_PLAYER)
 				{
+					short scale;
+					if (strikeVel < 32)
+						scale = ((strikeVel << 23) >> 16);
+					else
+						scale = 4096;
+
+					if (model->flags2 & MODEL_FLAG_SMASHABLE)
+						NoteFelony(&felonyData, 7, scale);
+					else
+						NoteFelony(&felonyData, 6, scale);
+				}
+#endif
+				collisionResult.hit.vy = -collisionResult.hit.vy;
+
+				VECTOR_NOPAD velocity;
+				velocity.vx = m_st.n.linearVelocity[0] / ONE;
+				velocity.vy = -17;
+				velocity.vz = m_st.n.linearVelocity[2] / ONE;
+
+				if (model->flags2 & MODEL_FLAG_SMASHABLE)
+				{
+					// TODO: World lua callback on smashables
+
 					// Lua interaction
 					if (m_carEventsLua.valid())
 					{
@@ -2424,9 +2443,10 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 								"cellObject", cop,
 								"position", LuaPropertyRef(collisionResult.hit),
 								"normal", LuaPropertyRef(collisionResult.surfNormal),
+								"velocity", LuaPropertyRef(velocity),
 								"strikeVel", LuaPropertyRef(strikeVel)
 							);
-							m_carEventsLua.call(this, "HitCellObject", tbl);
+							m_carEventsLua.call(this, "HitSmashable", tbl);
 						}
 						catch (const sol::error& e)
 						{
@@ -2434,208 +2454,163 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 						}
 					}
 
+					cop->pos.vx = OBJECT_SMASHED_MARK;
 #if 0
-					if (m_controlType == CONTROL_TYPE_PLAYER)
-					{
-						if (strikeVel < 32)
-							scale = ((strikeVel << 23) >> 16);
-						else
-							scale = 4096;
+					// smash object
+					damage_object(cop, &velocity);
 
-						if (model->flags2 & MODEL_FLAG_SMASHABLE)
-							NoteFelony(&felonyData, 7, scale);
-						else
-							NoteFelony(&felonyData, 6, scale);
+					// smash object
+					if ((model->shape_flags & SHAPE_FLAG_TRANS) == 0)
+					{
+						SMASHABLE_OBJECT* match;
+						SMASHABLE_OBJECT* sip;
+
+						sip = smashable;
+						match = sip;
+
+						while (sip->name != NULL)
+						{
+							if (sip->modelIdx == cop->type)
+							{
+								match = sip;
+								break;
+							}
+							sip++;
+						}
+
+						chan = GetFreeChannel();
+						player_id = GetPlayerId(cp);
+
+						if (NumPlayers > 1 && NoPlayerControl == 0)
+							SetPlayerOwnsChannel(chan, player_id);
+
+						Start3DSoundVolPitch(chan, SOUND_BANK_SFX, match->sound,
+							collisionResult.hit.vx, -collisionResult.hit.vy, collisionResult.hit.vz,
+							match->volume, match->pitch + (((velocity.vx ^ velocity.vz) * (collisionResult.hit.vx ^ collisionResult.hit.vz) & 0x3ff) - 0x200));
 					}
+
+					m_hd.where.t[0] = tempwhere.vx;
+					m_hd.where.t[2] = tempwhere.vz;
+
+					collisionResult.hit.vy += 30;
+
+					Setup_Sparks(&collisionResult.hit, &velocity, 10, 0);
+					Setup_Debris(&collisionResult.hit, &velocity, 5, 0);
+					Setup_Debris(&collisionResult.hit, &velocity, 5, debris_colour << 0x10);
+
+					if (m_controlType == CONTROL_TYPE_PLAYER)
+						SetPadVibration(*m_ai.padid, 3);
 #endif
-					collisionResult.hit.vy = -collisionResult.hit.vy;
+					m_hd.where.t[0] = tempwhere.vx;
+					m_hd.where.t[2] = tempwhere.vz;
 
-					velocity.vx = m_st.n.linearVelocity[0] / ONE;
-					velocity.vy = -17;
-					velocity.vz = m_st.n.linearVelocity[2] / ONE;
-
-					if (model->flags2 & MODEL_FLAG_SMASHABLE)
-					{
-						// TODO: World lua callback on smashables
-
-						// Lua interaction
-						if (m_carEventsLua.valid())
-						{
-							try {
-								sol::state_view sv(m_carEventsLua.lua_state());
-								sol::table tbl = sv.create_table_with(
-									"model", building.modelRef,
-									"cellObject", cop,
-									"position", LuaPropertyRef(collisionResult.hit),
-									"normal", LuaPropertyRef(collisionResult.surfNormal),
-									"velocity", LuaPropertyRef(velocity),
-									"strikeVel", LuaPropertyRef(strikeVel)
-								);
-								m_carEventsLua.call(this, "HitSmashable", tbl);
-							}
-							catch (const sol::error& e)
-							{
-								MsgError("CCar event call error: %s\n", e.what());
-							}
-						}
-
-						cop->pos.vx = OBJECT_SMASHED_MARK;
+					return 0;
+				}
 #if 0
-						// smash object
-						damage_object(cop, &velocity);
+				// add leaves
+				if (strikeVel > 0x3600 && m_hd.wheel_speed + 16000U > 32000)
+				{
+					if (model->flags2 & MODEL_FLAG_TREE)
+					{
+						LeafPosition.vx = collisionResult.hit.vx;
+						LeafPosition.vy = -((rand() & 0xfe) + 600) - collisionResult.hit.vy;
+						LeafPosition.vz = collisionResult.hit.vz;
 
-						// smash object
-						if ((model->shape_flags & SHAPE_FLAG_TRANS) == 0)
+						AddLeaf(&LeafPosition, 3, 1);
+					}
+					else
+					{
+						if (gNight && (model->flags2 & MODEL_FLAG_LAMP))
 						{
-							SMASHABLE_OBJECT* match;
-							SMASHABLE_OBJECT* sip;
-
-							sip = smashable;
-							match = sip;
-
-							while (sip->name != NULL)
+							if (damage_lamp(cop))
 							{
-								if (sip->modelIdx == cop->type)
-								{
-									match = sip;
-									break;
-								}
-								sip++;
+								ClearMem((char*)&lamp_velocity, sizeof(lamp_velocity));
+
+								collisionResult.hit.vy -= 730;
+								Setup_Sparks(&collisionResult.hit, &lamp_velocity, 0x14, 0);
+								collisionResult.hit.vy += 730;
 							}
-
-							chan = GetFreeChannel();
-							player_id = GetPlayerId(cp);
-
-							if (NumPlayers > 1 && NoPlayerControl == 0)
-								SetPlayerOwnsChannel(chan, player_id);
-
-							Start3DSoundVolPitch(chan, SOUND_BANK_SFX, match->sound,
-								collisionResult.hit.vx, -collisionResult.hit.vy, collisionResult.hit.vz,
-								match->volume, match->pitch + (((velocity.vx ^ velocity.vz) * (collisionResult.hit.vx ^ collisionResult.hit.vz) & 0x3ff) - 0x200));
 						}
 
-						m_hd.where.t[0] = tempwhere.vx;
-						m_hd.where.t[2] = tempwhere.vz;
-
+						velocity.vy -= 20;
 						collisionResult.hit.vy += 30;
 
-						Setup_Sparks(&collisionResult.hit, &velocity, 10, 0);
-						Setup_Debris(&collisionResult.hit, &velocity, 5, 0);
-						Setup_Debris(&collisionResult.hit, &velocity, 5, debris_colour << 0x10);
+						Setup_Sparks(&collisionResult.hit, &velocity, 4, 0);
+
+						collisionResult.hit.vy -= 30;
+						velocity.vy += 20;
+					}
+
+					if (strikeVel > 0x1b000)
+					{
+						Setup_Debris(&collisionResult.hit, &velocity, 6, debris_colour << 0x10);
 
 						if (m_controlType == CONTROL_TYPE_PLAYER)
-							SetPadVibration(*m_ai.padid, 3);
-#endif
-						m_hd.where.t[0] = tempwhere.vx;
-						m_hd.where.t[2] = tempwhere.vz;
-
-						return 0;
+							SetPadVibration(*m_ai.padid, 1);
 					}
-#if 0
-					// add leaves
-					if (strikeVel > 0x3600 && m_hd.wheel_speed + 16000U > 32000)
-					{
-						if (model->flags2 & MODEL_FLAG_TREE)
-						{
-							LeafPosition.vx = collisionResult.hit.vx;
-							LeafPosition.vy = -((rand() & 0xfe) + 600) - collisionResult.hit.vy;
-							LeafPosition.vz = collisionResult.hit.vz;
-
-							AddLeaf(&LeafPosition, 3, 1);
-						}
-						else
-						{
-							if (gNight && (model->flags2 & MODEL_FLAG_LAMP))
-							{
-								if (damage_lamp(cop))
-								{
-									ClearMem((char*)&lamp_velocity, sizeof(lamp_velocity));
-
-									collisionResult.hit.vy -= 730;
-									Setup_Sparks(&collisionResult.hit, &lamp_velocity, 0x14, 0);
-									collisionResult.hit.vy += 730;
-								}
-							}
-
-							velocity.vy -= 20;
-							collisionResult.hit.vy += 30;
-
-							Setup_Sparks(&collisionResult.hit, &velocity, 4, 0);
-
-							collisionResult.hit.vy -= 30;
-							velocity.vy += 20;
-						}
-
-						if (strikeVel > 0x1b000)
-						{
-							Setup_Debris(&collisionResult.hit, &velocity, 6, debris_colour << 0x10);
-
-							if (m_controlType == CONTROL_TYPE_PLAYER)
-								SetPadVibration(*m_ai.padid, 1);
-						}
-					}
-#endif
-
-					DamageCar(cd, collisionResult, strikeVel);
-
-					displacement = FIXEDH(lever[0] * collisionResult.surfNormal.vx + lever[1] * collisionResult.surfNormal.vy + lever[2] * collisionResult.surfNormal.vz);
-					displacement = FIXEDH(((lever[0] * lever[0] + lever[2] * lever[2]) - displacement * displacement) * m_cosmetics.twistRateY) + 4096;
-
-					if (strikeVel <= 127 * 4096)
-						denom = (strikeVel * 4096) / displacement;
-					else
-						denom = (strikeVel / displacement) * 4096;
-
-					denom /= 64;
-
-					reaction[0] = denom * (collisionResult.surfNormal.vx / 64);
-					reaction[1] = denom * (collisionResult.surfNormal.vy / 64);
-					reaction[2] = denom * (collisionResult.surfNormal.vz / 64);
-
-					m_hd.aacc[1] += FIXEDH(lever[2] * reaction[0]) - FIXEDH(lever[0] * reaction[2]);
-
-					// angular impulse calculation and modifiers
-					if (m_controlType != CONTROL_TYPE_LEAD_AI)
-					{
-						temp = FIXEDH(lever[1] * reaction[2]);
-
-						if (m_controlType == CONTROL_TYPE_PURSUER_AI)
-							temp >>= 1;
-
-						m_hd.aacc[0] += temp;
-
-						temp = FIXEDH(lever[2] * reaction[1]);
-
-						if (m_controlType == CONTROL_TYPE_PURSUER_AI)
-							temp >>= 1;
-
-						m_hd.aacc[0] -= temp;
-
-						temp = FIXEDH(lever[0] * reaction[1]);
-
-						if (m_controlType == CONTROL_TYPE_PURSUER_AI)
-							temp >>= 1;
-
-						m_hd.aacc[2] += temp;
-
-						temp = FIXEDH(lever[1] * reaction[0]);
-
-						if (m_controlType == CONTROL_TYPE_PURSUER_AI)
-							temp >>= 1;
-
-						m_hd.aacc[2] -= temp;
-
-						m_st.n.linearVelocity[1] += reaction[1];
-					}
-
-					m_st.n.linearVelocity[0] += reaction[0];
-					m_st.n.linearVelocity[2] += reaction[2];
 				}
-			}
+#endif
 
-			m_hd.where.t[0] -= FIXEDH(m_st.n.linearVelocity[0]);
-			m_hd.where.t[2] -= FIXEDH(m_st.n.linearVelocity[2]);
+				DamageCar(cd, collisionResult, strikeVel);
+
+				int displacement = FIXEDH(lever[0] * collisionResult.surfNormal.vx + lever[1] * collisionResult.surfNormal.vy + lever[2] * collisionResult.surfNormal.vz);
+				displacement = FIXEDH(((lever[0] * lever[0] + lever[2] * lever[2]) - displacement * displacement) * m_cosmetics.twistRateY) + 4096;
+
+				int denom;
+				if (strikeVel <= 127 * 4096)
+					denom = (strikeVel * 4096) / displacement;
+				else
+					denom = (strikeVel / displacement) * 4096;
+
+				denom /= 64;
+
+				reaction[0] = denom * (collisionResult.surfNormal.vx / 64);
+				reaction[1] = denom * (collisionResult.surfNormal.vy / 64);
+				reaction[2] = denom * (collisionResult.surfNormal.vz / 64);
+
+				m_hd.aacc[1] += FIXEDH(lever[2] * reaction[0]) - FIXEDH(lever[0] * reaction[2]);
+
+				// angular impulse calculation and modifiers
+				if (m_controlType != CONTROL_TYPE_LEAD_AI)
+				{
+					int temp = FIXEDH(lever[1] * reaction[2]);
+
+					if (m_controlType == CONTROL_TYPE_PURSUER_AI)
+						temp >>= 1;
+
+					m_hd.aacc[0] += temp;
+
+					temp = FIXEDH(lever[2] * reaction[1]);
+
+					if (m_controlType == CONTROL_TYPE_PURSUER_AI)
+						temp >>= 1;
+
+					m_hd.aacc[0] -= temp;
+
+					temp = FIXEDH(lever[0] * reaction[1]);
+
+					if (m_controlType == CONTROL_TYPE_PURSUER_AI)
+						temp >>= 1;
+
+					m_hd.aacc[2] += temp;
+
+					temp = FIXEDH(lever[1] * reaction[0]);
+
+					if (m_controlType == CONTROL_TYPE_PURSUER_AI)
+						temp >>= 1;
+
+					m_hd.aacc[2] -= temp;
+
+					m_st.n.linearVelocity[1] += reaction[1];
+				}
+
+				m_st.n.linearVelocity[0] += reaction[0];
+				m_st.n.linearVelocity[2] += reaction[2];
+			}
 		}
+
+		m_hd.where.t[0] -= FIXEDH(m_st.n.linearVelocity[0]);
+		m_hd.where.t[2] -= FIXEDH(m_st.n.linearVelocity[2]);
 	}
 
 	return collided;
@@ -2643,9 +2618,6 @@ bool CCar::CarBuildingCollision(BUILDING_BOX& building, CELL_OBJECT* cop, int fl
 
 bool CCar::CarCarCollision(CCar* other, int RKstep)
 {
-	int do1, do2;
-	int strikeVel, strength;
-	VECTOR_NOPAD lever0, lever1, torque, pointVel0;
 	/*
 	// Lua interaction
 	if (m_carEvents.valid())
@@ -2687,6 +2659,7 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 
 	collResult.location.vy -= 0;
 
+	VECTOR_NOPAD lever0, lever1;
 	lever0[0] = collResult.location.vx - cp->m_hd.where.t[0];
 	lever0[1] = collResult.location.vy - cp->m_hd.where.t[1];
 	lever0[2] = collResult.location.vz - cp->m_hd.where.t[2];
@@ -2695,13 +2668,14 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	lever1[1] = collResult.location.vy - c1->m_hd.where.t[1];
 	lever1[2] = collResult.location.vz - c1->m_hd.where.t[2];
 
-	strength = 47 - (lever0[1] + lever1[1]) / 2;
+	int strength = 47 - (lever0[1] + lever1[1]) / 2;
 
 	lever0[1] += strength;
 	lever1[1] += strength;
 
-	strikeVel = collResult.depth * 0xc000;
+	int strikeVel = collResult.depth * 0xc000;
 
+	VECTOR_NOPAD pointVel0;
 	pointVel0[0] = (FIXEDH(cpState.n.angularVelocity[1] * lever0[2] - cpState.n.angularVelocity[2] * lever0[1]) + cpState.n.linearVelocity[0]) -
 		(FIXEDH(c1State.n.angularVelocity[1] * lever1[2] - c1State.n.angularVelocity[2] * lever1[1]) + c1State.n.linearVelocity[0]);
 
@@ -2824,6 +2798,7 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 		}
 	}
 
+	int do1, do2;
 	if (m2 < m1)
 	{
 		do1 = (m2 * 4096) / m1;
@@ -2886,7 +2861,7 @@ void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, 
 	// apply force to car 0
 	if (!infiniteMass)
 	{
-		int twistY, strength1;
+		int strength1;
 
 		if (m_controlType == CONTROL_TYPE_PURSUER_AI && other->m_controlType != CONTROL_TYPE_LEAD_AI && other->m_hndType != 0)
 			strength1 = (strikeVel * (7 - gCopDifficultyLevel)) / 8;
@@ -2905,9 +2880,9 @@ void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, 
 		delta.n.linearVelocity[1] -= velocity.vy;
 		delta.n.linearVelocity[2] -= velocity.vz;
 
-		twistY = m_cosmetics.twistRateY / 2;
+		const int twistY = m_cosmetics.twistRateY / 2;
 
-		LONGVECTOR3 torque;
+		VECTOR_NOPAD torque;
 		torque[0] = FIXEDH(velocity.vy * lever[2] - velocity.vz * lever[1]) * twistY;
 		torque[1] = FIXEDH(velocity.vz * lever[0] - velocity.vx * lever[2]) * twistY;
 		torque[2] = FIXEDH(velocity.vx * lever[1] - velocity.vy * lever[0]) * twistY;

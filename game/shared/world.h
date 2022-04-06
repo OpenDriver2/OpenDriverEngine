@@ -11,13 +11,14 @@
 class CTexturePage;
 struct TexDetailInfo_t;
 struct ModelRef_t;
+struct EFFECT_DESC;
 
 struct BUILDING_BOX
 {
 	VECTOR_NOPAD pos;
 	int xsize, zsize;
 	int theta, height;
-	ModelRef_t* modelRef;
+	const ModelRef_t* modelRef;
 };
 
 struct DRAWABLE
@@ -53,9 +54,14 @@ struct EVENT_SURFACE
 	Array<POLY> polys;
 };
 
+struct MODEL_EFEFCTS
+{
+	Array<EFFECT_DESC> effects;
+};
+
 // TODO: replace std::function with custom impl with allocator support
 using CellObjectIterateFn = std::function<bool(int listType, CELL_OBJECT* co)>;
-using BoxCollisionFn = std::function<bool(BUILDING_BOX& box, CELL_OBJECT* co, void* object)>;
+using BoxCollisionFn = std::function<bool(const BUILDING_BOX& box, CELL_OBJECT* co, void* object)>;
 
 extern Matrix4x4 g_objectMatrix[64];
 extern MATRIX g_objectMatrixFixed[64];
@@ -139,11 +145,11 @@ public:
 	static void				Lua_Init(sol::state& lua);
 
 protected:
-
-	static Map<int, Array<CELL_OBJECT>>	CellObjects;
 	static Array<DRAWABLE>				Drawables;
+	static Map<int, Array<CELL_OBJECT>>	CellObjects;
 	static Map<int, CELL_LIST_DESC>		CellLists;
 	static Map<int, EVENT_SURFACE>		EventSurfaces;
+	static Map<int, MODEL_EFEFCTS>		ModelEffects;
 };
 
 

@@ -289,7 +289,7 @@ public:
 	void					StepOneCar();
 
 	// collision
-	bool					CarBuildingCollision(struct BUILDING_BOX& building, struct CELL_OBJECT* cop, int flags);
+	bool					CarBuildingCollision(const struct BUILDING_BOX& building, struct CELL_OBJECT* cop, int flags);
 	bool					CarCarCollision(CCar* other, int RKstep);
 
 	// utility functions (mostly for Lua)
@@ -396,6 +396,7 @@ protected:
 	uint8				m_controlFlags{ 0 };
 
 	int8				m_id{ -1 };
+	int8				m_crashTimer{ 0 };
 
 	short				m_idlevol{ -10000 };
 	short				m_revsvol{ -10000 };
