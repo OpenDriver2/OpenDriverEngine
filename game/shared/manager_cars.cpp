@@ -687,14 +687,13 @@ ISoundSource* CManager_Cars::GetSoundSource(const char* name) const
 
 void CManager_Cars::CheckScenaryCollisions(CCar* cp)
 {
-	int queryDist = 580 + cp->m_hd.speed;
+	const int queryDist = 580 + cp->m_hd.speed;
 	const VECTOR_NOPAD& position = cp->GetPosition();
 
-	CWorld::QueryCollision(position, queryDist, [](const BUILDING_BOX& bbox, CELL_OBJECT* co, void* object) {
-		CCar* cp = (CCar*)object;
+	CWorld::QueryCollision(position, queryDist, [cp](const BUILDING_BOX& bbox, CELL_OBJECT* co) {
 		cp->CarBuildingCollision(bbox, co, 0);
 		return true;
-	}, cp);
+	});
 }
 
 void CManager_Cars::CheckCarToCarCollisions()

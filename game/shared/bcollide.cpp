@@ -71,12 +71,12 @@ bool bcollided2d(CDATA2D body[2], int* boxOverlap)
 // [D] [T]
 void bFindCollisionPoint(CDATA2D body[2], CRET2D& collisionResult)
 {
-	bool carBarrierCollision = false;
+	bool barrierCollision = false;
 
-	if (!body[0].isCameraOrTanner && !body[1].isCameraOrTanner &&
+	if (!body[0].ignoreBarrier && !body[1].ignoreBarrier &&
 		(body[1].length[1] >= body[1].length[0] * 4 || body[1].length[0] >= body[1].length[1] * 4))
 	{
-		carBarrierCollision = true;
+		barrierCollision = true;
 	}
 
 	int smallest = body[0].limit[0] + 1;
@@ -112,7 +112,7 @@ void bFindCollisionPoint(CDATA2D body[2], CRET2D& collisionResult)
 	}
 
 	// calc push
-	if (carBarrierCollision)
+	if (barrierCollision)
 	{
 		for (int k = 1; k >= 0; --k)
 		{

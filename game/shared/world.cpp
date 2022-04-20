@@ -69,6 +69,14 @@ void CWorld::Lua_Init(sol::state& lua)
 		world[LUADOC_M("MapHeight", "(position: fix.VECTOR) : int - returns height value at specified 3D point")]
 			= &MapHeight;
 
+		world[LUADOC_M("QueryCollision", "(queryPos: fix.VECTOR, queryDist: int, func: function(box: BUILDING_BOX, cellObj: CELL_OBJECT)) - performs cell object query")]
+			= [](const VECTOR_NOPAD& queryPos, int queryDist, sol::function& func) {
+			QueryCollision(queryPos, queryDist, [&func](const BUILDING_BOX& box, CELL_OBJECT* co) {
+				bool result = func.call(box, co);
+				return result;
+			});
+		},
+
 		world[LUADOC_M("PushCellObject", "(cellObj: CELL_OBJECT) - push event cell object. Any collision checks afterwards will have an effect with it")]
 			= &PushCellObject;
 
@@ -119,6 +127,21 @@ void CWorld::Lua_Init(sol::state& lua)
 
 			LUADOC_P("model", "<int> - model index"),
 			&DRAWABLE::model
+		);
+	}
+
+	// collision query box
+	{
+		LUADOC_TYPE();
+		lua.new_usertype<BUILDING_BOX>(
+			LUADOC_T("BUILDING_BOX"),
+
+			LUADOC_P("name"), &BUILDING_BOX::pos,
+			LUADOC_P("xsize", "<int>"), & BUILDING_BOX::xsize,
+			LUADOC_P("zsize", "<int>"), & BUILDING_BOX::zsize,
+			LUADOC_P("theta", "<int>"), & BUILDING_BOX::theta,
+			LUADOC_P("height", "<int>"), & BUILDING_BOX::height,
+			LUADOC_P("modelRef", "<int>"), & BUILDING_BOX::modelRef
 		);
 	}
 
@@ -679,7 +702,7 @@ void CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, 
 
 //-------------------------------------------------------------
 
-void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const BoxCollisionFn& func, void* object)
+void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const BoxCollisionFn& func)
 {
 	if (!func)
 		return;
@@ -818,7 +841,7 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 			bbox.theta = (co->yang + collide->yang) * 64 & 0xfff;
 			bbox.modelRef = ref;
 
-			if (!func(bbox, co, object))
+			if (!func(bbox, co))
 				return;
 		}
 	}

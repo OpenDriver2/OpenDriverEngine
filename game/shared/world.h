@@ -61,7 +61,7 @@ struct MODEL_EFEFCTS
 
 // TODO: replace std::function with custom impl with allocator support
 using CellObjectIterateFn = std::function<bool(int listType, CELL_OBJECT* co)>;
-using BoxCollisionFn = std::function<bool(const BUILDING_BOX& box, CELL_OBJECT* co, void* object)>;
+using BoxCollisionFn = std::function<bool(const BUILDING_BOX& box, CELL_OBJECT* co)>;
 
 extern Matrix4x4 g_objectMatrix[64];
 extern MATRIX g_objectMatrixFixed[64];
@@ -110,7 +110,7 @@ public:
 
 	//------------------------------------------
 	// objects and collision
-	static void				QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const BoxCollisionFn& func, void* object);
+	static void				QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const BoxCollisionFn& func);
 
 	// push event cell object
 	// any collision checks afterwards will have an effect with it
