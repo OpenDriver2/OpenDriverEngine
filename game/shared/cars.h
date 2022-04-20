@@ -71,6 +71,7 @@ struct CarCosmetics
 	SVECTOR cog;
 	short twistRateX, twistRateY, twistRateZ;
 	short mass;
+	short baseRPM;
 
 	ISoundSource* revSample{ nullptr };
 	ISoundSource* idleSample{ nullptr };
@@ -240,7 +241,7 @@ enum ECarControlType : int
 	CONTROL_TYPE_PURSUER_AI = 3,		// Police pursuer car. Always chases player
 	CONTROL_TYPE_LEAD_AI = 4,			// FreeRoamer AI
 
-	CONTROL_TYPE_CAMERACOLLIDER = 5,	// Used as a camera collider
+	// CONTROL_TYPE_CAMERACOLLIDER = 5,	// OBSOLETE Used as a camera collider
 	CONTROL_TYPE_TANNERCOLLIDER = 6,	// Used as collision box for tanner
 	CONTROL_TYPE_CUTSCENE = 7,			// Pretty same as player car but controllled by cutscene. Can be a chase car.
 };
