@@ -470,7 +470,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 			{
 				TexDetailInfo_t& detail = m_texPages[data.tpage].m_details[info.texnum];
 				detail.extraCLUTs[data.palette] = &data.clut;
-				detail.numExtraCLUTs = Math::max(detail.numExtraCLUTs, data.palette);
+				detail.numExtraCLUTs = Math::max(detail.numExtraCLUTs, data.palette + 1);
 			}
 
 			added_cluts++;
@@ -494,7 +494,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 			{
 				TexDetailInfo_t& detail = m_texPages[data.tpage].m_details[info.texnum];
 				detail.extraCLUTs[data.palette] = &data.clut;
-				detail.numExtraCLUTs = Math::max(detail.numExtraCLUTs, data.palette);
+				detail.numExtraCLUTs = Math::max(detail.numExtraCLUTs, data.palette + 1);
 			}
 		}
 	}
