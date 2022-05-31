@@ -12,6 +12,13 @@ enum EPlayerControlType
 	PlayerControl_NetworkPeer
 };
 
+enum ERubberBandMode
+{
+	Rubberband_Off = 0,
+	Rubberband_Chaser,
+	Rubberband_Escape
+};
+
 class CPlayer
 {
 	friend class CManager_Players;
@@ -43,6 +50,15 @@ public:
 	
 	// TODO: pedestrian
 
+	void					SetRubberbandPowerRatio(int powerRatio) { m_rubberbandPowerRatio = powerRatio; }
+	int						GetRubberbandPowerRatio() const { return m_rubberbandPowerRatio; }
+
+	void					SetRubberbandPoint(const VECTOR_NOPAD& position) { m_rubberbandPoint = position; }
+	const VECTOR_NOPAD&		GetRubberbandPoint() const { return m_rubberbandPoint; }
+
+	void					SetRubberbandMode(ERubberBandMode mode) { m_rubberbandMode = mode; }
+	ERubberBandMode			GetRubberbandMode() const { return m_rubberbandMode; }
+
 	void					UpdateControls(const InputData& input);
 	void					ProcessCarPad();
 
@@ -51,6 +67,10 @@ public:
 protected:
 	InputData						m_currentInputs;
 	CCar*							m_currentCar{ nullptr };
+	VECTOR_NOPAD					m_rubberbandPoint{ 0 };
+	ERubberBandMode					m_rubberbandMode{ Rubberband_Off };
+	int								m_rubberbandPowerRatio{ 4096 };
+
 	RefCount::Ptr<CReplayStream>	m_playbackStream;
 	RefCount::Ptr<CReplayStream>	m_recordStream;
 	EPlayerControlType				m_controlType{ PlayerControl_Local };

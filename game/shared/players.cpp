@@ -56,6 +56,15 @@ void CPlayer::Lua_Init(sol::state& lua)
 			LUADOC_P("input", "<PlayerInputData> - player control buttons data"), 
 			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
 
+			LUADOC_P("rubberbandPowerRatio", "<int> - chase power ratio of rubber band (usually target car value)"),
+			sol::property(&CPlayer::GetRubberbandPowerRatio, &CPlayer::SetRubberbandPowerRatio),
+
+			LUADOC_P("rubberbandPoint", "<fix.VECTOR> - world position for computing rubberbanding scale"),
+			sol::property(&CPlayer::GetRubberbandPoint, &CPlayer::SetRubberbandPoint),
+
+			LUADOC_P("rubberbandMode", "<RubberbandMode> - rubberbanding mode preset"),
+			sol::property(&CPlayer::GetRubberbandMode, &CPlayer::SetRubberbandMode),
+
 			LUADOC_P("playbackStream", "<ReplayStream> (mayBeNull readonly) - replay playback stream"),
 			sol::property([](const CPlayer& ply) { 
 				CReplayStream& ptr = *ply.m_playbackStream;
@@ -67,7 +76,19 @@ void CPlayer::Lua_Init(sol::state& lua)
 				CReplayStream& ptr = *ply.m_recordStream;
 				return &ptr;
 			})
+
+			
 		);
+	}
+
+	{
+		LUADOC_TYPE();
+		LUA_BEGIN_ENUM(ERubberBandMode);
+		lua.new_enum<ERubberBandMode>(LUADOC_T("RubberbandMode"), {
+			LUA_ENUM(Rubberband_Off, "Off"),
+			LUA_ENUM(Rubberband_Chaser, "Chaser"),
+			LUA_ENUM(Rubberband_Escape, "Escape"),
+		});
 	}
 }
 
@@ -332,68 +353,46 @@ void CPlayer::ProcessCarPad()
 	}
 	else if (m_currentInputs.accel)
 	{
-#if 0 // TODO: player handler for rubberbanding
-		if (cp->m_hndType == 5)
+		if (m_rubberbandMode == Rubberband_Escape)
 		{
 			// rubber band freeroamer.
 			// accelerate faster if closer to player
-			int dx, dz, dist;
+			const int dx = m_rubberbandPoint.vx - cp->m_hd.where.t[0] >> 10;
+			const int dz = m_rubberbandPoint.vz - cp->m_hd.where.t[2] >> 10;
 
-			dx = car_data[player[0].playerCarId].hd.where.t[0] - cp->hd.where.t[0] >> 10;
-			dz = car_data[player[0].playerCarId].hd.where.t[2] - cp->hd.where.t[2] >> 10;
-
-			dist = dx * dx + dz * dz;
+			const int dist = dx * dx + dz * dz;
 
 			if (dist > 40)
-				cp->thrust = 3000;
+				cp->m_thrust = 3000;
 			else if (dist > 20)
-				cp->thrust = 4000;
+				cp->m_thrust = 4000;
 			else if (dist > 9)
-				cp->thrust = 4900;
+				cp->m_thrust = 4900;
 			else
-				cp->thrust = 6000;
+				cp->m_thrust = 6000;
 		}
 		else
-#endif
 		{
 			cp->m_thrust = FIXEDH(cp->m_cosmetics.powerRatio * 4915);
 		}
 
-#if 0
-		if (cp->m_controlType == CONTROL_TYPE_PLAYER)
+		if (m_rubberbandMode == Rubberband_Chaser)
 		{
-			CAR_DATA* tp;
-			int targetCarId, cx, cz, chase_square_dist;
+			if (cp->m_cosmetics.powerRatio > 3050)
+				cp->m_thrust = FIXEDH(m_rubberbandPowerRatio * 4915);
 
-			if (player[0].playerCarId == cp->id)
-				targetCarId = player[0].targetCarId;
-			else if (player[1].playerCarId == cp->id)
-				targetCarId = player[1].targetCarId;
+			const int cx = cp->m_hd.where.t[0] - m_rubberbandPoint.vx >> 10;
+			const int cz = cp->m_hd.where.t[2] - m_rubberbandPoint.vz >> 10;
+
+			int chase_square_dist = cx * cx + cz * cz;
+
+			if (chase_square_dist > 20)
+				cp->m_thrust = (cp->m_thrust * 8000) / 7000;
+			else if (chase_square_dist > 6)
+				cp->m_thrust = (cp->m_thrust * 7400) / 7000;
 			else
-				targetCarId = -1;
-
-			// apply rubber banding to player car depending on distance from target car
-			if (targetCarId != -1)
-			{
-				tp = &car_data[targetCarId];
-
-				if (3050 < cp->ap.carCos->powerRatio)
-					cp->thrust = FIXEDH(tp->ap.carCos->powerRatio * 4915);
-
-				cx = cp->hd.where.t[0] - tp->hd.where.t[0] >> 10;
-				cz = cp->hd.where.t[2] - tp->hd.where.t[2] >> 10;
-
-				chase_square_dist = cx * cx + cz * cz;
-
-				if (chase_square_dist > 20)
-					cp->thrust = (cp->thrust * 8000) / 7000;
-				else if (chase_square_dist > 6)
-					cp->thrust = (cp->thrust * 7400) / 7000;
-				else
-					cp->thrust = (cp->thrust * 6700) / 7000;
-			}
+				cp->m_thrust = (cp->m_thrust * 6700) / 7000;
 		}
-#endif
 
 		if (/*cp->m_hndType == 0 && */cp->m_hd.changingGear != 0)
 			cp->m_thrust = 1;
