@@ -671,6 +671,10 @@ GrVAO* GR_CreateVAO(int numVertices, int numIndices, GrVertex* verts /*= nullptr
 	newVAO->buffers[1] = buffers[1];
 	newVAO->dynamic = dynamic;
 
+	// bind back and continue good life
+	if (g_CurrentVAO)
+		glBindVertexArray(g_CurrentVAO->vertexArray);
+
 	return newVAO;
 }
 
@@ -721,6 +725,9 @@ void GR_DestroyVAO(GrVAO* vaoPtr)
 {
 	if (!vaoPtr)
 		return;
+
+	if (g_CurrentVAO == vaoPtr)
+		g_CurrentVAO = nullptr;
 
 	glDeleteVertexArrays(1, &vaoPtr->vertexArray);
 	glDeleteBuffers(2, vaoPtr->buffers);
