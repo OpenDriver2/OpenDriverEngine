@@ -27,6 +27,7 @@ typedef void (*OnCarModelFreed_t)(CarModelData_t* tp);
 
 struct dpoly_t
 {
+	ubyte	type;
 	ubyte	flags;
 	ubyte	page;
 	ubyte	detail;

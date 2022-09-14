@@ -112,6 +112,7 @@ public:
 	// loaders
 	void					LoadTextureInfoLump(IVirtualStream* pFile);
 	void					LoadPermanentTPages(IVirtualStream* pFile);
+	void					LoadPermanentTPagesD1Demo(IVirtualStream* pFile);
 	void					LoadTextureNamesLump(IVirtualStream* pFile, int size);
 	void					LoadOverlayMapLump(IVirtualStream* pFile, int size);
 	void					LoadPalletLump(IVirtualStream* pFile);
@@ -127,7 +128,7 @@ public:
 	const char*				GetTextureDetailName(TEXINF* info) const;
 
 	// unpacks RNC2 overlay map segment into RGBA buffer (32x32)
-	void					GetOverlayMapSegmentRGBA(TVec4D<ubyte>* destination, int index) const;
+	void					GetOverlayMapSegmentRGBA(TVec4D<ubyte>* destination, int index, bool bgra = false) const;
 	int						GetOverlayMapSegmentCount() const;
 
 protected:

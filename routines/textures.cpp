@@ -11,8 +11,6 @@
 #include "textures.h"
 #include "level.h"
 
-
-
 //-------------------------------------------------------------------------------
 
 // unpacks texture, returns new source pointer
@@ -339,6 +337,69 @@ void CDriverLevelTextures::LoadPermanentTPages(IVirtualStream* pFile)
 	}
 }
 
+void CDriverLevelTextures::LoadPermanentTPagesD1Demo(IVirtualStream* pFile)
+{
+	long lumpOffset = pFile->Tell() + 8;
+
+	DevMsg(SPEW_NORM, "Loading OLD FORMAT permanent texture pages\n");
+	
+
+	int numTpages = 0;
+	int textureCount = 0;
+	pFile->Read(&numTpages, 1, sizeof(numTpages));
+	pFile->Read(&textureCount, 1, sizeof(textureCount));
+
+	if (numTpages == 0 || numTpages > 127)
+	{
+		return;
+	}
+	
+	TEXPAGE_POS tpage_position[128];
+	pFile->Read(tpage_position, numTpages + 1, sizeof(XYPAIR));
+	
+	m_texPages = new CTexturePage[numTpages];
+	m_numPermanentPages = numTpages;
+	m_numTexPages = numTpages;
+
+	int totalTexturesRead = 0;
+	// for each tpage read TEXINF array
+	for (int i = 0; i < numTpages; ++i)
+	{
+		CTexturePage& tp = m_texPages[i];
+		int detailCount;
+		pFile->Read(&detailCount, 1, sizeof(detailCount));
+
+		tp.m_id = i;
+		tp.m_tp = tpage_position[i];
+		tp.m_owner = this;
+		tp.m_details = new TexDetailInfo_t[detailCount];
+		tp.m_numDetails = detailCount;
+
+		for (int j = 0; j < detailCount; ++j)
+		{
+			TexDetailInfo_t& detailInfo = tp.m_details[j];
+			detailInfo.pageNum = i;
+			detailInfo.detailNum = j;
+			detailInfo.numExtraCLUTs = 0;
+			memset(detailInfo.extraCLUTs, 0, sizeof(detailInfo.extraCLUTs));
+
+			pFile->Read(&detailInfo.info, 1, sizeof(detailInfo.info));
+			totalTexturesRead++;
+		}
+	}
+
+	Msg("Loading permanent texture pages (%d, tex: %d, read %d)\n", numTpages, textureCount, totalTexturesRead);
+	DevMsg(SPEW_NORM, "Loading permanent texture pages (%d)\n", numTpages);
+
+	// load permanent pages
+	for (int i = 0; i < numTpages; i++)
+	{
+		pFile->Seek(lumpOffset + tpage_position[i].offset, VS_SEEK_SET);
+		// permanents are also compressed
+		m_texPages[i].LoadTPageAndCluts(pFile, false);
+	}
+}
+
 //-------------------------------------------------------------
 // parses texture info lumps. Quite simple
 //-------------------------------------------------------------
@@ -354,7 +415,7 @@ void CDriverLevelTextures::LoadTextureInfoLump(IVirtualStream* pFile)
 	DevMsg(SPEW_NORM, "Texture amount: %d\n", numTextures);
 
 	// read array of texutre page info
-	TEXPAGE_POS* tpage_position = new TEXPAGE_POS[numPages + 1];
+	TEXPAGE_POS tpage_position[128];
 	pFile->Read(tpage_position, numPages+1, sizeof(TEXPAGE_POS));
 
 	// read page details
@@ -379,9 +440,6 @@ void CDriverLevelTextures::LoadTextureInfoLump(IVirtualStream* pFile)
 	pFile->Read(m_specList, 16, sizeof(XYPAIR));
 
 	DevMsg(SPEW_NORM,"Special/Car TPages = %d\n", m_numSpecPages);
-
-	// not needed
-	delete tpage_position;
 }
 
 //-------------------------------------------------------------
@@ -418,6 +476,10 @@ void CDriverLevelTextures::LoadOverlayMapLump(IVirtualStream* pFile, int lumpSiz
 //-------------------------------------------------------------
 void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 {
+	// temporary not working. Maybe it's incorrect
+	if (m_format < LEV_FORMAT_DRIVER1)
+		return;
+
 	ushort* clutTablePtr;
 	int total_cluts;
 
@@ -436,7 +498,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 	{
 		PALLET_INFO info;
 
-		if (m_format == LEV_FORMAT_DRIVER1)
+		if (m_format <= LEV_FORMAT_DRIVER1)
 		{
 			PALLET_INFO_D1 infod1;
 			pFile->Read(&infod1, 1, sizeof(info) - sizeof(int));
@@ -476,7 +538,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 			added_cluts++;
 
 			// only in D1 we need to check count
-			if (m_format == LEV_FORMAT_DRIVER1)
+			if (m_format <= LEV_FORMAT_DRIVER1)
 			{
 				if (added_cluts >= total_cluts)
 					break;
@@ -525,7 +587,7 @@ const char* CDriverLevelTextures::GetTextureDetailName(TEXINF* info) const
 }
 
 // unpacks RNC2 overlay map segment into RGBA buffer (32x32)
-void CDriverLevelTextures::GetOverlayMapSegmentRGBA(TVec4D<ubyte>* destination, int index) const
+void CDriverLevelTextures::GetOverlayMapSegmentRGBA(TVec4D<ubyte>* destination, int index, bool bgra /*= false*/) const
 {
 	// 8 bit texture so...
 	char mapBuffer[16 * 32];
@@ -556,7 +618,7 @@ void CDriverLevelTextures::GetOverlayMapSegmentRGBA(TVec4D<ubyte>* destination, 
 
 			colorIndex &= 0xf;
 
-			destination[y * 32 + x] = rgb5a1_ToBGRA8(clut[colorIndex]);
+			destination[y * 32 + x] = bgra ? rgb5a1_ToBGRA8(clut[colorIndex]) : rgb5a1_ToRGBA8(clut[colorIndex]);
 		}
 	}
 }

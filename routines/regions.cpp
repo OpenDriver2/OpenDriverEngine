@@ -382,7 +382,8 @@ void CBaseLevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 	DevMsg(SPEW_NORM, "Region spool count %d (size=%d bytes)\n", m_numRegionSpools, regionsInfoSize);
 
 	m_regionSpoolInfo = (Spool*)malloc(regionsInfoSize);
-	pFile->Read(m_regionSpoolInfo, 1, regionsInfoSize);
+	if(regionsInfoSize > 0)
+		pFile->Read(m_regionSpoolInfo, 1, regionsInfoSize);
 
 	m_areaDataStates = new bool[m_numAreas];
 	memset(m_areaDataStates, 0, m_numAreas);

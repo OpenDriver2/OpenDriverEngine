@@ -13,6 +13,7 @@
 enum LevLumpType
 {
 	// known lumps indexes
+	LUMP_PERMANENTPAGES		= 0,		// Driver 1 old format of texture pages
 	LUMP_MODELS				= 1,		// level models
 	LUMP_MAP				= 2,		// map info
 
@@ -55,6 +56,7 @@ enum ELevelFormat
 
 	LEV_FORMAT_INVALID = 0,
 
+	LEV_FORMAT_DRIVER1_OLD,			// driver 1, old lump version
 	LEV_FORMAT_DRIVER1,				// driver 1
 	LEV_FORMAT_DRIVER2_ALPHA16,		// driver 2 alpha 1.6 format
 	LEV_FORMAT_DRIVER2_RETAIL,		// driver 2 retail format

@@ -33,6 +33,10 @@ ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
 
 		switch (lump.type)
 		{
+			case LUMP_PERMANENTPAGES:
+				MsgInfo("Detected old 'Driver 1 DEMO' LEV file\n");
+				pFile->Seek(curPos, VS_SEEK_SET);
+				return LEV_FORMAT_DRIVER1_OLD;
 			case LUMP_MODELS:
 			case LUMP_MAP:
 			case LUMP_TEXTURENAMES:
@@ -138,6 +142,10 @@ void CDriverLevelLoader::ProcessLumps(IVirtualStream* pFile)
 		{
 			// Lumps shared between formats
 			// almost identical
+			case LUMP_PERMANENTPAGES:
+				if (m_textures)
+					m_textures->LoadPermanentTPagesD1Demo(pFile);
+				break;
 			case LUMP_MODELS:
 				DevMsg(SPEW_WARNING, "LUMP_MODELS ofs=%d size=%d\n", pFile->Tell(), lump.size);
 				if(m_models)
@@ -310,12 +318,18 @@ bool CDriverLevelLoader::Load(IVirtualStream* pStream)
 	if (m_textures)
 		m_textures->SetFormat(m_format);
 
+	if (m_format == LEV_FORMAT_DRIVER1_OLD)
+	{
+		ProcessLumps(pStream);
+		return true;
+	}
+
 	LUMP curLump;
 	pStream->Read(&curLump, sizeof(curLump), 1);
 
 	if (curLump.type != LUMP_LUMPDESC)
 	{
-		MsgError("Not a LEV file!\n");
+		MsgError("Not a valid LEV file!\n");
 		return false;
 	}
 

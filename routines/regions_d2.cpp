@@ -121,7 +121,7 @@ sdPlane* CDriver2LevelRegion::SdGetCell(const VECTOR_NOPAD& cPosition, int& sdLe
 
 	// initial surface
 	if (*surface == -1)
-		return nullptr;
+		return &g_defaultPlane;
 
 	const bool simplerMethod = m_owner->m_format == LEV_FORMAT_DRIVER2_ALPHA16;
 

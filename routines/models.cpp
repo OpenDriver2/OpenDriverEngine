@@ -89,11 +89,18 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 	int modelCount;
 	pFile->Read(&modelCount, sizeof(int), 1);
 
+	if (!modelCount)
+		return;
+
 	DevMsg(SPEW_NORM, "	all car models count: %d\n", modelCount);
 
 	// read entries
 	carmodelentry_t model_entries[MAX_CAR_MODELS];
 	pFile->Read(&model_entries, sizeof(carmodelentry_t), MAX_CAR_MODELS);
+
+	// a kind of validation for older formats since they have duplicate car model lumps
+	if ((uint)model_entries[0].cleanOffset > 100000)
+		return;
 
 	// position
 	int r_ofs = pFile->Tell();
@@ -169,6 +176,18 @@ void CDriverLevelModels::LoadModelNamesLump(IVirtualStream* pFile, int size)
 
 		sz += len + 1;
 	} while (sz < size);
+
+	// assign model names to existing models if they were loaded
+	// (for older D1 LEV versions)
+
+	for (int i = 0; i < m_numModelsInPack; i++)
+	{
+		ushort mappedId;
+		pFile->Read(&mappedId, 1, sizeof(ushort));
+
+		ModelRef_t& ref = m_levelModels[i];
+		ref.name = GetModelNameByIndex(i);
+	}
 
 	delete[] modelnames;
 }
@@ -353,12 +372,11 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 	int ptype = polyType & 31;
 	int extFlags = (polyType >> 5) & 7;
 
+	out->type = ptype;
 	out->page = 0xFF;
 	out->detail = 0xFF;
 	out->flags = 0;
-	out->color = CVECTOR{ 255 };
-
-	*(uint*)&out->color = 0;
+	out->color = CVECTOR{ 255, 0, 255, 0 };
 
 	// TODO: D1 and D2 to have different decoding routines
 
@@ -366,7 +384,9 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 	{
 		case 1:
 			// what a strange face type. Hardcoded?
-			*(uint*)out->vindices = *(uint*)&polyList[3];
+			*(uint*)out->vindices = *(uint*)&polyList[4];
+			*(uint*)&out->color = *(uint*)&polyList[8];
+			out->flags = FACE_IS_QUAD | FACE_RGB;
 			break;
 		case 0:
 		case 8:
@@ -384,9 +404,9 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 		case 19:
 		{
 			// F4
-			*(uint*)out->vindices = *(uint*)&polyList[1];
-			*(uint*)out->uv = *(uint*)&polyList[4];
-			*(uint*)&out->color = *(uint*)&polyList[8];
+			*(uint*)out->vindices = *(uint*)&polyList[4];
+			*(uint*)out->uv = *(uint*)&polyList[8];
+			*(uint*)&out->color = *(uint*)&polyList[12];
 			
 			// FIXME: read colours
 
@@ -434,8 +454,6 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 			
 			out->page = pft4->texture_set;
 			out->detail = pft4->texture_id;
-
-			//SwapValues(out->uv[2], out->uv[3]);
 
 			out->flags = FACE_IS_QUAD | FACE_TEXTURED;
 
@@ -496,11 +514,18 @@ int decode_poly(const char* polyList, dpoly_t* out, int forceType /*= -1*/)
 		}
 	}
 
-	if (out->page == 255)
+	// triangles are hacked to be quads for PSX. We don't need that
+	if (out->flags && FACE_IS_QUAD && out->vindices[2] == out->vindices[3])
+	{
+		out->flags &= ~FACE_IS_QUAD;
+	}
+
+	if (out->page == 255 && (out->flags & FACE_TEXTURED))
 	{
 		out->flags &= ~FACE_TEXTURED;
 		out->flags |= FACE_RGB;
+		out->color.pad = 128;
 	}
 	
-	return PolySizes[*polyList & 0x1f];
+	return PolySizes[*polyList & 31];
 }
