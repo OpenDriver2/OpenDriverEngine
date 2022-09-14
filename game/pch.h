@@ -1,11 +1,5 @@
-#include "core/ignore_vc_new.h"
+//#include <sol/forward.hpp>
 #include <sol/sol.hpp>
-
-#include "core/dktypes.h"
-#include "core/cmdlib.h"
-#include "core/VirtualStream.h"
-#include "core/FileStream.h"
-
 #include <nstd/Memory.hpp>
 #include <nstd/Array.hpp>
 #include <nstd/HashSet.hpp>
@@ -19,6 +13,11 @@
 #include <nstd/Mutex.hpp>
 #include <nstd/Thread.hpp>
 #include <nstd/RefCount.hpp>
+
+#include "core/dktypes.h"
+#include "core/cmdlib.h"
+#include "core/VirtualStream.h"
+#include "core/FileStream.h"
 
 #include "routines/d2_types.h"
 #include "routines/models.h"

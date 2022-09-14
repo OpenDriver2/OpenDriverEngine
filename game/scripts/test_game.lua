@@ -223,6 +223,11 @@ TestGame.Init = function(residentModel)
 		
 		players.localPlayer:InitReplay(nil)
 		players.localPlayer.currentCar = plcar
+
+		--players.localPlayer.rubberbandMode = RubberbandMode.Chaser
+		--players.localPlayer.rubberbandPoint = positionInfo.position
+		--players.localPlayer.rubberbandPowerRatio = 4096
+
 		local maxMusic = #cityStart.musicType
 		Music.Init(CurrentCityInfo.gameId, cityStart.musicType[(CurrentSkyType % maxMusic) + 1] + 1)
 		Music.FunkUpDaBGMTunez(false)

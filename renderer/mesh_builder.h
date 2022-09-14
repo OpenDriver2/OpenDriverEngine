@@ -1,6 +1,7 @@
 #ifndef MESH_BUILDER_H
 #define MESH_BUILDER_H
 
+#include <string.h>
 #include "gl_renderer.h"
 
 class CMeshBuilder

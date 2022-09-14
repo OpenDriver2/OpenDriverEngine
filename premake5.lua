@@ -56,9 +56,6 @@ group "Dependencies"
 project "libnstd"
 	kind "StaticLib"
 
-	filter "system:Windows"
-		defines { "__PLACEMENT_NEW_INLINE" }
-	
 	includedirs {
 		"dependencies/libnstd/include"
 	}

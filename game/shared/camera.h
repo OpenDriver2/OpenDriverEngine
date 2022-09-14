@@ -2,7 +2,7 @@
 #define CAMERA_H
 
 #include "math/Vector.h"
-#include <sol/forward.hpp>
+
 
 //---------------------------------------------------------
 
