@@ -353,10 +353,11 @@ void CPlayer::ProcessCarPad()
 	}
 	else if (m_currentInputs.accel)
 	{
+		// TODO: D1 scales support
+
+		// accelerate faster if closer to point
 		if (m_rubberbandMode == Rubberband_Escape)
 		{
-			// rubber band freeroamer.
-			// accelerate faster if closer to player
 			const int dx = m_rubberbandPoint.vx - cp->m_hd.where.t[0] >> 10;
 			const int dz = m_rubberbandPoint.vz - cp->m_hd.where.t[2] >> 10;
 
@@ -376,6 +377,7 @@ void CPlayer::ProcessCarPad()
 			cp->m_thrust = FIXEDH(cp->m_cosmetics.powerRatio * 4915);
 		}
 
+		// accelerate faster if further to point
 		if (m_rubberbandMode == Rubberband_Chaser)
 		{
 			if (cp->m_cosmetics.powerRatio > 3050)
@@ -384,7 +386,7 @@ void CPlayer::ProcessCarPad()
 			const int cx = cp->m_hd.where.t[0] - m_rubberbandPoint.vx >> 10;
 			const int cz = cp->m_hd.where.t[2] - m_rubberbandPoint.vz >> 10;
 
-			int chase_square_dist = cx * cx + cz * cz;
+			const int chase_square_dist = cx * cx + cz * cz;
 
 			if (chase_square_dist > 20)
 				cp->m_thrust = (cp->m_thrust * 8000) / 7000;
