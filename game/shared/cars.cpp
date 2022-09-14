@@ -656,13 +656,11 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 
 		if (Surface.surfaceType == (int)SurfaceType::Grass)
 		{
-#if 0
-			if (gInGameCutsceneActive && gCurrentMissionNumber == 23 && gInGameCutsceneID == 0)
-				surfacePoint[1] += isin((surfacePoint[0] + surfacePoint[2]) * 2) >> 9;
-			else
-#endif
-				surfacePoint[1] += (isin((surfacePoint[0] + surfacePoint[2]) * 2) >> 8) / 3;
+			// TODO: (gInGameCutsceneActive && gCurrentMissionNumber == 23 && gInGameCutsceneID == 0)
+			const bool d1Roughness = (m_cosmetics.wheelDisp[i].vy < -100);
+			const int roughness = isin((surfacePoint[0] + surfacePoint[2]) * 2) >> 8;
 
+			surfacePoint[1] += d1Roughness ? (roughness >> 1) : (roughness / 3);
 			surfaceFactor >>= 1;
 		}
 
@@ -803,7 +801,6 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				}
 			}
 
-			int sidevel;
 			int slidevel = (pointVel[0] / 64) * (lfx / 64) + (pointVel[2] / 64) * (lfz / 64);
 			int wheelspd = abs((oldSpeed / 64) * (slidevel / 64));
 
@@ -825,6 +822,8 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 				if (slidevel < -12500)
 					slidevel = -12500;
 			}
+
+			int sidevel;
 
 			if (i & 1)
 			{
