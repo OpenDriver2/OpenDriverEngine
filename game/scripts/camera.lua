@@ -88,14 +88,59 @@ local function PlaceCameraFollowCar(dt)
 	local cameraPos = fix.VECTOR(0,0,0)
 	
 	local addDist = math.max(248, carCos.colBox.vy * 3)
+	local carHeight = math.max(-375, -carCos.colBox.vy * 3 + 85);
+
+	-- TEMP
+	local gCameraDefaultScrZ = 256
+
+	-- determine aspect ratio of the car
+	local aspectY = (carCos.colBox.vy * 256) / fix.ONE;
+	local aspectZ = (carCos.colBox.vz * 256) / fix.ONE;
+
+	local A = (aspectY * (aspectZ / 2));
+	local B = (aspectZ / (aspectY * 2));
 	
-	local maxCameraDist = carCos.colBox.vz * 2 + carCos.colBox.vy + addDist
-	local carHeight = carCos.colBox.vy * -3 + 85
+	-- Fireboyd78 camera code from ReD2
+	-- adjust for especially taller/longer cars
+	if A >= 85 then
+		local C = (A * B)
+
+		local camDist = (aspectY * aspectZ)
+		local camAdjust = 0;
+
+		if C < carCos.colBox.vy then
+			-- taller; keep vehicle in view while respecting ratio
+			if camDist >= gCameraDefaultScrZ then
+				addDist = addDist + (gCameraDefaultScrZ - camDist)
+			elseif camDist < gCameraDefaultScrZ then
+				addDist = addDist +( gCameraDefaultScrZ - camDist)
+			else
+				addDist = addDist + (gCameraDefaultScrZ - C)
+			end
+
+			camAdjust = 1
+		elseif C > addDist then
+			-- longer; move camera up
+			addDist = addDist - (C - addDist) * 2
+			carHeight = carHeight - (A / 2)
+
+			camAdjust = 1;
+		elseif camDist < (-carHeight + 100) then
+			-- long and tall (but fits within view)
+			addDist = addDist - (camDist - (gCameraDefaultScrZ / B))
+		else
+			-- long and very tall; probably a huge bus
+			addDist = addDist - camDist / (1 + B)
+			carHeight = carHeight - (A - gCameraDefaultScrZ) / 2
+		end
+	end
+
+	local carSize = carCos.colBox.vz * 2 + carCos.colBox.vy;
+	local maxCameraDist = carSize + addDist;
 	
+	-- TODO: check collision
 	local cameraDist = maxCameraDist
-	
-	
-	
+
 	-- smooth follow
 	local angleDelta = fix.DIFF_ANGLES(cameraAngle, baseDir)
 	cameraAngle = (cameraAngle + (angleDelta / 8) * dt * 25)
