@@ -98,40 +98,37 @@ local function PlaceCameraFollowCar(dt)
 	local aspectZ = (carCos.colBox.vz * 256) / fix.ONE;
 
 	local A = (aspectY * (aspectZ / 2));
-	local B = (aspectZ / (aspectY * 2));
-	
+		
 	-- Fireboyd78 camera code from ReD2
 	-- adjust for especially taller/longer cars
-	if A >= 85 then
-		local C = (A * B)
+	if A >= 80 then
+		local B = aspectZ / (aspectY * 2);
+		local C = A * B
 
 		local camDist = (aspectY * aspectZ)
 		local camAdjust = 0;
 
-		if C < carCos.colBox.vy then
-			-- taller; keep vehicle in view while respecting ratio
-			if camDist >= gCameraDefaultScrZ then
-				addDist = addDist + (gCameraDefaultScrZ - camDist)
-			elseif camDist < gCameraDefaultScrZ then
-				addDist = addDist +( gCameraDefaultScrZ - camDist)
-			else
-				addDist = addDist + (gCameraDefaultScrZ - C)
-			end
-
-			camAdjust = 1
-		elseif C > addDist then
-			-- longer; move camera up
-			addDist = addDist - (C - addDist) * 2
-			carHeight = carHeight - (A / 2)
-
-			camAdjust = 1;
-		elseif camDist < (-carHeight + 100) then
-			-- long and tall (but fits within view)
-			addDist = addDist - (camDist - (gCameraDefaultScrZ / B))
+		if C > addDist then
+			-- long vehicle but not very tall;
+			-- move the camera closer and lower it a bit
+			addDist = addDist - (C - addDist) * 2;
+			carHeight = carHeight - (A / 2);
+		elseif (C < carCos.colBox.vy) then
+			-- tall vehicle but not very long;
+			-- move up closer in respect to camera aspect
+			addDist = addDist - (camDist - gCameraDefaultScrZ);
 		else
-			-- long and very tall; probably a huge bus
-			addDist = addDist - camDist / (1 + B)
-			carHeight = carHeight - (A - gCameraDefaultScrZ) / 2
+			-- deal with very large vehicles (like buses)
+			if camDist < -carHeight + 100 then
+				-- long and tall, but still fits within view
+				-- move up closer in respect to camera/vehicle aspect
+				addDist = addDist - (camDist - (gCameraDefaultScrZ / B));
+			else
+				-- absolutely massive, doesn't fit within view!
+				-- move up closer; adjust height in respect to camera aspect
+				addDist = addDist - (camDist / (1 + B));
+				carHeight = carHeight - (A - gCameraDefaultScrZ) / 2;
+			end
 		end
 	end
 
@@ -205,4 +202,3 @@ function InitCamera( params )
 		camera.MainViewVelocity:set(0.0)
 	end
 end
-
