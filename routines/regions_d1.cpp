@@ -22,6 +22,9 @@ void CDriver1LevelRegion::FreeAll()
 
 	delete[] m_roadMap;
 	m_roadMap = nullptr;
+
+	delete[] m_surfaceRoads;
+	m_surfaceRoads = nullptr;
 }
 
 void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
@@ -58,8 +61,8 @@ void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	const int pvsDataOffset = cellObjectsOffset + m_spoolInfo->cell_data_size[2]; // FIXME: is it even there in Driver 1?
 
 	// read roadm (map?)
-	//pFile->Seek(ctx.lumpInfo->spooled_offset + roadMOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
-	//pFile->Read(roadMapData, m_spoolInfo->roadm_size * SPOOL_CD_BLOCK_SIZE, sizeof(char));
+	pFile->Seek(ctx.lumpInfo->spooled_offset + roadMOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
+	LoadRoadCellsData(pFile);
 
 	// read roadh (heights?)
 	pFile->Seek(ctx.lumpInfo->spooled_offset + roadHOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
@@ -137,6 +140,30 @@ void CDriver1LevelRegion::LoadRoadHeightMapData(IVirtualStream* pFile)
 	delete[] roadMapData;
 }
 
+void CDriver1LevelRegion::LoadRoadCellsData(IVirtualStream* pFile)
+{
+	m_surfaceRoads = new ushort[ROAD_MAP_REGION_CELLS];
+	ushort* pRoadIds = m_surfaceRoads;
+	int i = ROAD_MAP_REGION_CELLS;
+
+	do {
+		short length;
+		pFile->Read(&length, 1, sizeof(short));
+
+		if (length == -1)
+			break;
+
+		ushort value;
+		pFile->Read(&value, 1, sizeof(short));
+
+		int count = length;
+		for (i = i - count; count > 0; count--)
+		{
+			*pRoadIds++ = value;
+		}
+	} while (i > 0);
+}
+
 //----------------------------------------
 // cell iterator
 CELL_OBJECT* CDriver1LevelRegion::StartIterator(CELL_ITERATOR_D1* iterator, int cellNumber) const
@@ -174,6 +201,18 @@ void CDriver1LevelMap::FreeAll()
 
 	Memory::free(m_surfaceData);
 	m_surfaceData = nullptr;
+
+	delete[] m_roads;
+	m_roads = nullptr;
+
+	delete[] m_roadBounds;
+	m_roadBounds = nullptr;
+
+	delete[] m_junctions;
+	m_junctions = nullptr;
+
+	delete[] m_junctionBounds;
+	m_junctionBounds = nullptr;
 
 	CBaseLevelMap::FreeAll();
 }
@@ -225,6 +264,36 @@ void CDriver1LevelMap::LoadRoadMapLump(IVirtualStream* pFile)
 	//m_roadMapLumpData.unitZMid = 1500 * height / 2;
 }
 
+void CDriver1LevelMap::LoadRoadsLump(IVirtualStream* pFile)
+{
+	pFile->Read(&m_numRoads, 1, sizeof(int));
+	m_roads = new DRIVER1_ROAD[m_numRoads];
+	pFile->Read(m_roads, m_numRoads, sizeof(DRIVER1_ROAD));
+}
+
+void CDriver1LevelMap::LoadJunctionsLump(IVirtualStream* pFile)
+{
+	pFile->Read(&m_numJunctions, 1, sizeof(int));
+	m_junctions = new DRIVER1_JUNCTION[m_numJunctions];
+	pFile->Read(m_junctions, m_numJunctions, sizeof(DRIVER1_JUNCTION));
+}
+
+void CDriver1LevelMap::LoadRoadBoundsLump(IVirtualStream* pFile)
+{
+	int numRoadBounds;
+	pFile->Read(&numRoadBounds, 1, sizeof(int));
+	m_roadBounds = new DRIVER1_ROADBOUNDS[numRoadBounds];
+	pFile->Read(m_roadBounds, numRoadBounds, sizeof(DRIVER1_ROADBOUNDS));
+}
+
+void CDriver1LevelMap::LoadJuncBoundsLump(IVirtualStream* pFile)
+{
+	int numJuncBounds;
+	pFile->Read(&numJuncBounds, 1, sizeof(int));
+	m_junctionBounds = new XYPAIR[numJuncBounds];
+	pFile->Read(m_junctionBounds, numJuncBounds, sizeof(XYPAIR));
+}
+
 void CDriver1LevelMap::LoadRoadSurfaceLump(IVirtualStream* pFile, int size)
 {
 	int numSurfaces;
@@ -251,6 +320,12 @@ CBaseLevelRegion* CDriver1LevelMap::GetRegion(const XZPAIR& cell) const
 	// lookup region
 	const int region_x = cell.x / m_mapInfo.region_size;
 	const int region_z = cell.z / m_mapInfo.region_size;
+
+	if (region_x < 0 ||
+		region_z < 0 ||
+		region_x >= m_regions_across ||
+		region_z >= m_regions_down)
+		return nullptr;
 
 	return GetRegion(region_x + region_z * m_regions_across);
 }
@@ -370,13 +445,15 @@ bool CDriver1LevelMap::GetRoadInfo(ROUTE_DATA& outData, const VECTOR_NOPAD& posi
 		return false;
 	}
 
-	const uint value = region->m_roadMap[(cpos.x % road_region_size) + 
-										 (cpos.z % road_region_size) * road_region_size];
+	const int cellIdx = (cpos.x % road_region_size) + (cpos.z % road_region_size) * road_region_size;
+
+	const uint value = region->m_roadMap[cellIdx];
 
 	outData.height = *(short*)&value;
-	outData.type = value >> 16 & 0x3ff;
+	outData.type = value >> 16 & 1023;
 	outData.objectAngle = (value >> 30) * 1024;
 	outData.value = value;
+	outData.roadIndex = region->m_surfaceRoads[cellIdx];
 
 	return true;
 }

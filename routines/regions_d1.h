@@ -6,6 +6,8 @@
 // DRIVER 1
 //----------------------------------------------------------------------------------
 
+#define ROAD_MAP_REGION_CELLS	3600
+
 class CDriver1LevelRegion;
 class CDriver1LevelMap;
 
@@ -32,9 +34,11 @@ public:
 
 protected:
 	void					LoadRoadHeightMapData(IVirtualStream* pFile);
+	void					LoadRoadCellsData(IVirtualStream* pFile);
 
 	CELL_DATA_D1*			m_cells{ nullptr };				// cell data that holding information about cell pointers. 3D world seeks cells first here
 	uint*					m_roadMap{ nullptr };
+	ushort*					m_surfaceRoads{ nullptr };
 };
 
 
@@ -49,6 +53,11 @@ public:
 
 	void 					LoadMapLump(IVirtualStream* pFile) override;
 	void					LoadSpoolInfoLump(IVirtualStream* pFile) override;
+
+	void					LoadRoadsLump(IVirtualStream* pFile);
+	void					LoadJunctionsLump(IVirtualStream* pFile);
+	void					LoadRoadBoundsLump(IVirtualStream* pFile);
+	void					LoadJuncBoundsLump(IVirtualStream* pFile);
 
 	void					LoadRoadMapLump(IVirtualStream* pFile); // or NewProcessRoadMapLump in D1 & D2
 	void					LoadRoadSurfaceLump(IVirtualStream* pFile, int size);
@@ -68,7 +77,17 @@ public:
 
 	//----------------------------------------
 	// road map stuff
-	bool					GetRoadInfo(ROUTE_DATA& outData, const VECTOR_NOPAD& position) const;
+	bool						GetRoadInfo(ROUTE_DATA& outData, const VECTOR_NOPAD& position) const;
+
+	int							GetNumRoads() const { return m_numRoads; }
+	int							GetNumJunctions() const { return m_numJunctions; }
+
+	const ROAD_MAP_LUMP_DATA&	GetRoadMapLumpData() const { return m_roadMapLumpData; }
+
+	DRIVER1_ROAD*				GetRoad(int idx) const { return &m_roads[idx]; }
+	DRIVER1_ROADBOUNDS*			GetRoadBounds(int idx) const { return &m_roadBounds[idx]; }
+	DRIVER1_JUNCTION*			GetJunction(int idx) const { return &m_junctions[idx]; }
+	XYPAIR*						GetJunctionBounds(int idx) const { return &m_junctionBounds[idx]; }
 
 protected:
 
@@ -79,6 +98,14 @@ protected:
 	CDriver1LevelRegion*	m_regions{ nullptr };					// map of regions
 	SURFACEINFO*			m_surfacePtrs[900];
 	char*					m_surfaceData{ nullptr };
+
+	DRIVER1_ROAD*			m_roads{ nullptr };
+	DRIVER1_ROADBOUNDS*		m_roadBounds{ nullptr };
+	DRIVER1_JUNCTION*		m_junctions{ nullptr };
+	XYPAIR*					m_junctionBounds{ nullptr };
+
+	int						m_numRoads{ 0 };
+	int						m_numJunctions{ 0 };
 };
 
 

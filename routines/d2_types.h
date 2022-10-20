@@ -382,7 +382,7 @@ struct DRIVER2_JUNCTION
 };
 
 //------------------------------------------------------------------------------------------------------------
-// Driver 1 PSX is so wasteful
+// Driver 1 PSX
 
 struct ROAD_MAP_LUMP_DATA
 {
@@ -420,12 +420,57 @@ struct ROUTE_DATA
 	int type;
 	int height;
 	int objectAngle;
+	int roadIndex;
 	uint value;
+};
+
+enum DRIVER1_ROAD_FLAGS
+{
+	ROAD_FLAG_PARKING = (1 << 0)
+};
+
+struct DRIVER1_ROAD
+{
+	short	id;
+	short	ConnectIdx[2];
+	char	NumLanes, LaneDirs;			// looks like the same as in D2
+	short	length;
+	char	flags;
+	char	pad;
+	short	x, z;
+};
+
+struct DRIVER1_JUNC_ETRY
+{
+	short	fromJunc;
+	short	road;
+	short	flags;
+	short	extraFlags;
+};
+
+struct DRIVER1_JUNCTION
+{
+	short	id;
+	char	type;
+	char	pad;
+	short	lightsTimer;
+	char	lightsNS, lightsWE;
+	DRIVER1_JUNC_ETRY entries[4];
+	short	x, z;
+};
+
+struct DRIVER1_ROADBOUNDS
+{
+	int		x1, y1;
+	int		x2, y2;
+	uint8	dir;
+	uint8	_pad[3];
 };
 
 //------------------------------------------------------------------------------------------------------------
 
-struct AreaDataStr {
+struct AreaDataStr 
+{
 	uint16	gfx_offset;
 	uint16	model_offset;
 	uint16	music_offset;

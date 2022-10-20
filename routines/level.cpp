@@ -232,9 +232,13 @@ void CDriverLevelLoader::ProcessLumps(IVirtualStream* pFile)
 				break;
 			case LUMP_ROADS:
 				DevMsg(SPEW_WARNING, "LUMP_ROADS ofs=%d size=%d\n", pFile->Tell(), lump.size);
+				if (m_map)
+					((CDriver1LevelMap*)m_map)->LoadRoadsLump(pFile);
 				break;
 			case LUMP_JUNCTIONS:
 				DevMsg(SPEW_WARNING, "LUMP_JUNCTIONS ofs=%d size=%d\n", pFile->Tell(), lump.size);
+				if (m_map)
+					((CDriver1LevelMap*)m_map)->LoadJunctionsLump(pFile);
 				break;
 			case LUMP_ROADSURF:
 				DevMsg(SPEW_WARNING, "LUMP_ROADSURF ofs=%d size=%d\n", pFile->Tell(), lump.size);
@@ -243,9 +247,13 @@ void CDriverLevelLoader::ProcessLumps(IVirtualStream* pFile)
 				break;
 			case LUMP_ROADBOUNDS:
 				DevMsg(SPEW_WARNING, "LUMP_ROADBOUNDS ofs=%d size=%d\n", pFile->Tell(), lump.size);
+				if (m_map)
+					((CDriver1LevelMap*)m_map)->LoadRoadBoundsLump(pFile);
 				break;
 			case LUMP_JUNCBOUNDS:
 				DevMsg(SPEW_WARNING, "LUMP_JUNCBOUNDS ofs=%d size=%d\n", pFile->Tell(), lump.size);
+				if (m_map)
+					((CDriver1LevelMap*)m_map)->LoadJuncBoundsLump(pFile);
 				break;
 			case LUMP_SUBDIVISION:
 				DevMsg(SPEW_WARNING, "LUMP_SUBDIVISION ofs=%d size=%d\n", pFile->Tell(), lump.size);
