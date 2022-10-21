@@ -189,7 +189,6 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 	int moreLevels;
 	sdPlane* plane;
 	short* check;
-	short* buffer;
 
 	XYPAIR cellPos;
 
@@ -198,8 +197,8 @@ int CDriver2LevelRegion::RoadInCell(VECTOR_NOPAD& position) const
 	cellPos.x = position.vx - 512;
 	cellPos.y = position.vz - 512;
 
-	check = &buffer[(cellPos.x >> 10 & 63) +
-					(cellPos.y >> 10 & 63) * 64 + 4];
+	check = &m_surfaceData[(cellPos.x >> 10 & 63) +
+						   (cellPos.y >> 10 & 63) * 64 + 4];
 
 	if (*check == -1)
 		return -1;
