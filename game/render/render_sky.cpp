@@ -1,6 +1,8 @@
 #include "game/pch.h"
 #include "render_sky.h"
 
+#pragma optimize("", off)
+
 #define SKY_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\
 	"	attribute vec4 a_normal_tv;\n"\
@@ -35,14 +37,15 @@ const char* sky_shader =
 	SKY_FRAGMENT_SHADER
 	"#endif\n";
 
-const int SKY_CLUT_START_Y = 252;
+const int D2_SKY_CLUT_START_Y = 252;
+const int D2_SKY_SIZE_W = 512 / 4;
+const int D2_SKY_SIZE_H = 252 / 3;
+const int D2_SKY_TEXPAGE_SIZE = 512 * 256; // it's treated as 2:1
+const int D2_SKY_OFFSET_STEP = 0x10000;
 
-const int SKY_SIZE_W = 512 / 4;
-const int SKY_SIZE_H = 252 / 3;
-
-const int SKY_TEXPAGE_SIZE = 512 * 256; // it's treated as 2:1
-
-const int SKY_OFFSET_STEP = 0x10000;
+const int D1_SKY_TEXPAGE_SIZE = 256 * 128; // it's treated as 2:1
+const int D1_SKY_SIZE_W = 256 / 4;
+const int D1_SKY_SIZE_H = 126 / 3;
 
 const int SKY_TEX_CHANNELS = 4;
 
@@ -55,19 +58,64 @@ int g_skyColorConstantId = -1;
 UV g_skytexuv[28] = { 0 };
 short g_skytpage[28][2] = { 0 };
 
-uint8 g_HorizonLookup[4][4] = {
+uint8 g_HorizonLookupD2[4][4] = {
 	{0, 0, 20, 20},
 	{20, 20, 0, 0},
 	{0, 0, 20, 20},
 	{0, 0, 20, 20},
 };
 
-uint8 g_HorizonTextures[40] = {
+uint8 g_HorizonTexturesD2[40] = {
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
 	0, 1, 2, 3, 4, 5, 6, 7,
 	20, 21, 22, 23, 24, 25, 26, 27,
 	16, 17, 18, 19
 };
+
+uint8 g_HorizonLookupD1[4] = {
+	0, 12, 24, 36
+};
+
+uint8 g_HorizonTexturesD1[48] = {
+    0x0,  0x2,  0x6,  0xA,
+    0x1,  0x5,  0x9,  0x4,
+    0x8,  0xB,  0x7,  0x3,
+    0x2,  0xB,  0x7,  0x3,
+    0x6,  0xA,  0x8,  0x4,
+    0x0,  0x1,  0x5,  0x9,
+    0x9,  0x0,  0x4,  0x8,
+    0x5,  0x1,  0xA,  0x6,
+    0x2,  0x3,  0x7,  0xB,
+    0x0,  0x4,  0x8,  0x3,
+    0x9,  0x5,  0x1,  0x7,
+    0xB,  0x2,  0x6,  0xA,
+};
+
+#pragma pack(push, 1)
+struct BMP_INFO_HEADER
+{
+	int size;
+	int width;
+	int height;
+	short planes;
+	short bitcount;
+	int compression;
+	int sizeimage;
+	int xpelsPerMeter;
+	int ypelsPerMeter;
+	int clrused;
+	int clrimportant;
+};
+
+struct BMP_FILE_HEADER
+{
+	char type[2];
+	int size;
+	short _reserved[2];
+	int offbits;
+	BMP_INFO_HEADER info;
+};
+#pragma pack(pop)
 
 void CopyTpageImage(ushort* tp_src, ushort* dst, int x, int y, int dst_w, int dst_h)
 {
@@ -81,19 +129,57 @@ void CopyTpageImage(ushort* tp_src, ushort* dst, int x, int y, int dst_w, int ds
 	}
 }
 
-void ConvertIndexedSkyImage(uint* color_data, ubyte* src_indexed, int x_idx, int y_idx, bool outputBGR, bool originalTransparencyKey)
+void ConvertIndexedSkyImageD1(uint* color_data, ushort* imageClut, ubyte* src_indexed, int x_idx, int y_idx, bool outputBGR, bool originalTransparencyKey)
+{
+	int ox = x_idx * D1_SKY_SIZE_W;
+	int oy = y_idx * D1_SKY_SIZE_H;
+	int w = D1_SKY_SIZE_W;
+	int h = D1_SKY_SIZE_H;
+
+	int tp_wx = ox + w;
+	int tp_hy = oy + h;
+
+	for (int y = oy; y < tp_hy; y++)
+	{
+		for (int x = ox; x < tp_wx; x++)
+		{
+			ubyte clindex = src_indexed[(y - oy) * 32 + (x - ox) / 2];
+
+			if (0 != (x & 1))
+				clindex >>= 4;
+
+			clindex &= 0xF;
+
+			// flip texture by Y
+			int ypos = (128 - y - 1) * 256;
+
+			if (outputBGR)
+			{
+				TVec4D<ubyte> color = rgb5a1_ToBGRA8(imageClut[clindex], originalTransparencyKey);
+				color_data[ypos + x] = *(uint*)(&color);
+			}
+			else
+			{
+				TVec4D<ubyte> color = rgb5a1_ToRGBA8(imageClut[clindex], originalTransparencyKey);
+				color_data[ypos + x] = *(uint*)(&color);
+			}
+		}
+	}
+}
+
+void ConvertIndexedSkyImageD2(uint* color_data, ubyte* src_indexed, int x_idx, int y_idx, bool outputBGR, bool originalTransparencyKey)
 {
 	ushort imageClut[16];
 
 	int clut_x = x_idx * 16;
-	int clut_y = SKY_CLUT_START_Y + y_idx;
+	int clut_y = D2_SKY_CLUT_START_Y + y_idx;
 
 	CopyTpageImage((ushort*)src_indexed, (ushort*)imageClut, clut_x, clut_y, 16, 1);
 
-	int ox = x_idx * SKY_SIZE_W;
-	int oy = y_idx * SKY_SIZE_H;
-	int w = SKY_SIZE_W;
-	int h = SKY_SIZE_H;
+	int ox = x_idx * D2_SKY_SIZE_W;
+	int oy = y_idx * D2_SKY_SIZE_H;
+	int w = D2_SKY_SIZE_W;
+	int h = D2_SKY_SIZE_H;
 
 	int tp_wx = ox + w;
 	int tp_hy = oy + h;
@@ -127,10 +213,43 @@ void ConvertIndexedSkyImage(uint* color_data, ubyte* src_indexed, int x_idx, int
 }
 
 static int vertexSky_horizontaboffset;
-void VertexSkyCb(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
+void VertexSkyCbD1(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
 {
-	int skytexnum = g_HorizonTextures[vertexSky_horizontaboffset + polyNum];
+	const int skytexnum = g_HorizonTexturesD1[vertexSky_horizontaboffset + polyNum];
 	
+	UV& uvs = g_skytexuv[skytexnum];
+	short* tp = g_skytpage[skytexnum];
+
+	vert.tc_u = (tp[0] * 4.0) / 256.0f;
+	vert.tc_v = tp[1] / 128.0f;
+
+	// map to 0..1
+	if (polyVertNum == 0)
+	{
+		vert.tc_u += ((float)uvs.u2 + 0.5f) / 256.0f;
+		vert.tc_v += ((float)uvs.v2 + 0.5f) / 128.0f;
+	}
+	else if (polyVertNum == 1)
+	{
+		vert.tc_u += ((float)uvs.u3 + 0.5f) / 256.0f;
+		vert.tc_v += ((float)uvs.v3 + 0.5f) / 128.0f;
+	}
+	else if (polyVertNum == 2)
+	{
+		vert.tc_u += ((float)uvs.u1 + 0.5f) / 256.0f;
+		vert.tc_v += ((float)uvs.v1 + 0.5f) / 128.0f;
+	}
+	else if (polyVertNum == 3)
+	{
+		vert.tc_u += ((float)uvs.u0 + 0.5f) / 256.0f;
+		vert.tc_v += ((float)uvs.v0 + 0.5f) / 128.0f;
+	}
+}
+
+void VertexSkyCbD2(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
+{
+	const int skytexnum = g_HorizonTexturesD2[vertexSky_horizontaboffset + polyNum];
+
 	if (polyNum >= 12)
 	{
 		vert.cr *= 0.5f;
@@ -228,11 +347,11 @@ void GenerateSkyUVs_Driver2()
 		}
 
 		tp_x = 0;
-		v = ry * SKY_SIZE_H;
+		v = ry * D2_SKY_SIZE_H;
 
 		for (x = 0; x < 4; x++)
 		{
-			u = x * SKY_SIZE_W;
+			u = x * D2_SKY_SIZE_W;
 			UV& uvs = g_skytexuv[i];
 
 			if (single)
@@ -249,28 +368,28 @@ void GenerateSkyUVs_Driver2()
 			else if (flipped)
 			{
 				uvs.u0 = u;
-				uvs.v0 = v + SKY_SIZE_H - 1;
-				uvs.u1 = u + SKY_SIZE_W - 1;
-				uvs.v1 = v + SKY_SIZE_H - 1;
+				uvs.v0 = v + D2_SKY_SIZE_H - 1;
+				uvs.u1 = u + D2_SKY_SIZE_W - 1;
+				uvs.v1 = v + D2_SKY_SIZE_H - 1;
 				uvs.u2 = u;
 				uvs.v2 = v;
-				uvs.u3 = u + SKY_SIZE_W - 1;
+				uvs.u3 = u + D2_SKY_SIZE_W - 1;
 				uvs.v3 = v;
 			}
 			else
 			{
 				uvs.u0 = u;
 				uvs.v0 = v;
-				uvs.u1 = u + SKY_SIZE_W - 1;
+				uvs.u1 = u + D2_SKY_SIZE_W - 1;
 				uvs.v1 = v;
 				uvs.u2 = u;
-				uvs.v2 = v + SKY_SIZE_H - 1;
-				uvs.u3 = u + SKY_SIZE_W - 1;
-				uvs.v3 = v + SKY_SIZE_H - 1;
+				uvs.v2 = v + D2_SKY_SIZE_H - 1;
+				uvs.u3 = u + D2_SKY_SIZE_W - 1;
+				uvs.v3 = v + D2_SKY_SIZE_H - 1;
 			}
 
 			g_skytpage[i][0] = tp_x & 0xffffffc0;
-			g_skytpage[i][1] = ry * SKY_SIZE_H & 768;
+			g_skytpage[i][1] = ry * D2_SKY_SIZE_H & 768;
 
 			tp_x += 32;
 			i++;
@@ -282,8 +401,8 @@ void GenerateSkyUVs_Driver2()
 
 void GenerateSkyUVs_Driver1()
 {
-	const int bmpWidth = 64 >> 2;
-	const int bmpHeight = 42;
+	const int bmpWidth = D1_SKY_SIZE_W >> 2; // 64 >> 2;
+	const int bmpHeight = D1_SKY_SIZE_H;
 
 	int rect_x = 0; // 512;
 	int rect_y = 0;
@@ -301,10 +420,10 @@ void GenerateSkyUVs_Driver1()
 		uvs.v2 = bmpHeight + rect_y - 1;
 		uvs.v3 = bmpHeight + rect_y - 1;
 
-		rect_x += 16;
-		if (rect_x == 576)
+		rect_x += bmpWidth;
+		if (rect_x == D1_SKY_SIZE_W) // 576 - 512
 		{
-			rect_x = 512;
+			rect_x = 0;
 			rect_y += bmpHeight;
 		}
 
@@ -327,12 +446,21 @@ void GenerateSkyUVs()
 	{
 		ModelRef_t* ref = CWorld::GetModelByIndex(i);
 		ref->model->num_polys;
-		vertexSky_horizontaboffset = g_HorizonLookup[/*GameLevel*/0][i];
 
 		if (ref && ref->userData)
 		{
 			CRenderModel* renderModel = (CRenderModel*)ref->userData;
-			renderModel->GenerateBuffers(nullptr, VertexSkyCb);
+
+			if (skyModel->model->num_polys == 20)
+			{
+				vertexSky_horizontaboffset = g_HorizonLookupD2[/*GameLevel*/0][i];
+				renderModel->GenerateBuffers(nullptr, VertexSkyCbD2);
+			}
+			else
+			{
+				vertexSky_horizontaboffset = g_HorizonLookupD1[i];
+				renderModel->GenerateBuffers(nullptr, VertexSkyCbD1);
+			}
 		}
 	}
 }
@@ -374,8 +502,17 @@ bool CSky::Load(const char* filename, int skyNumber)
 	if (filename == nullptr)
 		return false;
 
+	String skyName = String::fromCString(filename);
+	tchar* subStr = const_cast<tchar*>(skyName.find('#', 0));
+
+	if (subStr)
+	{
+		skyNumber = atoi(subStr + 1);
+		skyName.trim(subStr);
+	}
+
 	File file;
-	if (!file.open(String::fromCString(filename), File::readFlag))
+	if (!file.open(skyName, File::readFlag))
 	{
 		MsgError("Unable to open '%s'\n", filename);
 		return false;
@@ -392,27 +529,95 @@ bool CSky::Load(const char* filename, int skyNumber)
 	file.read(data, fileSize);
 	file.close();
 
-	ubyte* skyImage = data + skyNumber * SKY_OFFSET_STEP;
-
-	uint* color_data;
-	int imgSize = SKY_TEXPAGE_SIZE * SKY_TEX_CHANNELS;
-
-	color_data = new uint[imgSize / sizeof(uint)];
-
-	// 3x4 images (128x84 makes 512x252 tpage)
-	for (int y = 0; y < 3; y++)
+	// Driver 1 skies?
+	String ext = File::extension(skyName);
+	if (ext.startsWith("BIN"))
 	{
-		for (int x = 0; x < 4; x++)
+		// should have 256x126 image
+		const int imgSize = D1_SKY_TEXPAGE_SIZE * SKY_TEX_CHANNELS;
+		uint* color_data = new uint[imgSize / sizeof(uint)];
+
+		// total 15 sky textures
+		int* offsetInfo = (int*)(data + skyNumber * 48);
+
+		int x = 0;
+		int y = 0;
+
+		for (int i = 0; i < 12; i++)
 		{
-			ConvertIndexedSkyImage(color_data, skyImage, x, y, false, false);
+			// get the BMP data
+			int bmpSize = offsetInfo[i + 1] - offsetInfo[i];
+			ubyte* bmpData = data + offsetInfo[i];
+
+			BMP_FILE_HEADER* hdr = (BMP_FILE_HEADER*)bmpData;
+			ubyte* imageData = (ubyte*)(hdr + 1);
+			ubyte* pBitmapData = (ubyte*)&hdr[1].size;
+
+			ushort skyclutData[16];
+
+			for (int j = 0; j < 16; ++j)
+			{
+				ubyte* pbVar1 = pBitmapData-1;
+				ubyte bVar2 = *pBitmapData;
+				ubyte bVar3 = *imageData;
+
+				imageData += 4;
+				pBitmapData += 4;
+
+				skyclutData[j] = (ushort)(bVar2 >> 3) | (ushort)(bVar3 >> 3) << 10 | (ushort)(*pbVar1 >> 3) << 5 | 0x8000;
+			}
+			
+			ushort pixMapData[2048];
+			ushort* puVar6 = (ushort*)(imageData + (hdr->info.height - 1) * 32);
+			ushort* puVar7;
+			for (int yy = 0; yy < hdr->info.height; ++yy)
+			{
+				for (int xx = 0; xx < 16; ++xx) 
+				{
+					puVar7 = puVar6;
+					ushort uVar5 = (ushort)*puVar7;
+					pixMapData[yy * 16 + xx] = (ushort)((uVar5 & 0xf) << 4) | (ushort)((uVar5 & 0xf0) >> 4) | (ushort)((uVar5 & 0xf00) << 4) | (ushort)((uVar5 & 0xf000) >> 4);
+					puVar6 = puVar7 + 1;
+				}
+				puVar6 = puVar7 - 31;
+			}
+
+			ConvertIndexedSkyImageD1(color_data, skyclutData, (ubyte*)pixMapData, x, y, false, false);
+
+			x += 1;
+			if (x == 4)
+			{
+				x = 0;
+				y += 1;
+			}
 		}
+
+		// Notice that it should be treated as 256x128 texture or UVs will be wrong!
+		g_skyTexture = GR_CreateRGBATexture(256, 128, (ubyte*)color_data);
+		delete[] color_data;
+	}
+	else
+	{
+		ubyte* skyImage = data + skyNumber * D2_SKY_OFFSET_STEP;
+
+		const int imgSize = D2_SKY_TEXPAGE_SIZE * SKY_TEX_CHANNELS;
+		uint* color_data = new uint[imgSize / sizeof(uint)];
+
+		// 3x4 images (128x84 makes 512x252 tpage)
+		for (int y = 0; y < 3; y++)
+		{
+			for (int x = 0; x < 4; x++)
+			{
+				ConvertIndexedSkyImageD2(color_data, skyImage, x, y, false, false);
+			}
+		}
+
+		// Notice that it should be treated as 512x256 texture or UVs will be wrong!
+		g_skyTexture = GR_CreateRGBATexture(512, 256, (ubyte*)color_data);
+		delete[] color_data;
 	}
 
-	// Notice that it should be treated as 512x256 texture or UVs will be wrong!
-	g_skyTexture = GR_CreateRGBATexture(512, 256, (ubyte*)color_data);
-
 	delete[] data;
-	delete[] color_data;
 
 	return true;
 }
