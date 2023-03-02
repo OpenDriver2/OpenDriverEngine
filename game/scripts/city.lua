@@ -230,16 +230,14 @@ function ChangeCity(newCityName, newCityType, newWeather)
 			newCityType = CityType.Day
 		end
 	end
-	
+
 	local triggerLoading = false
 	
 	if  CurrentCityInfo ~= newCity or 
-		CurrentCityType ~= newCityType or
+		CurrentCityType ~= newCityType and type(newCity.levPath) == "table" or
 		world.IsLevelLoaded() == false then
-
-		MsgInfo("NewLevel!\n")
-		
 		triggerLoading = true
+		MsgInfo("NewLevel!\n")
 	end
 	
 	if newCityName ~= nil then
@@ -276,7 +274,6 @@ function ChangeCity(newCityName, newCityType, newWeather)
 	levRenderProps.ambientColor = lightPreset.ambientColor
 	levRenderProps.lightColor = lightPreset.lightColor
 	levRenderProps.fogColor = lightPreset.fogColor
-	util.printObject(lightPreset)
 	levRenderProps.fogParams = lightPreset.fogParams
 	sky.color:set(lightPreset.skyColor)
 	

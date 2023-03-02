@@ -74,7 +74,7 @@ local PlayerStartInfo = {
 	["Miami"] = {
 		-- D1 default
 		{
-			startPos = POSITION_INFO {x = 129853, z = 421288, direction = -1024},
+			startPos = POSITION_INFO {x = 134000, z = 420740, direction = -1024},
 			playerCarId = 5,
 			musicType = {3, 4}
 		}
@@ -82,7 +82,7 @@ local PlayerStartInfo = {
 	["SanFrancisco"] = {
 		-- D1 default
 		{
-			startPos = POSITION_INFO {x = -454890, z = 202343, direction = 1024},
+			startPos = POSITION_INFO {x = -389600, z = 178500, direction = 0},
 			playerCarId = 5,
 			musicType = {5, 6}
 		}

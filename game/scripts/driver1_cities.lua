@@ -8,7 +8,7 @@ return {
 		number 		= 0,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
-		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#4",
 		
 		brightnessScale = 0.6,
 
@@ -36,7 +36,7 @@ return {
 		number 		= 1,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
-		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#10",
 		
 		brightnessScale = 0.85,
 
@@ -64,7 +64,7 @@ return {
 		number 		= 2,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
-		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#0",
 		
 		brightnessScale = 2,
 		forceNight	= true,
@@ -93,7 +93,7 @@ return {
 		number 		= 3,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
-		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#1",
 		
 		brightnessScale = 1,
 		forceNight	= true,
@@ -122,7 +122,7 @@ return {
 		number 		= 4,
 		gameId		= 1,
 
-		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#0",
 		
 		brightnessScale = 0.8,
 
@@ -143,7 +143,7 @@ return {
 		number 		= 5,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
-		skyPath		= "DRIVER2/DATA/SKY0.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#7",
 	
 		brightnessScale = 0.85,
 
@@ -171,7 +171,7 @@ return {
 		number 		= 6,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
-		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#0",
 		
 		brightnessScale = 0.8,
 
@@ -192,7 +192,7 @@ return {
 		number 		= 7,		-- city index; For necessary hardcoded stuff
 		gameId 		= 1,		-- Game Index.
 
-		skyPath		= "DRIVER2/DATA/SKY2.RAW",
+		skyPath		= "DRIVER/DATA/SKY.BIN#1",
 		
 		brightnessScale = 0.8,
 

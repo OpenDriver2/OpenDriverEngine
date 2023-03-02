@@ -65,24 +65,24 @@ AddCallback(InitSmashables, CityEvents.OnLoaded)
 
 -- TODO: register them in city Lua file!!!
 local KnownCyclingPals = {
-    -- name, vx, vy, start1, stop1, speed1, start2, stop2, speed2
+    -- start1, stop1, speed1, start2, stop2, speed2
     Chicago = {
-        { "REDRVR", 0, 0, 6, 10, 2, 11, 15, 2 },
-        { "NAVPIR34", 0, 0, 0, 6, 0, 7, 13, 0 },
+        ["REDRVR"]      = { start1 = 6, stop1 = 10, speed1 = 2,  start2 = 11, stop2 = 15, speed2 = 2 },
+        ["NAVPIR34"]    = { start1 = 0, stop1 = 6,  speed1 = 0,  start2 = 7,  stop2 = 13, speed2 = 0 },
     },
     LasVegas = {
-        { "DTSYN01", 0, 0, 0, 3, 0, 4, 14, 0 },
-        { "DTSYN02", 0, 0, 0, 15, 0, -1, -1, 0 },
-        { "F-MTSYN2", 0, 0, 0, 3, 0, 10, 14, 0 },
-        { "DTSYN03", 0, 0, 0, 3, 0, -1, -1, 0 },
-        { "SYN-CAS1", 0, 0, 0, 3, 0, 4, 14, 0 },
-        { "SYNSLOT", 0, 0, 0, 3, 0, 4, 7, 0 },
-        { "ENT1B", 0, 0, 0, 15, 0, -1, -1, 0 },
-        { "FLAMINGO", 0, 0, 0, 3, 0, 9, 12, 0 },
-        { "CYCLE-01", 0, 0, 0, 5, 1, 6, 11, 1 },
-        { "CYCLE-02", 0, 0, 0, 3, 3, -1, -1, 0 },
-        { "CYCLE-03", 0, 0, 0, 6, 7, 7, 13, 7 },
-        { "CYCLE-04", 0, 0, 0, 6, 15, 7, 13, 15 }
+        ["DTSYN01"]     = { start1 = 0, stop1 = 3,  speed1 = 0,  start2 = 4,  stop2 = 14, speed2 = 0 },
+        ["DTSYN02"]     = { start1 = 0, stop1 = 15, speed1 = 0,  start2 = -1, stop2 = -1, speed2 = 0 },
+        ["F-MTSYN2"]    = { start1 = 0, stop1 = 3,  speed1 = 0,  start2 = 10, stop2 = 14, speed2 = 0 },
+        ["DTSYN03"]     = { start1 = 0, stop1 = 3,  speed1 = 0,  start2 = -1, stop2 = -1, speed2 = 0 },
+        ["SYN-CAS1"]    = { start1 = 0, stop1 = 3,  speed1 = 0,  start2 = 4,  stop2 = 14, speed2 = 0 },
+        ["SYNSLOT"]     = { start1 = 0, stop1 = 3,  speed1 = 0,  start2 = 4,  stop2 = 7,  speed2 = 0 },
+        ["ENT1B"]       = { start1 = 0, stop1 = 15, speed1 = 0,  start2 = -1, stop2 = -1, speed2 = 0 },
+        ["FLAMINGO"]    = { start1 = 0, stop1 = 3,  speed1 = 0,  start2 = 9,  stop2 = 12, speed2 = 0 },
+        ["CYCLE-01"]    = { start1 = 0, stop1 = 5,  speed1 = 1,  start2 = 6,  stop2 = 11, speed2 = 1 },
+        ["CYCLE-02"]    = { start1 = 0, stop1 = 3,  speed1 = 3,  start2 = -1, stop2 = -1, speed2 = 0 },
+        ["CYCLE-03"]    = { start1 = 0, stop1 = 6,  speed1 = 7,  start2 = 7,  stop2 = 13, speed2 = 7 },
+        ["CYCLE-04"]    = { start1 = 0, stop1 = 6,  speed1 = 15, start2 = 7,  stop2 = 13, speed2 = 15 }
     },
 }
 local CyclingPals = {}
@@ -97,8 +97,9 @@ local function InitCyclingPals()
     if cyclingPals == nil then
         return
     end
-    for i,v in ipairs(cyclingPals) do
-        local texDetail = world.FindTextureDetail(v[1])
+    CyclingPals = {}
+    for name, v in pairs(cyclingPals) do
+        local texDetail = world.FindTextureDetail(name)
         if texDetail ~= nil then
             CyclingPals[texDetail] = v
         end
@@ -111,12 +112,12 @@ local function ColourCycle()
     if (step & 1) == 0 then
         return
     end
-    for k,v in pairs(CyclingPals) do
-        if (CycleTimer & v[6]) == 0 then
-            world.StepTextureDetailPalette(k, v[4], v[5])
+    for detail, v in pairs(CyclingPals) do
+        if (CycleTimer & v.speed1) == 0 then
+            world.StepTextureDetailPalette(detail, v.start1, v.stop1)
         end
-        if (CycleTimer & v[9]) == 0 then
-            world.StepTextureDetailPalette(k, v[7], v[8])
+        if (CycleTimer & v.speed2) == 0 then
+            world.StepTextureDetailPalette(detail, v.start2, v.stop2)
         end
     end
     CycleTimer = CycleTimer + 1

@@ -101,7 +101,7 @@ local function PlaceCameraFollowCar(dt)
 		
 	-- Fireboyd78 camera code from ReD2
 	-- adjust for especially taller/longer cars
-	if A >= 80 then
+	if A >= carCos.colBox.vx then
 		local B = aspectZ / (aspectY * 2);
 		local C = A * B
 

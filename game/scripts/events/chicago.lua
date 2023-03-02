@@ -162,14 +162,12 @@ local function InitFerrisWheel()
 
 end
 
-local function UpdateFerrisWheel()
+local function UpdateFerrisWheel(dt)
 
-    
 end
 
 local function DrawFerrisWheel(dt)
     FerrisWheel.rotation = FerrisWheel.rotation + 32 * dt
-
     local spoke = {
 		vec.vec3(0, 0, 2677 / fix.ONE),
 		vec.vec3(0, 2677 / fix.ONE, 0)
