@@ -507,7 +507,9 @@ bool CSky::Load(const char* filename, int skyNumber)
 
 	if (subStr)
 	{
-		skyNumber = atoi(subStr + 1);
+		if (skyNumber > 2)
+			skyNumber = 2;
+		skyNumber += atoi(subStr + 1);
 		skyName.trim(subStr);
 	}
 
@@ -540,9 +542,6 @@ bool CSky::Load(const char* filename, int skyNumber)
 		// total 15 sky textures
 		int* offsetInfo = (int*)(data + skyNumber * 48);
 
-		int x = 0;
-		int y = 0;
-
 		for (int i = 0; i < 12; i++)
 		{
 			// get the BMP data
@@ -551,45 +550,31 @@ bool CSky::Load(const char* filename, int skyNumber)
 
 			BMP_FILE_HEADER* hdr = (BMP_FILE_HEADER*)bmpData;
 			ubyte* imageData = (ubyte*)(hdr + 1);
-			ubyte* pBitmapData = (ubyte*)&hdr[1].size;
 
 			ushort skyclutData[16];
-
 			for (int j = 0; j < 16; ++j)
 			{
-				ubyte* pbVar1 = pBitmapData-1;
-				ubyte bVar2 = *pBitmapData;
-				ubyte bVar3 = *imageData;
+				ubyte b = imageData[0];
+				ubyte g = imageData[1];
+				ubyte r = imageData[2];
 
 				imageData += 4;
-				pBitmapData += 4;
-
-				skyclutData[j] = (ushort)(bVar2 >> 3) | (ushort)(bVar3 >> 3) << 10 | (ushort)(*pbVar1 >> 3) << 5 | 0x8000;
+				skyclutData[j] = (ushort)(r >> 3) | (ushort)(g >> 3) << 5 | (ushort)(b >> 3) << 10 | 0x8000;
 			}
 			
 			ushort pixMapData[2048];
-			ushort* puVar6 = (ushort*)(imageData + (hdr->info.height - 1) * 32);
-			ushort* puVar7;
+			ushort* pixData = (ushort*)(imageData + (hdr->info.height - 1) * 32);
 			for (int yy = 0; yy < hdr->info.height; ++yy)
 			{
 				for (int xx = 0; xx < 16; ++xx) 
 				{
-					puVar7 = puVar6;
-					ushort uVar5 = (ushort)*puVar7;
-					pixMapData[yy * 16 + xx] = (ushort)((uVar5 & 0xf) << 4) | (ushort)((uVar5 & 0xf0) >> 4) | (ushort)((uVar5 & 0xf00) << 4) | (ushort)((uVar5 & 0xf000) >> 4);
-					puVar6 = puVar7 + 1;
+					ushort pix = pixData[xx];
+					pixMapData[yy * 16 + xx] = (ushort)((pix & 0xf) << 4) | (ushort)((pix & 0xf0) >> 4) | (ushort)((pix & 0xf00) << 4) | (ushort)((pix & 0xf000) >> 4);
 				}
-				puVar6 = puVar7 - 31;
+				pixData -= 16;
 			}
 
-			ConvertIndexedSkyImageD1(color_data, skyclutData, (ubyte*)pixMapData, x, y, false, false);
-
-			x += 1;
-			if (x == 4)
-			{
-				x = 0;
-				y += 1;
-			}
+			ConvertIndexedSkyImageD1(color_data, skyclutData, (ubyte*)pixMapData, i % 4, i / 4, false, false);
 		}
 
 		// Notice that it should be treated as 256x128 texture or UVs will be wrong!
