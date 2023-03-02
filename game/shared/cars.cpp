@@ -1996,8 +1996,6 @@ float CCar::GetLerpValue() const
 
 VECTOR_NOPAD CCar::GetInterpolatedCogPosition() const
 {
-	
-
 	return ToFixedVector(lerp(FromFixedVector(m_prevCogPosition), FromFixedVector(GetCogPosition()), GetLerpValue()));
 }
 
@@ -2064,6 +2062,8 @@ void CCar::SetPosition(const VECTOR_NOPAD& value)
 	m_hd.where.t[0] = value.vx;
 	m_hd.where.t[1] = value.vy;
 	m_hd.where.t[2] = value.vz;
+
+	ResetInterpolation();
 }
 
 int	CCar::GetDirection() const
@@ -2075,6 +2075,8 @@ void CCar::SetDirection(const int& newDir)
 {
 	m_hd.direction = newDir;
 	TempBuildHandlingMatrix(0);
+
+	ResetInterpolation();
 }
 
 const VECTOR_NOPAD& CCar::GetLinearVelocity() const
