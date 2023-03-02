@@ -59,6 +59,19 @@ struct MODEL_EFEFCTS
 	Array<EFFECT_DESC> effects;
 };
 
+struct ROAD_PROPERTIES
+{
+	int index;
+	// TODO: accessors to short ConnectIdx[4];
+	// TODO: accessors to int8 NumLanes;
+	// TODO: accessors to int8 LaneDirs;
+	// TODO: accessors to int8 AILanes;
+
+	// TODO: type
+
+	// TODO: accessor to curve, straight, junction
+};
+
 // TODO: replace std::function with custom impl with allocator support
 using CellObjectIterateFn = std::function<bool(int listType, CELL_OBJECT* co)>;
 using BoxCollisionFn = std::function<bool(const BUILDING_BOX& box, CELL_OBJECT* co)>;
@@ -105,8 +118,14 @@ public:
 	static ModelRef_t*		GetModelByIndex(int modelIndex);
 	static ModelRef_t*		GetModelByName(const char* name);
 
+	//------------------------------------------
+	// road surfaces
+
 	static int				MapHeight(const VECTOR_NOPAD& position);
 	static void				FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, VECTOR_NOPAD& outPoint, sdPlane& outPlane);
+	static int				GetSurfaceIndex(const VECTOR_NOPAD& position);
+
+	static ROAD_PROPERTIES	GetRoadProperties(int surfaceIndex);
 
 	//------------------------------------------
 	// objects and collision

@@ -69,6 +69,7 @@ public:
 	CBaseLevelRegion*		GetRegion(int regionIdx) const override;
 
 	void					FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outPoint, sdPlane& outPlane) const override;
+	int						GetSurfaceIndex(const VECTOR_NOPAD& position) const override;
 
 	//----------------------------------------
 	// cell iterator

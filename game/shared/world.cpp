@@ -69,6 +69,9 @@ void CWorld::Lua_Init(sol::state& lua)
 		world[LUADOC_M("MapHeight", "(position: fix.VECTOR) : int - returns height value at specified 3D point")]
 			= &MapHeight;
 
+		world[LUADOC_M("GetSurfaceIndex", "(position: fix.VECTOR) : int - returns surface (road) index value at specified 3D point")]
+			= &GetSurfaceIndex;
+
 		world[LUADOC_M("QueryCollision", "(queryPos: fix.VECTOR, queryDist: int, func: function(box: BUILDING_BOX, cellObj: CELL_OBJECT)) - performs cell object query")]
 			= [](const VECTOR_NOPAD& queryPos, int queryDist, sol::function& func) {
 			QueryCollision(queryPos, queryDist, [&func](const BUILDING_BOX& box, CELL_OBJECT* co) {
@@ -698,6 +701,11 @@ void CWorld::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& outNormal, 
 
 		// TODO: 2D polygon shape for bounds and plane normal
 	}
+}
+
+int CWorld::GetSurfaceIndex(const VECTOR_NOPAD& position)
+{
+	return g_levMap->GetSurfaceIndex(position);
 }
 
 //-------------------------------------------------------------

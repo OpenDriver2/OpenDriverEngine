@@ -753,6 +753,30 @@ void CDriver2LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& o
 	}
 }
 
+int CDriver2LevelMap::GetSurfaceIndex(const VECTOR_NOPAD& position) const
+{
+	VECTOR_NOPAD cellPos;
+	XZPAIR cell;
+	int level = 0;
+
+	cellPos.vx = position.vx - 512;	// FIXME: is that a quarter of a cell?
+	cellPos.vy = position.vy;
+	cellPos.vz = position.vz - 512;
+
+	WorldPositionToCellXZ(cell, cellPos);
+	const CDriver2LevelRegion* region = (CDriver2LevelRegion*)GetRegion(cell);
+
+	if (!region)
+		return -32;
+
+	const sdPlane* plane = region->SdGetCell(cellPos, level, SdGetBSP);
+
+	if (!plane)
+		return -32;
+
+	return plane->surfaceType - 32;
+}
+
 int	CDriver2LevelMap::GetRoadIndex(VECTOR_NOPAD& position) const
 {
 	VECTOR_NOPAD cellPos;

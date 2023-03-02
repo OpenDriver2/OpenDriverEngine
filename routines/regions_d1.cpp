@@ -5,6 +5,7 @@
 #include "core/cmdlib.h"
 #include "core/IVirtualStream.h"
 #include "math/isin.h"
+#include <climits>
 
 extern sdPlane g_defaultPlane;
 extern sdPlane g_seaPlane;
@@ -594,6 +595,20 @@ void CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& o
 				outPlane.surfaceType = (int)SurfaceType::Grass;
 		}
 	}
+}
+
+int	CDriver1LevelMap::GetSurfaceIndex(const VECTOR_NOPAD& position) const
+{
+	ROUTE_DATA routeData;
+	if (!GetRoadInfo(routeData, position))
+	{
+		return -32;
+	}
+
+	if (routeData.roadIndex >= SHRT_MAX)
+		return -32;
+
+	return routeData.roadIndex;
 }
 
 //-------------------------------------------------------------
