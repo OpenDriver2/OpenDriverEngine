@@ -595,6 +595,13 @@ void CDriver1LevelMap::FindSurface(const VECTOR_NOPAD& position, VECTOR_NOPAD& o
 				outPlane.surfaceType = (int)SurfaceType::Grass;
 		}
 	}
+#if 0
+	// FRISCO hack
+	if (position.vx > -345000 && position.vx < -328500 && position.vz < 267000 && position.vz > 250500)
+	{
+		outPoint.vy = -1500;
+	}
+#endif
 }
 
 int	CDriver1LevelMap::GetSurfaceIndex(const VECTOR_NOPAD& position) const
