@@ -7,8 +7,8 @@ struct TexDetailInfo_t;
 class CRender_Cars
 {
 public:
-	static void		InitRender();
-	static void		TerminateRender();
+	static void		Init();
+	static void		Terminate();
 
 	static void		MangleWheelModel(struct MODEL* model);
 

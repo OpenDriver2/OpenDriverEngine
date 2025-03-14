@@ -496,8 +496,8 @@ bool CWorld::LoadLevel(const char* fileName)
 
 	bool result = loader.Load(&stream);
 
-	CRender_Cars::InitRender();
-	CRender_Level::InitRender();
+	CRender_Cars::Init();
+	CRender_Level::Init();
 	ResetStep();
 
 	return result;
@@ -508,8 +508,8 @@ bool CWorld::LoadLevel(const char* fileName)
 //-------------------------------------------------------
 void CWorld::UnloadLevel()
 {
-	CRender_Cars::TerminateRender();
-	CRender_Level::TerminateRender();
+	CRender_Cars::Terminate();
+	CRender_Level::Terminate();
 	CManager_Players::RemoveAllPlayers();
 	if (g_levMap)
 	{

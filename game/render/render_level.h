@@ -35,8 +35,8 @@ class CRender_Level
 public:
 	static LevelRenderProps RenderProps;
 
-	static void	InitRender();
-	static void	TerminateRender();
+	static void	Init();
+	static void	Terminate();
 
 	static void DrawMap(const Vector3D& cameraPos, float cameraAngleY, const Volume& frustrumVolume);
 

@@ -46,13 +46,13 @@ struct RenderLevelFrame
 	int maxObjects = 0;
 } g_RenderLevelFrame;
 
-void CRender_Level::InitRender()
+void CRender_Level::Init()
 {
 	ShadowVAO = GR_CreateVAO(128, 128);
 	g_RenderLevelFrame.Clear();
 }
 
-void CRender_Level::TerminateRender()
+void CRender_Level::Terminate()
 {
 	GR_DestroyVAO(ShadowVAO);
 	ShadowVAO = nullptr;

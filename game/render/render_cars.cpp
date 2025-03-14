@@ -10,7 +10,7 @@ TexDetailInfo_t* CRender_Cars::ShadowDetail = nullptr;
 Vector4D CRender_Cars::ShadowUV(0.0f);
 
 
-void CRender_Cars::InitRender()
+void CRender_Cars::Init()
 {
 	ShadowVAO = GR_CreateVAO(8192, 8192);
 	ShadowDetail = CWorld::FindTextureDetail("CARSHAD");
@@ -24,7 +24,7 @@ void CRender_Cars::InitRender()
 	}
 }
 
-void CRender_Cars::TerminateRender()
+void CRender_Cars::Terminate()
 {
 	GR_DestroyVAO(ShadowVAO);
 	ShadowVAO = nullptr;
