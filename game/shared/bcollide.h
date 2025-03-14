@@ -1,5 +1,4 @@
-#ifndef BCOLLIDE_H
-#define BCOLLIDE_H
+#pragma once
 
 #include "math/psx_math_types.h"
 
@@ -31,5 +30,3 @@ struct CRET2D
 bool	bcollided2d(CDATA2D body[2], int* boxOverlap = nullptr);
 void	bFindCollisionPoint(CDATA2D body[2], CRET2D& collisionResult);
 int		bFindCollisionTime(CDATA2D body[2], CRET2D& collisionResult);
-
-#endif // BCOLLIDE_H

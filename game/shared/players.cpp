@@ -1,5 +1,8 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+
 #include "players.h"
+#include "replay.h"
+#include "cars.h"
 
 const int REPLAY_STEAM_MAX_LENGTH = 8000;
 
@@ -116,12 +119,12 @@ void CPlayer::InitReplay(CReplayStream* sourceStream /*= nullptr*/)
 
 		if (!m_recordStream)
 		{
-			m_recordStream = new CReplayStream(REPLAY_STEAM_MAX_LENGTH);
+			m_recordStream = CRefPtr_new(CReplayStream, REPLAY_STEAM_MAX_LENGTH);
 		}
 		m_recordStream->Purge();
 	}
 
-	m_playbackStream = sourceStream;
+	m_playbackStream.Assign(sourceStream);
 }
 
 EPlayerControlType CPlayer::GetControlType() const
@@ -451,7 +454,7 @@ CPlayer* CManager_Players::GetLocalPlayer()
 
 CPlayer* CManager_Players::GetPlayerByCar(CCar* car)
 {
-	for (usize i = 0; i < Players.size(); ++i)
+	for (int i = 0; i < Players.numElem(); ++i)
 	{
 		if (Players[i]->GetCurrentCar() == car)
 			return Players[i];
@@ -463,22 +466,24 @@ CPlayer* CManager_Players::GetPlayerByCar(CCar* car)
 CPlayer* CManager_Players::CreatePlayer()
 {
 	CPlayer* newPlayer = new CPlayer();
-	return Players.append(newPlayer);
+	Players.append(newPlayer);
+
+	return newPlayer;
 }
 
 void CManager_Players::RemovePlayer(CPlayer* player)
 {
-	auto& found = Players.find(player);
-	if (found != Players.end())
+	const int foundIdx = arrayFindIndex(Players, player);
+	if (foundIdx != -1)
 	{
+		Players.fastRemoveIndex(foundIdx);
 		delete player;
-		Players.remove(found);
 	}
 }
 
 void CManager_Players::RemoveAllPlayers()
 {
-	for (usize i = 0; i < Players.size(); ++i)
+	for (int i = 0; i < Players.numElem(); ++i)
 	{
 		if(Players[i] != &LocalPlayer)
 			delete Players[i];

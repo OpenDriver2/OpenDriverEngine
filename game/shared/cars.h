@@ -1,13 +1,19 @@
-#ifndef CARS_H
-#define CARS_H
+#pragma once
+#include "audio/eqSoundEmitterObject.h"
 
-#include "audio/IAudioSystem.h"
-
-typedef int		LONGVECTOR3[3];
-typedef int		LONGVECTOR4[4];
-typedef int		LONGQUATERNION[4];
+using LONGVECTOR3 = int[3];
+using LONGVECTOR4 = int[4];
+using LONGQUATERNION = int[4];
 
 struct ModelRef_t;
+struct CAR_COSMETICS_D1;
+struct CAR_COSMETICS_D2;
+struct BUILDING_BOX;
+struct CELL_OBJECT;
+
+struct CDATA2D;
+struct CRET2D; 
+struct CRET3D;
 
 struct BOUND_BOX
 {
@@ -45,11 +51,11 @@ struct ExtraLightInfo
 struct CarCosmetics
 {
 	CarCosmetics();
-	void InitFrom(const struct CAR_COSMETICS_D2& srcCos);
-	void InitFrom(const struct CAR_COSMETICS_D1& srcCos);
+	void InitFrom(const CAR_COSMETICS_D2& srcCos);
+	void InitFrom(const CAR_COSMETICS_D1& srcCos);
 
 	HANDLING_TYPE handlingType;
-	Array<GEAR_DESC> gears;
+	FixedArray<GEAR_DESC, 8> gears;
 	SVECTOR headLight;
 	SVECTOR frontInd, backInd;
 	SVECTOR brakeLight, revLight;
@@ -73,9 +79,9 @@ struct CarCosmetics
 	short mass;
 	short baseRPM;
 
-	ISoundSource* revSample{ nullptr };
-	ISoundSource* idleSample{ nullptr };
-	ISoundSource* hornSample{ nullptr };
+	EqString revSample;
+	EqString idleSample;
+	EqString hornSample;
 
 	SVECTOR& get_wheelDisp(int i)
 	{
@@ -264,8 +270,8 @@ class CCar
 	friend class CManager_Cars;
 	friend class CPlayer;
 public:
-							CCar();
-							~CCar();
+	CCar();
+	~CCar();
 
 	void					Destroy();
 
@@ -290,7 +296,7 @@ public:
 	void					StepOneCar();
 
 	// collision
-	bool					CarBuildingCollision(const struct BUILDING_BOX& building, struct CELL_OBJECT* cop, int flags);
+	bool					CarBuildingCollision(const BUILDING_BOX& building, CELL_OBJECT* cop, int flags);
 	bool					CarCarCollision(CCar* other, int RKstep);
 
 	// utility functions (mostly for Lua)
@@ -342,7 +348,7 @@ protected:
 	void				NoseDown();
 
 	// collision
-	void				DamageCar(struct CDATA2D* cd, const struct CRET2D& collisionResult, int strikeVel);
+	void				DamageCar(CDATA2D* cd, const CRET2D& collisionResult, int strikeVel);
 	bool				DamageCar3D(const VECTOR_NOPAD& delta, int strikeVel, CCar* pOtherCar);
 
 	// game sound
@@ -365,11 +371,11 @@ protected:
 	void				StartStaticSound(const char* type, float refDist, float volume, float pitch);
 
 	void				CollisionSound(int impact, bool car_vs_car);
-	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const VECTOR_NOPAD& lever, const struct CRET3D& collResult);
+	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const VECTOR_NOPAD& lever, const CRET3D& collResult);
 
-	static void			EngineSoundUpdateCb(void* obj, IAudioSource::Params& params);
-	static void			IdleSoundUpdateCb(void* obj, IAudioSource::Params& params);
-	static void			SkidSoundUpdateCb(void* obj, IAudioSource::Params& params);
+	static void			EngineSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
+	static void			IdleSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
+	static void			SkidSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
 
 	// --------------------
 	HANDLING_DATA		m_hd;
@@ -383,8 +389,8 @@ protected:
 	CarCosmetics		m_cosmetics;
 	BOUND_BOX			m_bbox;
 
-	Matrix4x4			m_prevDrawCarMatrix{ identity4() };
-	Matrix4x4			m_drawCarMatrix{ identity4() };
+	Matrix4x4			m_prevDrawCarMatrix{ identity4 };
+	Matrix4x4			m_drawCarMatrix{ identity4 };
 	VECTOR_NOPAD		m_prevPosition{ 0 };
 	VECTOR_NOPAD		m_prevCogPosition{ 0 };
 	int					m_prevDirection{ 0 };
@@ -403,7 +409,7 @@ protected:
 	short				m_revsvol{ -10000 };
 
 	union {
-		char* padid{ 0 };		// CONTROL_TYPE_PLAYER or CONTROL_TYPE_CUTSCENE
+		char* padid{ 0 };	// CONTROL_TYPE_PLAYER or CONTROL_TYPE_CUTSCENE
 		CIV_STATE c;		// CONTROL_TYPE_CIV_AI
 		COP p;				// CONTROL_TYPE_PURSUER_AI
 		LEAD_CAR l;			// CONTROL_TYPE_LEAD_AI
@@ -430,10 +436,7 @@ protected:
 	ModelRef_t*		m_model{ nullptr };
 	ModelRef_t*		m_wheelModels[3]{ nullptr };
 
-	CRefPointer<IAudioSource*> m_engineSound;
-	CRefPointer<IAudioSource*> m_idleSound;
-	CRefPointer<IAudioSource*> m_skidSound;
-	CRefPointer<IAudioSource*> m_dirtSound;
+	CSoundingObject	m_soundObj;
 
 	// lua callbacks
 	sol::function	m_carEventsLua;
@@ -446,5 +449,3 @@ protected:
 		"HitCar",
 	*/
 };
-
-#endif // CARS_H

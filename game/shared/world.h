@@ -1,9 +1,4 @@
-#ifndef WORLD_H
-#define WORLD_H
-
-#include "core/ignore_vc_new.h"
-#include <sol/forward.hpp>
-
+#pragma once
 #include "math/psx_math_types.h"
 #include "camera.h"
 #include "routines/d2_types.h"
@@ -12,6 +7,7 @@ class CTexturePage;
 struct TexDetailInfo_t;
 struct ModelRef_t;
 struct EFFECT_DESC;
+struct CELL_ITERATOR_CACHE;
 
 struct BUILDING_BOX
 {
@@ -31,10 +27,10 @@ struct DRAWABLE
 
 struct CELL_LIST_DESC
 {
-	Matrix4x4 pivotMatrix{ identity4() };
+	Matrix4x4 pivotMatrix{ identity4 };
 
 	// TODO: multiple instances?
-	Matrix4x4 transform{ identity4() };		// this field is recalculated whenever list is dirty
+	Matrix4x4 transform{ identity4 };		// this field is recalculated whenever list is dirty
 	VECTOR_NOPAD rotation{ 0 };
 	VECTOR_NOPAD position{ 0 };
 	bool visible{ true };
@@ -73,8 +69,8 @@ struct ROAD_PROPERTIES
 };
 
 // TODO: replace std::function with custom impl with allocator support
-using CellObjectIterateFn = std::function<bool(int listType, CELL_OBJECT* co)>;
-using BoxCollisionFn = std::function<bool(const BUILDING_BOX& box, CELL_OBJECT* co)>;
+using CellObjectIterateFn = EqFunction<bool(int listType, CELL_OBJECT* co)>;
+using BoxCollisionFn = EqFunction<bool(const BUILDING_BOX& box, CELL_OBJECT* co)>;
 
 extern Matrix4x4 g_objectMatrix[64];
 extern MATRIX g_objectMatrixFixed[64];
@@ -102,7 +98,7 @@ public:
 	// for animated textures
 	static void				StepTextureDetailPalette(const TexDetailInfo_t* detail, int start, int stop);
 
-	static void				RenderLevelView(const CameraViewParams& view);
+	static void				RenderLevelView(const CViewParams& view);
 
 	//------------------------------------------
 	// level management
@@ -150,7 +146,7 @@ public:
 	static void				RemoveEventSurface(int surface);
 
 	// iterates through all cell objects at specific cell on map
-	static void				ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, struct CELL_ITERATOR_CACHE* iteratorCache = nullptr);
+	static void				ForEachCellObjectAt(const XZPAIR& cell, const CellObjectIterateFn& func, CELL_ITERATOR_CACHE* iteratorCache = nullptr);
 
 	//------------------------------------------
 	// game steps
@@ -170,6 +166,3 @@ protected:
 	static Map<int, EVENT_SURFACE>		EventSurfaces;
 	static Map<int, MODEL_EFEFCTS>		ModelEffects;
 };
-
-
-#endif // WORLD_H

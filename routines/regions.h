@@ -1,20 +1,16 @@
-#ifndef REGIONS_H
-#define REGIONS_H
+#pragma once
 
-#include "core/dktypes.h"
 #include "models.h"
 #include "level.h"
 
 //------------------------------------------------------------------------------------------------------------
 
-// forward
 class IVirtualStream;
-
 class CBaseLevelRegion;
 class CBaseLevelMap;
 
-typedef void (*OnRegionLoaded_t)(CBaseLevelRegion* region);
-typedef void (*OnRegionFreed_t)(CBaseLevelRegion* region);
+using OnRegionLoaded_t = void (*)(CBaseLevelRegion* region);
+using OnRegionFreed_t = void (*)(CBaseLevelRegion* region);
 
 //----------------------------------------------------------------------------------
 
@@ -72,7 +68,7 @@ class CBaseLevelMap
 	friend class CDriver1LevelRegion;
 	friend class CDriver2LevelRegion;
 public:
-	CBaseLevelMap();
+	CBaseLevelMap() = default;
 	virtual ~CBaseLevelMap();
 
 	void						Init(CDriverLevelModels* models, CDriverLevelTextures* textures);
@@ -159,8 +155,3 @@ protected:
 	OnRegionLoaded_t			m_onRegionLoaded{ nullptr };
 	OnRegionFreed_t				m_onRegionFreed{ nullptr };
 };
-
-//-----------------------------------------------------------------------------------------
-
-
-#endif // REGIONS_H

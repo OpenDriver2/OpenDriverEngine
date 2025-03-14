@@ -1,9 +1,8 @@
-#include "core/dktypes.h"
-#include <nstd/Math.hpp>
+#include "core/core_common.h"
+
 #include "psx_math_types.h"
 #include "isin.h"
 #include "psx_matrix.h"
-#include "Vector.h"
 
 #define	FIX_BIT			12
 

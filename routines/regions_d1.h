@@ -1,12 +1,11 @@
-#ifndef REGION_D1
-#define REGION_D1
+#pragma once
 #include "regions.h"
 
 //----------------------------------------------------------------------------------
 // DRIVER 1
 //----------------------------------------------------------------------------------
 
-#define ROAD_MAP_REGION_CELLS	3600
+static constexpr int ROAD_MAP_REGION_CELLS = 3600;
 
 class CDriver1LevelRegion;
 class CDriver1LevelMap;
@@ -108,6 +107,3 @@ protected:
 	int						m_numRoads{ 0 };
 	int						m_numJunctions{ 0 };
 };
-
-
-#endif

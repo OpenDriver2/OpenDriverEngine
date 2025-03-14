@@ -1,14 +1,9 @@
-#ifndef MODEL_H
-#define MODEL_H
+#pragma once
 
-#include <nstd/String.hpp>
-#include <nstd/Array.hpp>
-
-#include "core/dktypes.h"
 #include "math/psx_math_types.h"
 #include "d2_types.h"
 
-#define MAX_MODELS				1536	// maximum models (this is limited by PACKED_CELL_OBJECT)
+static constexpr int MAX_MODELS = 1536;	// maximum models (this is limited by PACKED_CELL_OBJECT)
 
 //------------------------------------------------------------------------------------------------------------
 
@@ -19,11 +14,10 @@ struct CarModelData_t;
 
 //------------------------------------------------------------------------------------------------------------
 
-typedef void (*OnModelLoaded_t)(ModelRef_t* tp);
-typedef void (*OnModelFreed_t)(ModelRef_t* tp);
-
-typedef void (*OnCarModelLoaded_t)(CarModelData_t* tp);
-typedef void (*OnCarModelFreed_t)(CarModelData_t* tp);
+using OnModelLoaded_t = void (*)(ModelRef_t* tp);
+using OnModelFreed_t = void (*)(ModelRef_t* tp);
+using OnCarModelLoaded_t = void (*)(CarModelData_t* tp);
+using OnCarModelFreed_t = void (*)(CarModelData_t* tp);
 
 struct dpoly_t
 {
@@ -39,7 +33,7 @@ struct dpoly_t
 	// something more?
 };
 
-enum EFaceFlags_e
+enum EFaceFlags
 {
 	FACE_IS_QUAD			= (1 << 0),
 	FACE_RGB				= (1 << 1),	// this face has a color data
@@ -118,7 +112,7 @@ protected:
 
 	CarModelData_t		m_carModels[MAX_CAR_MODELS];
 
-	Array<String>		m_model_names;
+	Array<EqString>		m_model_names{ PP_SL };
 
 	OnModelLoaded_t		m_onModelLoaded{ nullptr };
 	OnModelFreed_t		m_onModelFreed{ nullptr };
@@ -132,7 +126,3 @@ protected:
 
 void			PrintUnknownPolys();
 int				decode_poly(const char* face, dpoly_t* out, int forceType = -1);
-
-//-------------------------------------------------------------------------------
-
-#endif // MODEL_H

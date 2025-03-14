@@ -1,6 +1,7 @@
-#ifndef RENDER_CARS_H
-#define RENDER_CARS_H
+#pragma once
 
+class CViewParams;
+class CMeshBuilder;
 class CCar;
 struct TexDetailInfo_t;
 
@@ -12,7 +13,7 @@ public:
 
 	static void		MangleWheelModel(struct MODEL* model);
 
-	static void		DrawCars(Array<CCar*>& cars, const CameraViewParams& view);
+	static void		DrawCars(ArrayCRef<CCar*> cars, const CViewParams& view);
 
 private:
 	static void				AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float distance);
@@ -20,5 +21,3 @@ private:
 	static Vector4D			ShadowUV;
 	static TexDetailInfo_t* ShadowDetail;
 };
-
-#endif // RENDER_CARS_H

@@ -1,11 +1,13 @@
-#include "game/pch.h"
+#include "core/core_common.h"
 #include "render_heightmap.h"
+#include "render/IDebugOverlay.h"
+#include "math/isin.h"
 
 #include "routines/regions_d2.h"
 
 extern CBaseLevelMap* g_levMap;
 
-VECTOR_NOPAD g_debugCellPos;
+static VECTOR_NOPAD g_debugCellPos;
 
 void DebugDrawSdNode(sdNode* node)
 {
@@ -18,7 +20,10 @@ void DebugDrawSdNode(sdNode* node)
 	Vector3D tangent = cross(dir, vec3_up);
 
 	ColorRGBA color(0, 1, 0, 1);
-	CDebugOverlay::Line(cpos - dir + tangent * float(node->dist / ONE_F), cpos + dir + tangent * float(node->dist / ONE_F), color);
+	DbgLine()
+		.Start(cpos - dir + tangent * float(node->dist / ONE_F))
+		.End(cpos + dir + tangent * float(node->dist / ONE_F))
+		.Color(color);
 }
 
 // recursively walks heightmap nodes
@@ -61,17 +66,21 @@ void DebugDrawDriver2HeightmapCell(const VECTOR_NOPAD& cellPos, const ColorRGBA&
 	cpos.vx -= 512;
 	cpos.vz -= 512;
 
-	CDebugOverlay::Line(Vector3D(cMax.x, cMin.y, cMin.z),
-		Vector3D(cMax.x, cMin.y, cMax.z), color);
+	DbgLine().Start(Vector3D(cMax.x, cMin.y, cMin.z))
+		.End(Vector3D(cMax.x, cMin.y, cMax.z))
+		.Color(color);
 
-	CDebugOverlay::Line(Vector3D(cMin.x, cMin.y, cMax.z),
-		Vector3D(cMin.x, cMin.y, cMin.z), color);
+	DbgLine().Start(Vector3D(cMin.x, cMin.y, cMax.z))
+		.End(Vector3D(cMin.x, cMin.y, cMin.z))
+		.Color(color);
 
-	CDebugOverlay::Line(Vector3D(cMin.x, cMin.y, cMin.z),
-		Vector3D(cMax.x, cMin.y, cMin.z), color);
+	DbgLine().Start(Vector3D(cMin.x, cMin.y, cMin.z))
+		.End(Vector3D(cMax.x, cMin.y, cMin.z))
+		.Color(color);
 
-	CDebugOverlay::Line(Vector3D(cMin.x, cMin.y, cMax.z),
-		Vector3D(cMax.x, cMin.y, cMax.z), color);
+	DbgLine().Start(Vector3D(cMin.x, cMin.y, cMax.z))
+		.End(Vector3D(cMax.x, cMin.y, cMax.z))
+		.Color(color);
 
 	g_debugCellPos.vx = cellMinX + 512;
 	g_debugCellPos.vy = cellPos.vy;

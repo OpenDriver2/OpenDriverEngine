@@ -1,6 +1,12 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+
+#include "routines/models.h"
+#include "routines/regions.h"
+#include "game/shared/world.h"
+#include "math/convert.h"
 #include "render_model.h"
 #include "render_cars.h"
+#include "render_level.h"
 
 #define MODEL_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\
@@ -49,27 +55,6 @@ const char* model_shader =
 
 //-------------------------------------------------------------------
 
-void AddExtentVertex(Vector3D& minPoint, Vector3D& maxPoint, const Vector3D& v)
-{
-	if (v.x < minPoint.x)
-		minPoint.x = v.x;
-
-	if (v.x > maxPoint.x)
-		maxPoint.x = v.x;
-
-	if (v.y < minPoint.y)
-		minPoint.y = v.y;
-
-	if (v.y > maxPoint.y)
-		maxPoint.y = v.y;
-
-	if (v.z < minPoint.z)
-		minPoint.z = v.z;
-
-	if (v.z > maxPoint.z)
-		maxPoint.z = v.z;
-}
-
 CRenderModel::CRenderModel()
 {
 }
@@ -80,7 +65,7 @@ CRenderModel::~CRenderModel()
 }
 
 // FIXME: remove this or don't use when using custom models
-void VertexTileWaterOrGrassCb(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
+static void VertexTileWaterOrGrassCb(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
 {
 	// HACK: move vertices slightly to get rid of Z-fighting
 	vert.vy -= 0.0005f;
@@ -94,9 +79,7 @@ bool CRenderModel::Initialize(ModelRef_t* model)
 	if (!model->model)
 		return false;
 
-	m_extMin = Vector3D(V_MAX_COORD);
-	m_extMax = Vector3D(-V_MAX_COORD);
-	
+	m_bbox.Reset();
 	m_sourceModel = model;
 
 	ModelVertexCb cb = nullptr;
@@ -118,31 +101,29 @@ void CRenderModel::Destroy()
 	m_batches.clear();
 }
 
-int CRenderModel::FindGrVertexIndex(const Array<vertexTuple_t>& whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs)
+int CRenderModel::FindGrVertexIndex(const ArrayCRef<vertexTuple_t> whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs)
 {
-	for(usize i = 0; i < whereFind.size(); i++)
+	for(vertexTuple_t vert : whereFind)
 	{
-		if (whereFind[i].flags != flags)
+		if (vert.flags != flags)
 			continue;
 		
 		if (flags & FACE_VERT_NORMAL)
 		{
-			if (whereFind[i].normalIndex != normalIndex)
+			if (vert.normalIndex != normalIndex)
 				continue;
 		}
 		else
-		{
 			return -1;
-		}
 
 		if (flags & FACE_TEXTURED)
 		{
-			if (whereFind[i].uvs != uvs)
+			if (vert.uvs != uvs)
 				continue;
 		}
 
-		if (whereFind[i].vertexIndex == vertexIndex)
-			return whereFind[i].grVertexIndex;
+		if (vert.vertexIndex == vertexIndex)
+			return vert.grVertexIndex;
 	}
 
 	return -1;
@@ -154,12 +135,12 @@ struct genBatch_t
 	int tpage;
 };
 
-genBatch_t* FindBatch(Array<genBatch_t*>& batches, int tpageId)
+static genBatch_t* FindBatch(ArrayRef<genBatch_t*> batches, int tpageId)
 {
-	for (usize i = 0; i < batches.size(); i++)
+	for (genBatch_t* batch : batches)
 	{
-		if (batches[i]->tpage == tpageId)
-			return batches[i];
+		if (batch->tpage == tpageId)
+			return batch;
 	}
 	return nullptr;
 }
@@ -251,7 +232,6 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 
 		// find or create new batch
 		int tpageId = (dec_face.flags & FACE_TEXTURED) ? dec_face.page : -1;
-
 		if (tpageId == 255)
 			tpageId = -1;
 		
@@ -262,7 +242,6 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 		{
 			batch = new genBatch_t;
 			batch->tpage = tpageId;
-	
 			batches.append(batch);
 		}
 		
@@ -310,7 +289,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 				newVert.cr = newVert.cg = newVert.cb = newVert.ca = 1.0f;
 
 				// add bounding box stuff
-				AddExtentVertex(m_extMin, m_extMax, fVert);
+				m_bbox.AddVertex(fVert);
 
 				if (smooth && !bad_normals)
 				{
@@ -336,7 +315,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 					newVert.cb = dec_face.color.b / 255;
 				}
 
-				index = vertMap.grVertexIndex = vertices.size();
+				index = vertMap.grVertexIndex = vertices.numElem();
 
 				// TODO: pass smooth flag modifier
 				if (vertexModCb)
@@ -393,21 +372,20 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 	Array<uint16> indices;
 
 	// merge batches
-	for(usize i = 0; i < batches.size(); i++)
+	for(genBatch_t* srcBatch : batches)
 	{	
-		uint16 startIndex = indices.size();
-		
-		for(usize j = 0; j < batches[i]->indices.size(); j++)
-			indices.append(batches[i]->indices[j]);
+		uint16 startIndex = indices.numElem();
+		for(uint16 idx : srcBatch->indices)
+			indices.append(idx);
 
 		modelBatch_t batch;
 		batch.startIndex = startIndex;
-		batch.numIndices = batches[i]->indices.size();
-		batch.tpage = batches[i]->tpage;
+		batch.numIndices = srcBatch->indices.numElem();
+		batch.tpage = srcBatch->tpage;
 
 		m_batches.append(batch);
 		
-		delete batches[i];
+		delete srcBatch;
 	}
 	
 	// if has existing one - regenerate
@@ -426,7 +404,7 @@ extern TextureID g_whiteTexture;
 
 int CRenderModel::GetNumBatches() const
 {
-	return m_batches.size();
+	return m_batches.numElem();
 }
 
 void CRenderModel::SetupRendering(bool setupShader, bool setupVAO)
@@ -463,10 +441,8 @@ void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 
 	GR_SetVAO(m_vao);
 	
-	for(usize i = 0; i < m_batches.size(); i++)
+	for(modelBatch_t& batch : m_batches)
 	{
-		modelBatch_t& batch = m_batches[i];
-		
 		if (fullSetup)
 		{
 			// check if palette tex is not empty
@@ -482,12 +458,6 @@ void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 	}
 }
 
-void CRenderModel::GetExtents(Vector3D& outMin, Vector3D& outMax) const
-{
-	outMin = m_extMin;
-	outMax = m_extMax;
-}
-
 //--------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------
@@ -498,7 +468,7 @@ void CRenderModel::DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& po
 	if (ref->baseInstance)
 		ref = ref->baseInstance;
 
-	const float to_rad = 1.0 / 64.0f * PI_F * 2.0f;
+	const float to_rad = 1.0 / 64.0f * M_PI_F * 2.0f;
 
 	const float objRotationRad = -rotation * to_rad;
 

@@ -6,8 +6,7 @@
     Not for commercial use
 */
 
-#include "core/cmdlib.h"
-#include "core/dktypes.h"
+#include "core/core_common.h"
 
 struct RNCheader
 {
@@ -29,7 +28,7 @@ struct RNCheader
 */
 
 /*____________________________________________________________________________*/
-short testRNC(unsigned long firstLong)
+static short testRNC(unsigned long firstLong)
 {
     int method = 0;
     method = (firstLong & 0xFF000000) >> 24;      //get low byte
@@ -40,18 +39,18 @@ short testRNC(unsigned long firstLong)
 }
 
 /*____________________________________________________________________________*/
-unsigned char get_byte(unsigned char** byteStreamPtr) //modifies data source ptr
+static unsigned char get_byte(unsigned char** byteStreamPtr) //modifies data source ptr
 {
     return *(*byteStreamPtr)++;
 }
 
-unsigned short get_word(unsigned char** byteStreamPtr) //modifies data source ptr
+static unsigned short get_word(unsigned char** byteStreamPtr) //modifies data source ptr
 {
     return get_byte(byteStreamPtr) | get_byte(byteStreamPtr) << 8;
 }
 
 //modifies only data destination ptr
-void mem_move(unsigned char** put, unsigned char* start, int count)
+static void mem_move(unsigned char** put, unsigned char* start, int count)
 {
     unsigned char* get = start;
     while (count--) 
@@ -65,7 +64,7 @@ void mem_move(unsigned char** put, unsigned char* start, int count)
 /* 8 bit left going stream
  * count is zero to initialze
  */
-unsigned short get_bits2(unsigned char** byteStreamPtr, unsigned short count)
+static unsigned short get_bits2(unsigned char** byteStreamPtr, unsigned short count)
 {
     static unsigned char bitStream = 0;
     unsigned short nextBit = 0;
@@ -95,7 +94,7 @@ unsigned short get_bits2(unsigned char** byteStreamPtr, unsigned short count)
     return theBits;
 }
 
-unsigned short get_offset(unsigned char** byteStreamPtr)
+static unsigned short get_offset(unsigned char** byteStreamPtr)
 {
     unsigned short value = 0;
     if (get_bits2(byteStreamPtr, 1)) {
@@ -114,7 +113,7 @@ unsigned short get_offset(unsigned char** byteStreamPtr)
 /*____________________________________________________________________________*/
 //RNC2 unpack
 
-int RNCunpack2(unsigned char* packed, unsigned long srcSize,
+static int RNCunpack2(unsigned char* packed, unsigned long srcSize,
     unsigned char* unpacked, unsigned long dstSize)
 {
     unsigned char* src = packed;

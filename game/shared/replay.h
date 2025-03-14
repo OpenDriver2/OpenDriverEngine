@@ -1,5 +1,6 @@
-#ifndef REPLAY_H
-#define REPLAY_H
+#pragma once
+#include "math/psx_math_types.h"
+#include "players.h"
 
 // TODO: mission.h
 struct SAVED_PLAYER_POS
@@ -15,7 +16,7 @@ struct SAVED_PLAYER_POS
 struct SAVED_CAR_POS
 {
 	char active;
-	uchar model, palette;
+	uint8 model, palette;
 	ushort totaldamage;
 	ushort damage[6];
 	short direction;
@@ -33,7 +34,7 @@ struct MISSION_DATA
 // DO NOT CHANGE
 struct STREAM_SOURCE
 {
-	uchar type, model, palette;
+	uint8 type, model, palette;
 	char controlType;
 	ushort flags;
 	ushort rotation;
@@ -46,7 +47,7 @@ struct STREAM_SOURCE
 
 struct PADRECORD;
 
-class CReplayStream : public RefCount::Object
+class CReplayStream : public RefCountedObject<CReplayStream>
 {
 public:
 	CReplayStream() = default;
@@ -77,7 +78,7 @@ protected:
 	PADRECORD*				m_initialPadRecordBuffer{ nullptr };
 	PADRECORD*				m_padRecordBuffer{ nullptr };
 	PADRECORD*				m_padRecordBufferEnd{ nullptr };
-	uchar					m_playbackrun{ 0 };
+	uint8					m_playbackrun{ 0 };
 	int						m_length{ 0 };			// CWorld::StepCnt
 	int						m_padCount{ 0 };
 	int						m_startStep{ 0 };
@@ -88,5 +89,3 @@ class CReplayData
 public:
 	static void				Lua_Init(sol::state& lua);
 };
-
-#endif // REPLAY_H

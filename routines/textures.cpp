@@ -1,12 +1,6 @@
-﻿#include "core/cmdlib.h"
-#include "core/IVirtualStream.h"
+﻿#include "core/core_common.h"
 #include "math/Vector.h"
 #include "util/rnc2.h"
-
-#include <string.h>
-
-#include <nstd/String.hpp>
-#include <nstd/Math.hpp>
 
 #include "textures.h"
 #include "level.h"
@@ -15,7 +9,7 @@
 
 // unpacks texture, returns new source pointer
 // there is something like RLE used
-char* unpackTexture(char* src, char* dest)
+static char* unpackTexture(char* src, char* dest)
 {
 	// start from the end
 	char* ptr = dest + TEXPAGE_4BIT_SIZE - 1;
@@ -42,7 +36,7 @@ char* unpackTexture(char* src, char* dest)
 
 //-------------------------------------------------------------------------------
 
-#define MAX_PAGE_CLUTS 63
+static constexpr int MAX_PAGE_CLUTS = 63;
 
 struct SpooledTextureData_t
 {
@@ -532,7 +526,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 			{
 				TexDetailInfo_t& detail = m_texPages[data.tpage].m_details[info.texnum];
 				detail.extraCLUTs[data.palette] = &data.clut;
-				detail.numExtraCLUTs = Math::max(detail.numExtraCLUTs, data.palette + 1);
+				detail.numExtraCLUTs = max(detail.numExtraCLUTs, data.palette + 1);
 			}
 
 			added_cluts++;
@@ -556,7 +550,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 			{
 				TexDetailInfo_t& detail = m_texPages[data.tpage].m_details[info.texnum];
 				detail.extraCLUTs[data.palette] = &data.clut;
-				detail.numExtraCLUTs = Math::max(detail.numExtraCLUTs, data.palette + 1);
+				detail.numExtraCLUTs = max(detail.numExtraCLUTs, data.palette + 1);
 			}
 		}
 	}
@@ -645,15 +639,10 @@ int	CDriverLevelTextures::GetOverlayMapSegmentCount() const
 // release all data
 void CDriverLevelTextures::FreeAll()
 {
-	delete[] m_textureNamesData;
-	delete[] m_texPages;
-	delete[] m_extraPalettes;
-	delete[] m_overlayMapData;
-
-	m_textureNamesData = nullptr;
-	m_texPages = nullptr;
-	m_extraPalettes = nullptr;
-	m_overlayMapData = nullptr;
+	SAFE_DELETE_ARRAY(m_textureNamesData);
+	SAFE_DELETE_ARRAY(m_texPages);
+	SAFE_DELETE_ARRAY(m_extraPalettes);
+	SAFE_DELETE_ARRAY(m_overlayMapData);
 
 	m_numTexPages = 0;
 	m_numPermanentPages = 0;

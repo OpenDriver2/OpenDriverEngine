@@ -1,5 +1,4 @@
-#ifndef CONVERT_H
-#define CONVERT_H
+#pragma once
 
 #include "math/psx_math_types.h"
 #include "math/Matrix.h"
@@ -24,5 +23,3 @@ inline Matrix4x4 FromFixedMatrix(const MATRIX& m)
 		m.m[2][0] / ONE_F, m.m[2][1] / ONE_F, m.m[2][2] / ONE_F, m.t[2] / ONE_F,
 		0.0f, 0.0f, 0.0f, 1.0f);
 }
-
-#endif // CONVERT_H

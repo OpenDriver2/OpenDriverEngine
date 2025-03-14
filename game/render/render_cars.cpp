@@ -1,5 +1,14 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+#include "math/convert.h"
+
+#include "routines/models.h"
+#include "routines/textures.h"
+#include "game/shared/world.h"
+#include "game/shared/cars.h"
+
 #include "render_cars.h"
+#include "render_model.h"
+#include "render_util.h"
 
 /* TODO:
 	- Add car model rendering and denting stuff
@@ -30,11 +39,10 @@ void CRender_Cars::Terminate()
 	ShadowVAO = nullptr;
 }
 
-
 void CRender_Cars::MangleWheelModel(MODEL* model)
 {
 	UV_INFO tmpUV2;
-	uchar tmpUV;
+	uint8 tmpUV;
 	uint v0, v1, v2;
 
 	// do some fuckery swaps
@@ -118,7 +126,7 @@ void CRender_Cars::MangleWheelModel(MODEL* model)
 	model->num_polys = 6;
 }
 
-void CRender_Cars::DrawCars(Array<CCar*>& cars, const CameraViewParams& view)
+void CRender_Cars::DrawCars(ArrayCRef<CCar*> cars, const CViewParams& view)
 {
 	if (!ShadowDetail)
 		return;
@@ -126,10 +134,10 @@ void CRender_Cars::DrawCars(Array<CCar*>& cars, const CameraViewParams& view)
 	CMeshBuilder carShadow(ShadowVAO);
 	carShadow.Begin(PRIM_TRIANGLE_STRIP);
 
-	for (usize i = 0; i < cars.size(); i++)
+	for (int i = 0; i < cars.numElem(); i++)
 	{
 		CCar* cp = cars[i];
-		const float distToView = distance(view.position, FromFixedVector(cp->GetPosition()));
+		const float distToView = distance(view.GetOrigin(), FromFixedVector(cp->GetPosition()));
 
 		// TODO: LOD!!!
 		cp->DrawCar();

@@ -2,12 +2,11 @@
 // Description: Driver 2 LEVel main structures
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LEVEL_H
-#define LEVEL_H
+#pragma once
 
 #include "d2_types.h"
 
-#define SPOOL_CD_BLOCK_SIZE		2048
+static constexpr int SPOOL_CD_BLOCK_SIZE = 2048;
 
 // known lumps indexes
 enum LevLumpType
@@ -91,7 +90,7 @@ protected:
 	void					ProcessLumps(IVirtualStream* pFile);
 
 	ELevelFormat			m_format{ LEV_FORMAT_AUTODETECT };
-	String					m_fileName;
+	EqString				m_fileName;
 
 	OUT_CITYLUMP_INFO*		m_lumpInfo;
 
@@ -99,5 +98,3 @@ protected:
 	CDriverLevelTextures*	m_textures{ nullptr };
 	CDriverLevelModels*		m_models{ nullptr };
 };
-
-#endif // LEVEL_H

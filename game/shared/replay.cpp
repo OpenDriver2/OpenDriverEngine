@@ -1,7 +1,9 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+#include "replay.h"
+#include "world.h"
 
-#define DRIVER2_REPLAY_MAGIC		0x14793209
-#define REDRIVER2_CHASE_MAGIC		(('D' << 24) | ('2' << 16) | ('C' << 8) | 'R' )
+static constexpr int DRIVER2_REPLAY_MAGIC = 0x14793209;
+static constexpr int REDRIVER2_CHASE_MAGIC = (('D' << 24) | ('2' << 16) | ('C' << 8) | 'R');
 
 static const int8 ReplayAnalogueUnpack[16] = {
 	0, -51, -63, -75, -87, -99, -111, -123,
@@ -9,25 +11,25 @@ static const int8 ReplayAnalogueUnpack[16] = {
 };
 
 // mapped pad identifiers
-#define MPAD_L2			0x1
-#define MPAD_R2			0x2
-#define MPAD_L1			0x4
-#define MPAD_R1			0x8
+static constexpr int MPAD_L2		= 0x1;
+static constexpr int MPAD_R2		= 0x2;
+static constexpr int MPAD_L1		= 0x4;
+static constexpr int MPAD_R1		= 0x8;
 
-#define MPAD_TRIANGLE	0x10
-#define MPAD_CIRCLE		0x20
-#define MPAD_CROSS		0x40
-#define MPAD_SQUARE		0x80
+static constexpr int MPAD_TRIANGLE	= 0x10;
+static constexpr int MPAD_CIRCLE	= 0x20;
+static constexpr int MPAD_CROSS		= 0x40;
+static constexpr int MPAD_SQUARE	= 0x80;
 
-#define MPAD_SELECT		0x100
-#define MPAD_L3			0x200
-#define MPAD_R3			0x400
-#define MPAD_START		0x800
+static constexpr int MPAD_SELECT	= 0x100;
+static constexpr int MPAD_L3		= 0x200;
+static constexpr int MPAD_R3		= 0x400;
+static constexpr int MPAD_START		= 0x800;
 
-#define MPAD_D_UP		0x1000
-#define MPAD_D_RIGHT	0x2000
-#define MPAD_D_DOWN		0x4000
-#define MPAD_D_LEFT		0x8000
+static constexpr int MPAD_D_UP		= 0x1000;
+static constexpr int MPAD_D_RIGHT	= 0x2000;
+static constexpr int MPAD_D_DOWN	= 0x4000;
+static constexpr int MPAD_D_LEFT	= 0x8000;
 
 
 //----------------------------------------
@@ -38,19 +40,19 @@ struct REPLAY_PARAMETER_BLOCK
 	int RecordingEnd;
 	VECTOR_NOPAD lead_car_start;
 	short Lead_car_dir;
-	uchar timeofday, weather;
+	uint8 timeofday, weather;
 };
 
 struct REPLAY_SAVE_HEADER
 {
 	uint magic;
-	uchar GameLevel;
-	uchar GameType;
-	uchar reserved1;
-	uchar NumReplayStreams, NumPlayers;
-	uchar RandomChase;
-	uchar CutsceneEvent;
-	uchar gCopDifficultyLevel;
+	uint8 GameLevel;
+	uint8 GameType;
+	uint8 reserved1;
+	uint8 NumReplayStreams, NumPlayers;
+	uint8 RandomChase;
+	uint8 CutsceneEvent;
+	uint8 gCopDifficultyLevel;
 	MISSION_DATA SavedData;
 	int ActiveCheats;
 	int wantedCar[2];
@@ -67,7 +69,7 @@ struct REPLAY_STREAM_HEADER
 
 struct PADRECORD
 {
-	uchar pad, analogue, run;
+	uint8 pad, analogue, run;
 };
 
 struct PING_PACKET
@@ -85,8 +87,8 @@ struct PLAYBACKCAMERA
 	short scr_z;
 	short gCameraMaxDistance;
 	short gCameraAngle;
-	uchar cameraview;
-	uchar next, prev, idx;
+	uint8 cameraview;
+	uint8 next, prev, idx;
 };
 
 //----------------------------------------
@@ -130,7 +132,7 @@ void CReplayData::Lua_Init(sol::state& lua)
 
 //----------------------------------------
 
-void PackInput(uint& outPad, char& outSteer, char& outType, const CPlayer::InputData& inputs)
+static void PackInput(uint& outPad, char& outSteer, char& outType, const CPlayer::InputData& inputs)
 {
 	outPad = 0;
 	outPad |= inputs.accel ? MPAD_CROSS : 0;
@@ -155,7 +157,7 @@ void PackInput(uint& outPad, char& outSteer, char& outType, const CPlayer::Input
 	}
 }
 
-void UnpackInput(CPlayer::InputData& outInputs, uint pad, char steer, char type)
+static void UnpackInput(CPlayer::InputData& outInputs, uint pad, char steer, char type)
 {
 	outInputs.accel = pad & MPAD_CROSS;
 	outInputs.brake = pad & MPAD_SQUARE;
@@ -179,7 +181,7 @@ void UnpackInput(CPlayer::InputData& outInputs, uint pad, char steer, char type)
 
 CReplayStream::CReplayStream(int bufferSize)
 {
-	m_initialPadRecordBuffer = (PADRECORD*)Memory::alloc(bufferSize * sizeof(PADRECORD));
+	m_initialPadRecordBuffer = PPNew PADRECORD[bufferSize];
 	m_padRecordBufferEnd = m_initialPadRecordBuffer + bufferSize;
 
 	Purge();
@@ -187,8 +189,7 @@ CReplayStream::CReplayStream(int bufferSize)
 
 CReplayStream::~CReplayStream()
 {
-	Memory::free(m_initialPadRecordBuffer);
-	m_initialPadRecordBuffer = nullptr;
+	SAFE_DELETE_ARRAY(m_initialPadRecordBuffer);
 	m_length = 0;
 	m_padCount = 0;
 	Reset();

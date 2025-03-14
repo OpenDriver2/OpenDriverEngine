@@ -1,9 +1,9 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+#include "cars.h"
 #include "bcoll3d.h"
 
-
 // [D] [T]
-int PointFaceCheck(CCar* cp0, CCar* cp1, int i, CRET3D& least, int nSign)
+static int PointFaceCheck(CCar* cp0, CCar* cp1, int i, CRET3D& least, int nSign)
 {
 	int partialDepth, depth;
 	const SVECTOR_NOPAD* radii;

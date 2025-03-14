@@ -1,7 +1,11 @@
-#include "game/pch.h"
-#include "render_sky.h"
+#include "core/core_common.h"
 
-#pragma optimize("", off)
+#include "render/ViewParams.h"
+#include "render_sky.h"
+#include "routines/textures.h"
+#include "routines/models.h"
+#include "render_model.h"
+#include "game/shared/world.h"
 
 #define SKY_VERTEX_SHADER \
 	"	attribute vec4 a_position_tu;\n"\
@@ -117,7 +121,7 @@ struct BMP_FILE_HEADER
 };
 #pragma pack(pop)
 
-void CopyTpageImage(ushort* tp_src, ushort* dst, int x, int y, int dst_w, int dst_h)
+static void CopyTpageImage(ushort* tp_src, ushort* dst, int x, int y, int dst_w, int dst_h)
 {
 	ushort* src = tp_src + x + 128 * y;
 
@@ -129,7 +133,7 @@ void CopyTpageImage(ushort* tp_src, ushort* dst, int x, int y, int dst_w, int ds
 	}
 }
 
-void ConvertIndexedSkyImageD1(uint* color_data, ushort* imageClut, ubyte* src_indexed, int x_idx, int y_idx, bool outputBGR, bool originalTransparencyKey)
+static void ConvertIndexedSkyImageD1(uint* color_data, ushort* imageClut, ubyte* src_indexed, int x_idx, int y_idx, bool outputBGR, bool originalTransparencyKey)
 {
 	int ox = x_idx * D1_SKY_SIZE_W;
 	int oy = y_idx * D1_SKY_SIZE_H;
@@ -167,7 +171,7 @@ void ConvertIndexedSkyImageD1(uint* color_data, ushort* imageClut, ubyte* src_in
 	}
 }
 
-void ConvertIndexedSkyImageD2(uint* color_data, ubyte* src_indexed, int x_idx, int y_idx, bool outputBGR, bool originalTransparencyKey)
+static void ConvertIndexedSkyImageD2(uint* color_data, ubyte* src_indexed, int x_idx, int y_idx, bool outputBGR, bool originalTransparencyKey)
 {
 	ushort imageClut[16];
 
@@ -213,7 +217,7 @@ void ConvertIndexedSkyImageD2(uint* color_data, ubyte* src_indexed, int x_idx, i
 }
 
 static int vertexSky_horizontaboffset;
-void VertexSkyCbD1(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
+static void VertexSkyCbD1(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
 {
 	const int skytexnum = g_HorizonTexturesD1[vertexSky_horizontaboffset + polyNum];
 	
@@ -246,7 +250,7 @@ void VertexSkyCbD1(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& 
 	}
 }
 
-void VertexSkyCbD2(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
+static void VertexSkyCbD2(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert)
 {
 	const int skytexnum = g_HorizonTexturesD2[vertexSky_horizontaboffset + polyNum];
 
@@ -286,7 +290,7 @@ void VertexSkyCbD2(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& 
 	}
 }
 
-void GenerateSkyUVs_Driver2()
+static void GenerateSkyUVs_Driver2()
 {
 	int flipped, single;
 
@@ -399,7 +403,7 @@ void GenerateSkyUVs_Driver2()
 	}
 }
 
-void GenerateSkyUVs_Driver1()
+static void GenerateSkyUVs_Driver1()
 {
 	const int bmpWidth = D1_SKY_SIZE_W >> 2; // 64 >> 2;
 	const int bmpHeight = D1_SKY_SIZE_H;
@@ -433,7 +437,7 @@ void GenerateSkyUVs_Driver1()
 }
 
 // Generate UVs just like REDRIVER2 does
-void GenerateSkyUVs()
+static void GenerateSkyUVs()
 {
 	ModelRef_t* skyModel = CWorld::GetModelByIndex(0);
 	if (skyModel->model->num_polys == 20)
@@ -615,14 +619,14 @@ void CSky::Unload()
 }
 
 // Renders sky
-void CSky::Draw(const CameraViewParams& view)
+void CSky::Draw(const CViewParams& view)
 {
-	CameraViewParams _view = view;
+	CViewParams _view = view;
 	Volume dummy;
 	GR_SetShader(g_skyShader);
 
 	const float sky_y_offset = 16.0f / 4096.0f;
-	_view.position = vec3_up * -sky_y_offset;
+	_view.SetOrigin(vec3_up * -sky_y_offset);
 
 	CCamera::SetupViewAndMatrices(_view, dummy);
 	GR_SetShaderConstantVector4D(g_skyColorConstantId, Vector4D(Color, 1.0f));

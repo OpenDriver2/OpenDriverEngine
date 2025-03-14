@@ -1,5 +1,4 @@
-#ifndef RENDERLEVEL_H
-#define RENDERLEVEL_H
+#pragma once
 
 class Volume;
 struct DRAWABLE;
@@ -56,7 +55,3 @@ private:
 
 	static GrVAO* ShadowVAO;
 };
-
-
-
-#endif // RENDERLEVEL_H

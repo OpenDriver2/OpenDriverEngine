@@ -1,6 +1,3 @@
-#ifndef SQUAREROOT0_H
-#define SQUAREROOT0_H
+#pragma once
 
 int SquareRoot0(int a);
-
-#endif // SQUAREROOT0_H

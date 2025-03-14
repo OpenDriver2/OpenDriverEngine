@@ -1,6 +1,4 @@
-#ifndef REGIONS_D2
-#define REGIONS_D2
-
+#pragma once
 #include "regions.h"
 
 //----------------------------------------------------------------------------------
@@ -11,14 +9,14 @@
 #define IS_ROAD_SURFACE(surfid)				(IS_STRAIGHT_SURFACE(surfid) || IS_CURVED_SURFACE(surfid))
 
 // those macros can be applied to straights and junctions
-#define ROAD_LANES_COUNT(rd)							((uint)(rd)->NumLanes & 0xF)					// lane count
-#define ROAD_WIDTH_IN_LANES(rd)							(ROAD_LANES_COUNT(rd) * 2)						// width in lanes
-#define ROAD_IS_AI_LANE(rd, lane)						((uint8)(rd)->AILanes >> ((lane) / 2) & 1U)	// lane AI driveable flag
-#define ROAD_IS_LEFTMOST_LANE_PARKING(rd)				(((uint8)(rd)->NumLanes & 0x40) != 0)			// allows parking on leftmost lane
-#define ROAD_IS_RIGHTMOST_LANE_PARKING(rd)				(((uint8)(rd)->NumLanes & 0x80) != 0)			// allows parking on rightmost lane
-#define ROAD_LANE_DIRECTION_BIT(rd, lane)				((uint8)(rd)->LaneDirs >> ((lane) / 2) & 1U)	// direction bit
-#define ROAD_SPEED_LIMIT(rd)							(((uint8)(rd)->NumLanes >> 4) & 3)				// speed limit id
-#define ROAD_HAS_FAST_LANES(rd)							(((uint8)(rd)->NumLanes >> 6) & 1)				// & 0x20; in fact speed limit check too
+#define ROAD_LANES_COUNT(rd)				((uint)(rd)->NumLanes & 0xF)					// lane count
+#define ROAD_WIDTH_IN_LANES(rd)				(ROAD_LANES_COUNT(rd) * 2)						// width in lanes
+#define ROAD_IS_AI_LANE(rd, lane)			((uint8)(rd)->AILanes >> ((lane) / 2) & 1U)		// lane AI driveable flag
+#define ROAD_IS_LEFTMOST_LANE_PARKING(rd)	(((uint8)(rd)->NumLanes & 0x40) != 0)			// allows parking on leftmost lane
+#define ROAD_IS_RIGHTMOST_LANE_PARKING(rd)	(((uint8)(rd)->NumLanes & 0x80) != 0)			// allows parking on rightmost lane
+#define ROAD_LANE_DIRECTION_BIT(rd, lane)	((uint8)(rd)->LaneDirs >> ((lane) / 2) & 1U)	// direction bit
+#define ROAD_SPEED_LIMIT(rd)				(((uint8)(rd)->NumLanes >> 4) & 3)				// speed limit id
+#define ROAD_HAS_FAST_LANES(rd)				(((uint8)(rd)->NumLanes >> 6) & 1)				// & 0x20; in fact speed limit check too
 
 #define ROAD_LANE_DIR(rd, lane) \
 	(((uint8)(rd)->LaneDirs == 0xFF && (rd)->NumLanes == 1) ? ((lane) & 1) : ROAD_LANE_DIRECTION_BIT(rd, lane))
@@ -30,7 +28,6 @@
 struct DRIVER2_ROAD_INFO
 {
 	int surfId;
-
 	short(*ConnectIdx)[4];
 
 	union
@@ -160,7 +157,7 @@ protected:
 	
 	// Driver 2 - specific
 	CDriver2LevelRegion*	m_regions{ nullptr };					// map of regions
-	PACKED_CELL_OBJECT*		m_packedStraddlers { nullptr };				// cell objects between regions
+	PACKED_CELL_OBJECT*		m_packedStraddlers { nullptr };			// cell objects between regions
 
 	DRIVER2_STRAIGHT*		m_straights{ nullptr };
 	DRIVER2_CURVE*			m_curves{ nullptr };
@@ -170,6 +167,3 @@ protected:
 	int						m_numCurves{ 0 };
 	int						m_numJunctions{ 0 };
 };
-
-
-#endif

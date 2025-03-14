@@ -1,4 +1,4 @@
-#include "core/dktypes.h"
+#include "ds/common_types.h"
 
 short ratan_tbl[1025] = {
 	0x000,   0x001,   0x002,   0x002,

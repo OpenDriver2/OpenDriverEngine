@@ -1,5 +1,12 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+#include "math/convert.h"
+#include "math/Utility.h"
 #include "render_level.h"
+#include "routines/models.h"
+#include "routines/regions.h"
+#include "render_model.h"
+#include "game/shared/world.h"
+#include "render_util.h"
 
 // extern some vars
 extern CDriverLevelModels		g_levModels;

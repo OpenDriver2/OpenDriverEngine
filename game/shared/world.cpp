@@ -1,22 +1,30 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+#include "math/squareroot0.h"
+#include "math/convert.h"
+#include "math/psx_matrix.h"
 #include "world.h"
 
 #include "routines/regions_d1.h"
 #include "routines/regions_d2.h"
+#include "routines/textures.h"
+#include "game/render/render_level.h"
+#include "game/shared/players.h"
+#include "game/render/render_model.h"
+#include "game/render/render_cars.h"
 
 OUT_CITYLUMP_INFO		g_levInfo;
 CDriverLevelTextures	g_levTextures;
 CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
-Map<int, Array<CELL_OBJECT>>	CWorld::CellObjects;
-Array<DRAWABLE>					CWorld::Drawables;
-Map<int, CELL_LIST_DESC>		CWorld::CellLists;
+Array<DRAWABLE>					CWorld::Drawables(PP_SL);
+Map<int, Array<CELL_OBJECT>>	CWorld::CellObjects(PP_SL);
+Map<int, CELL_LIST_DESC>		CWorld::CellLists(PP_SL);
 int								CWorld::StepCount = 0;
 
 Matrix4x4	g_objectMatrix[64];
 MATRIX		g_objectMatrixFixed[64];
-extern int g_cellsDrawDistance;
+extern int	g_cellsDrawDistance;
 
 inline int PackXZCell(const XZPAIR& cell)
 {
@@ -286,7 +294,7 @@ void CWorld::InitObjectMatrix()
 		InitMatrix(m);
 		RotMatrixY(i * 64, &m);
 
-		const float cellRotationRad = -i / 64.0f * PI_F * 2.0f;
+		const float cellRotationRad = -i / 64.0f * M_PI_F * 2.0f;
 		g_objectMatrix[i] = rotateY4(cellRotationRad);
 	}
 }
@@ -480,7 +488,7 @@ bool CWorld::LoadLevel(const char* fileName)
 	// seek to begin
 	MsgWarning("-----------\nLoading LEV file '%s'\n", fileName);
 
-	CFileStream stream(g_levFile, false);
+	CMemoryStream stream(g_levFile, false);
 	ELevelFormat levFormat = CDriverLevelLoader::DetectLevelFormat(&stream);
 
 	stream.Seek(0, VS_SEEK_SET);
@@ -532,7 +540,7 @@ void CWorld::UnloadLevel()
 //-------------------------------------------------------
 // Render level viewer
 //-------------------------------------------------------
-void CWorld::RenderLevelView(const CameraViewParams& view)
+void CWorld::RenderLevelView(const CViewParams& view)
 {
 	Volume frustumVolume;
 
@@ -548,10 +556,10 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 
 	const bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 	
-	CRender_Level::DrawMap(view.position, view.angles.y, frustumVolume);
+	CRender_Level::DrawMap(view.GetOrigin(), view.GetAngles().y, frustumVolume);
 	GR_SetCullMode(CULL_FRONT);
 	{
-		const VECTOR_NOPAD cameraPosition = ToFixedVector(view.position);
+		const VECTOR_NOPAD cameraPosition = ToFixedVector(view.GetOrigin());
 		XZPAIR cameraPosCell;
 		g_levMap->WorldPositionToCellXZ(cameraPosCell, cameraPosition);
 
@@ -567,16 +575,14 @@ void CWorld::RenderLevelView(const CameraViewParams& view)
 				continue;
 			}
 
-			Array<CELL_OBJECT>& objs = *it;
-			for (usize i = 0; i < objs.size(); i++)
-				CRender_Level::DrawCellObject(objs[i], view.position, view.angles.y, frustumVolume, driver2Map);
+			for (CELL_OBJECT& obj : *it)
+				CRender_Level::DrawCellObject(obj, view.GetOrigin(), view.GetAngles().y, frustumVolume, driver2Map);
 		}
 	}
 
-	for (usize i = 0; i < Drawables.size(); i++)
-	{
-		CRender_Level::DrawObject(Drawables[i], view.position, frustumVolume, driver2Map);
-	}
+	for (DRAWABLE& drawable : Drawables)
+		CRender_Level::DrawObject(drawable, view.GetOrigin(), frustumVolume, driver2Map);
+
 	Drawables.clear();
 }
 
@@ -585,7 +591,7 @@ int CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 	if (!IsLevelLoaded())
 		return 0;
 
-	CFileStream stream(g_levFile, false);
+	CMemoryStream stream(g_levFile, false);
 
 	SPOOL_CONTEXT spoolContext;
 	spoolContext.dataStream = &stream;
@@ -643,7 +649,7 @@ void CWorld::SpoolAllRegions()
 
 	Msg("Spooling ALL regions...\n");
 
-	CFileStream stream(g_levFile, false);
+	CMemoryStream stream(g_levFile, false);
 
 	SPOOL_CONTEXT spoolContext;
 	spoolContext.dataStream = &stream;
@@ -786,11 +792,8 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 
 			if (cellObjList != CellObjects.end())
 			{
-				Array<CELL_OBJECT>& objs = *cellObjList;
-				for (usize i = 0; i < objs.size(); i++)
-				{
-					checkAndAddCellObj(&objs[i]);
-				}
+				for (CELL_OBJECT& obj : *cellObjList)
+					checkAndAddCellObj(&obj);
 			}
 
 			cell.z++;
@@ -800,7 +803,7 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 	}
 
 	// check collisions
-	for (usize i = 0; i < collisionObjects.size(); i++)
+	for (int i = 0; i < collisionObjects.numElem(); i++)
 	{
 		CELL_OBJECT* co = collisionObjects[i];
 		const ModelRef_t* ref = collisionObjectModels[i];

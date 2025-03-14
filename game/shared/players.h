@@ -1,10 +1,9 @@
-#ifndef PLAYERS_H
-#define PLAYERS_H
-
-#include <sol/forward.hpp>
+#pragma once
+#include "math/psx_math_types.h"
 
 class CCar;
 class CReplayStream;
+using CReplayStreamPtr = CRefPtr<CReplayStream>;
 
 enum EPlayerControlType
 {
@@ -38,42 +37,42 @@ public:
 
 	virtual ~CPlayer();
 
-	void					Net_Init();
-	void					Net_Finalize();
+	void				Net_Init();
+	void				Net_Finalize();
 
-	void					InitReplay(CReplayStream* sourceStream = nullptr);
+	void				InitReplay(CReplayStream* sourceStream = nullptr);
 
-	EPlayerControlType		GetControlType() const;
+	EPlayerControlType	GetControlType() const;
 
-	void					SetCurrentCar(CCar* newCar);
-	CCar*					GetCurrentCar() const;
+	void				SetCurrentCar(CCar* newCar);
+	CCar*				GetCurrentCar() const;
 	
 	// TODO: pedestrian
 
-	void					SetRubberbandPowerRatio(int powerRatio) { m_rubberbandPowerRatio = powerRatio; }
-	int						GetRubberbandPowerRatio() const { return m_rubberbandPowerRatio; }
+	void				SetRubberbandPowerRatio(int powerRatio) { m_rubberbandPowerRatio = powerRatio; }
+	int					GetRubberbandPowerRatio() const { return m_rubberbandPowerRatio; }
 
-	void					SetRubberbandPoint(const VECTOR_NOPAD& position) { m_rubberbandPoint = position; }
-	const VECTOR_NOPAD&		GetRubberbandPoint() const { return m_rubberbandPoint; }
+	void				SetRubberbandPoint(const VECTOR_NOPAD& position) { m_rubberbandPoint = position; }
+	const VECTOR_NOPAD&	GetRubberbandPoint() const { return m_rubberbandPoint; }
 
-	void					SetRubberbandMode(ERubberBandMode mode) { m_rubberbandMode = mode; }
-	ERubberBandMode			GetRubberbandMode() const { return m_rubberbandMode; }
+	void				SetRubberbandMode(ERubberBandMode mode) { m_rubberbandMode = mode; }
+	ERubberBandMode		GetRubberbandMode() const { return m_rubberbandMode; }
 
-	void					UpdateControls(const InputData& input);
-	void					ProcessCarPad();
+	void				UpdateControls(const InputData& input);
+	void				ProcessCarPad();
 
-	static void				Lua_Init(sol::state& lua);
+	static void			Lua_Init(sol::state& lua);
 
 protected:
-	InputData						m_currentInputs;
-	CCar*							m_currentCar{ nullptr };
-	VECTOR_NOPAD					m_rubberbandPoint{ 0 };
-	ERubberBandMode					m_rubberbandMode{ Rubberband_Off };
-	int								m_rubberbandPowerRatio{ 4096 };
+	InputData			m_currentInputs;
+	CCar*				m_currentCar{ nullptr };
+	VECTOR_NOPAD		m_rubberbandPoint{ 0 };
+	ERubberBandMode		m_rubberbandMode{ Rubberband_Off };
+	int					m_rubberbandPowerRatio{ 4096 };
 
-	RefCount::Ptr<CReplayStream>	m_playbackStream;
-	RefCount::Ptr<CReplayStream>	m_recordStream;
-	EPlayerControlType				m_controlType{ PlayerControl_Local };
+	CReplayStreamPtr	m_playbackStream;
+	CReplayStreamPtr	m_recordStream;
+	EPlayerControlType	m_controlType{ PlayerControl_Local };
 };
 
 //---------------------------------------------------------------------------------
@@ -108,5 +107,3 @@ protected:
 	static CPlayer			LocalPlayer;
 	static Array<CPlayer*>	Players;
 };
-
-#endif // PLAYERS_H

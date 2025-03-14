@@ -1,14 +1,13 @@
-#ifndef PSX_MATH_TYPES_H
-#define PSX_MATH_TYPES_H
+#pragma once
 
-#include "math_common.h"
+#include "math/math_common.h"
 
-const int	ONE			= 4096;
-const float ONE_F		= float(ONE);
-const int	ONE_BITS	= 12;
+static constexpr int	ONE			= 4096;
+static constexpr float ONE_F		= float(ONE);
+static constexpr int	ONE_BITS	= 12;
 
-const float TO_RADIAN		= (1.0f / ONE_F * PI_F * 2.0f);
-const float TO_GTE_ANGLE	= (1.0f / (PI_F * 2.0f) * ONE_F);
+const float TO_RADIAN		= (1.0f / ONE_F * M_PI_F * 2.0f);
+const float TO_GTE_ANGLE	= (1.0f / (M_PI_F * 2.0f) * ONE_F);
 
 #define FixDivHalfRound(x, bits)		(((x) + (1 << (bits-1))) >> bits)
 #define	FIXEDH(a)					FixDivHalfRound(a, ONE_BITS)		// Fixed Half Round number
@@ -481,5 +480,3 @@ struct UV
 	uint8 u2, v2;
 	uint8 u3, v3;
 };
-
-#endif // PSX_MATH_TYPES_H

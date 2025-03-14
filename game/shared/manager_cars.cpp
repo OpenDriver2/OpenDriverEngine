@@ -1,5 +1,14 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+
+#include "math/ratan2.h"
+#include "routines/regions.h"
 #include "manager_cars.h"
+#include "cars.h"
+#include "players.h"
+#include "world.h"
+#include "game/render/render_model.h"
+#include "game/render/render_level.h"
+#include "game/render/render_cars.h"
 
 extern CBaseLevelMap* g_levMap;
 
@@ -121,7 +130,7 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	if (!levelModels)
 		levelModels = &g_levModels;
 
-	for (usize i = 0; i < m_carModels.size(); i++)
+	for (int i = 0; i < m_carModels.numElem(); i++)
 	{
 		// TODO: levelModels check
 		if (m_carModels[i]->index == modelNumber)
@@ -148,11 +157,7 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	else
 		delete renderModel;
 
-	int carModelIndex = m_carModels.size();
-
-	m_carModels.append(ref);
-
-	return carModelIndex;
+	return m_carModels.append(ref);
 }
 
 bool CManager_Cars::LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int residentModel)
@@ -211,12 +216,9 @@ void CManager_Cars::UnloadAllModels()
 {
 	RemoveAll();
 
-	for (usize i = 0; i < m_carModels.size(); i++)
+	for (ModelRef_t* ref : m_carModels)
 	{
-		ModelRef_t* ref = m_carModels[i];
-
 		CRenderModel* renderModel = (CRenderModel*)ref->userData;
-
 		delete renderModel;
 		delete ref;
 	}
@@ -308,11 +310,9 @@ void CManager_Cars::RemoveAll()
 {
 	CManager_Players::GetLocalPlayer()->SetCurrentCar(nullptr);
 
-	for (usize i = 0; i < m_active_cars.size(); i++)
-	{
-		CCar* cp = m_active_cars[i];
+	for (CCar* cp : m_active_cars)
 		delete cp;
-	}
+
 	m_active_cars.clear();
 }
 
@@ -322,21 +322,20 @@ void CManager_Cars::Remove(CCar* car)
 	if (*foundCar)
 	{
 		delete car;
-		m_active_cars.remove(foundCar);
+		m_active_cars.remove(*foundCar);
 	}
 }
 
 void CManager_Cars::UpdateControl()
 {
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (int i = 0; i < m_active_cars.numElem(); i++)
 	{
 		CCar* cp = m_active_cars[i];
 
 		if (cp->m_controlType == CONTROL_TYPE_NONE)
 		{
 			delete cp;
-			m_active_cars.remove(i);
-			i--;
+			m_active_cars.fastRemoveIndex(i--);
 			continue;
 		}
 
@@ -462,7 +461,7 @@ void CManager_Cars::GlobalTimeStep()
 
 	// step car forces (when no collisions with them)
 	// TODO: made into CCar::StepRigidBody()
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (int i = 0; i < m_active_cars.numElem(); i++)
 	{
 		cp = m_active_cars[i];
 
@@ -546,7 +545,7 @@ void CManager_Cars::GlobalTimeStep()
 	{
 		for (int RKstep = 0; RKstep < 2; RKstep++)
 		{
-			for (usize i = 0; i < m_active_cars.size(); i++)
+			for (int i = 0; i < m_active_cars.numElem(); i++)
 			{
 				cp = m_active_cars[i];
 
@@ -587,7 +586,7 @@ void CManager_Cars::GlobalTimeStep()
 					cpDelta.n.angularVelocity[1] = 0;
 					cpDelta.n.angularVelocity[2] = 0;
 
-					for (usize j = 0; j < i; j++)
+					for (int j = 0; j < i; j++)
 					{
 						c1 = m_active_cars[j];
 
@@ -602,7 +601,7 @@ void CManager_Cars::GlobalTimeStep()
 			}
 
 			// update forces and rebuild matrix of the cars
-			for (usize i = 0; i < m_active_cars.size(); i++)
+			for (int i = 0; i < m_active_cars.numElem(); i++)
 			{
 				cp = m_active_cars[i];
 
@@ -638,7 +637,7 @@ void CManager_Cars::GlobalTimeStep()
 	}
 
 	// update direction
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (int i = 0; i < m_active_cars.numElem(); i++)
 	{
 		cp = m_active_cars[i];
 		cp->m_hd.direction = ratan2(cp->m_hd.where.m[0][2], cp->m_hd.where.m[2][2]);
@@ -650,7 +649,7 @@ void CManager_Cars::GlobalTimeStep()
 	// dent cars - no more than 5 cars in per frame
 	carsDentedThisFrame = 0;
 
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (int i = 0; i < m_active_cars.numElem(); i++)
 	{
 		cp = m_active_cars[i];
 
@@ -699,7 +698,7 @@ void CManager_Cars::CheckScenaryCollisions(CCar* cp)
 void CManager_Cars::CheckCarToCarCollisions()
 {
 	// recalculate bounding boxes
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (int i = 0; i < m_active_cars.numElem(); i++)
 	{
 		CCar* cp = m_active_cars[i];
 		BOUND_BOX& bb = cp->m_bbox;
@@ -753,11 +752,11 @@ void CManager_Cars::CheckCarToCarCollisions()
 	}
 
 	// check boxes intersection with each other
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (int i = 0; i < m_active_cars.numElem(); i++)
 	{
 		BOUND_BOX& bb1 = m_active_cars[i]->m_bbox;
 
-		for (usize j = i+1; j < m_active_cars.size(); j++)
+		for (int j = i+1; j < m_active_cars.numElem(); j++)
 		{
 			BOUND_BOX& bb2 = m_active_cars[j]->m_bbox;
 
@@ -774,7 +773,7 @@ void CManager_Cars::CheckCarToCarCollisions()
 
 void CManager_Cars::DoScenaryCollisions()
 {
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (int i = 0; i < m_active_cars.numElem(); i++)
 	{
 		CCar* cp = m_active_cars[i];
 		// civ AI and dead cop cars perform less collision detection frames
@@ -795,9 +794,8 @@ void CManager_Cars::DoScenaryCollisions()
 
 void CManager_Cars::StepCars()
 {
-	for (usize i = 0; i < m_active_cars.size(); i++)
+	for (CCar* cp : m_active_cars)
 	{
-		CCar* cp = m_active_cars[i];
 		cp->StepOneCar();
 		cp->ControlCarRevs();
 	}
@@ -811,7 +809,7 @@ double CManager_Cars::GetInterpTime() const
 	return double(frameDiff) * ticks_to_ms;
 }
 
-void CManager_Cars::Draw(const CameraViewParams& view)
+void CManager_Cars::Draw(const CViewParams& view)
 {
 	if (CRender_Level::RenderProps.nightMode)
 		CRenderModel::SetupLightingProperties(CRender_Level::RenderProps.nightAmbientScale, CRender_Level::RenderProps.nightLightScale);

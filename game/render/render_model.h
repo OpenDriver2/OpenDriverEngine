@@ -1,9 +1,7 @@
-#ifndef DRAWMODEL_H
-#define DRAWMODEL_H
+#pragma once
+#include "math/psx_math_types.h"
 
-#include "math/Vector.h"
-
-#define RENDER_SCALING			(1.0f / ONE_F)
+static constexpr float RENDER_SCALING = (1.0f / ONE_F);
 
 struct ModelRef_t;
 struct GrVAO;
@@ -31,7 +29,7 @@ class CRenderModel
 public:
 
 	typedef void		(*ModelVertexCb)(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert);
-	typedef int			(*FindVertexFn)(const Array<vertexTuple_t>& whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs);
+	typedef int			(*FindVertexFn)(const ArrayCRef<vertexTuple_t> whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs);
 
 						CRenderModel();
 	virtual				~CRenderModel();
@@ -45,7 +43,7 @@ public:
 
 	int					GetNumBatches() const;
 
-	void				GetExtents(Vector3D& outMin, Vector3D& outMax) const;
+	const BoundingBox&	GetBBox() const { return m_bbox; }
 
 	static void			DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& position, int rotation);
 	static void			SetupModelShader();
@@ -64,14 +62,11 @@ public:
 
 protected:
 
-	static int			FindGrVertexIndex(const Array<vertexTuple_t>& whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs);
+	static int			FindGrVertexIndex(const ArrayCRef<vertexTuple_t> whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs);
 
-	Vector3D			m_extMin;
-	Vector3D			m_extMax;
+	BoundingBox			m_bbox;
 
 	ModelRef_t*			m_sourceModel { nullptr };
 	GrVAO*				m_vao { nullptr };
 	Array<modelBatch_t>	m_batches;
 };
-
-#endif

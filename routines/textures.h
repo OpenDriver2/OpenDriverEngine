@@ -1,8 +1,4 @@
-
-// Some containers
-
-#ifndef TEXTURES_H
-#define TEXTURES_H
+#pragma once
 
 #include "level.h"
 #include "math/Vector.h"
@@ -161,5 +157,3 @@ protected:
 
 TVec4D<ubyte> rgb5a1_ToBGRA8(ushort color, bool originalTransparencyKey = true);
 TVec4D<ubyte> rgb5a1_ToRGBA8(ushort color, bool originalTransparencyKey = true);
-
-#endif // TEXTURES_H

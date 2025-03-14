@@ -1,4 +1,7 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+#include "render_util.h"
+#include "math/convert.h"
+#include "game/shared/world.h"
 
 void CRender_Util::TesselatedShadowQuad(CMeshBuilder& meshBuilder, Vector3D* v, Vector2D* tc)
 {

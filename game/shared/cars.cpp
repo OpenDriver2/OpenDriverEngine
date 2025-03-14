@@ -1,5 +1,17 @@
-#include "game/pch.h"
+#include "core/core_common.h"
+
+#include "routines/d2_types.h"
+#include "routines/models.h"
+#include "math/isin.h"
+#include "math/ratan2.h"
+#include "math/psx_matrix.h"
+#include "math/convert.h"
+#include "bcoll3d.h"
+#include "bcollide.h"
 #include "cars.h"
+#include "world.h"
+#include "manager_cars.h"
+#include "game/render/render_model.h"
 
 extern CDriverLevelModels g_levModels;
 
@@ -1338,7 +1350,7 @@ uint16 CCar::GetEngineRevs()
 	int lastgear;
 	int ws, lws;
 	
-	const int maxGear = m_cosmetics.gears.size() - 1;
+	const int maxGear = m_cosmetics.gears.numElem() - 1;
 
 	gear = m_hd.gear;
 	ws = m_hd.wheel_speed;
@@ -2192,10 +2204,8 @@ void CCar::DrawCar()
 		{
 			renderModel = (CRenderModel*)wheelModelFront->userData;
 
-			Vector3D wheelMins, wheelMaxs;
-			renderModel->GetExtents(wheelMins, wheelMaxs);
-
-			wheelSizeInvScale = sizeScale / length(wheelMaxs.yz());
+			BoundingBox bbox = renderModel->GetBBox();
+			wheelSizeInvScale = sizeScale / length(bbox.maxPoint.yz());
 		}
 
 		GR_SetCullMode(CULL_NONE);

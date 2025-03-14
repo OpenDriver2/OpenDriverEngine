@@ -1,13 +1,11 @@
-#ifndef MANAGER_CARS_H
-#define MANAGER_CARS_H
-
-#include "core/ignore_vc_new.h"
-#include <sol/forward.hpp>
+#pragma once
+#include "math/psx_math_types.h"
 
 class CCar;
 class CDriverLevelModels;
 struct CarCosmetics;
 struct ModelRef_t;
+
 class ISoundSource;
 enum ECarControlType : int;
 
@@ -16,8 +14,6 @@ struct POSITION_INFO
 	VECTOR_NOPAD position;
 	int direction;
 };
-
-
 
 class CManager_Cars
 {
@@ -41,7 +37,7 @@ public:
 
 	double					GetInterpTime() const;
 
-	static void				Draw(const struct CameraViewParams& view);
+	static void				Draw(const CViewParams& view);
 	static void				UpdateTime(int64 ticks);
 
 	static void				Lua_Init(sol::state& lua);
@@ -67,5 +63,3 @@ protected:
 	sol::function			m_soundSourceGetCbLua;
 	sol::function			m_carEventsLua;
 };
-
-#endif // MANAGER_CARS_H

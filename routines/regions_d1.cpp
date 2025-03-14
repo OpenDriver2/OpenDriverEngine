@@ -1,11 +1,8 @@
+#include "core/core_common.h"
 #include "regions_d1.h"
-
 #include "level.h"
-#include <string.h>
-#include "core/cmdlib.h"
-#include "core/IVirtualStream.h"
+
 #include "math/isin.h"
-#include <climits>
 
 extern sdPlane g_defaultPlane;
 extern sdPlane g_seaPlane;
@@ -18,14 +15,11 @@ void CDriver1LevelRegion::FreeAll()
 	CBaseLevelRegion::FreeAll();
 
 	if (m_cells)
-		Memory::free(m_cells);
+		PPFree(m_cells);
 	m_cells = nullptr;
 
-	delete[] m_roadMap;
-	m_roadMap = nullptr;
-
-	delete[] m_surfaceRoads;
-	m_surfaceRoads = nullptr;
+	SAFE_DELETE_ARRAY(m_roadMap);
+	SAFE_DELETE_ARRAY(m_surfaceRoads);
 }
 
 void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
@@ -82,12 +76,12 @@ void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	if (UnpackCellPointers(m_cellPointers, packed_cell_pointers, 0, 0) != -1)
 	{
 		// read cell data
-		m_cells = (CELL_DATA_D1*)Memory::alloc(m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE);
+		m_cells = (CELL_DATA_D1*)PPAlloc(m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE);
 		pFile->Seek(ctx.lumpInfo->spooled_offset + cellDataOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
 		pFile->Read(m_cells, m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 
 		// read cell objects
-		m_cellObjects = (CELL_OBJECT*)Memory::alloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE * 2);
+		m_cellObjects = (CELL_OBJECT*)PPAlloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE * 2);
 		pFile->Seek(ctx.lumpInfo->spooled_offset + cellObjectsOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
 		pFile->Read(m_cellObjects, m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 	}
@@ -197,23 +191,14 @@ void CDriver1LevelMap::FreeAll()
 			m_regions[i].FreeAll();
 	}
 
-	delete[] m_regions;
-	m_regions = nullptr;
-
-	Memory::free(m_surfaceData);
+	PPFree(m_surfaceData);
 	m_surfaceData = nullptr;
 
-	delete[] m_roads;
-	m_roads = nullptr;
-
-	delete[] m_roadBounds;
-	m_roadBounds = nullptr;
-
-	delete[] m_junctions;
-	m_junctions = nullptr;
-
-	delete[] m_junctionBounds;
-	m_junctionBounds = nullptr;
+	SAFE_DELETE_ARRAY(m_regions);
+	SAFE_DELETE_ARRAY(m_roads);
+	SAFE_DELETE_ARRAY(m_roadBounds);
+	SAFE_DELETE_ARRAY(m_junctions);
+	SAFE_DELETE_ARRAY(m_junctionBounds);
 
 	CBaseLevelMap::FreeAll();
 }
@@ -299,7 +284,7 @@ void CDriver1LevelMap::LoadRoadSurfaceLump(IVirtualStream* pFile, int size)
 {
 	int numSurfaces;
 
-	m_surfaceData = (char*)Memory::alloc(size);
+	m_surfaceData = (char*)PPAlloc(size);
 	pFile->Read(m_surfaceData, 1, size);
 
 	// get the surface count
@@ -378,7 +363,7 @@ bool CDriver1LevelMap::SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx)
 	return false;
 }
 
-int PointInTri2d(int tx, int ty, const XYPAIR* verts)
+static int PointInTri2d(int tx, int ty, const XYPAIR* verts)
 {
 	// from PC reversing
 	if ((verts[1].y - verts[0].y) * (tx - verts[0].x) - (verts[1].x - verts[0].x) * (ty - verts[0].y) < 0)
@@ -390,7 +375,7 @@ int PointInTri2d(int tx, int ty, const XYPAIR* verts)
 	return 0;
 }
 
-int PointInQuad2d(int tx, int ty, const XYPAIR* verts)
+static int PointInQuad2d(int tx, int ty, const XYPAIR* verts)
 {
 	// from PC reversing
 	if ((tx - verts[0].x) * (verts[1].y - verts[0].y) -

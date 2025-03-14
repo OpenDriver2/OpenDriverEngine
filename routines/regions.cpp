@@ -1,20 +1,11 @@
+#include "core/core_common.h"
+
 #include "regions.h"
-
-#include <string.h>
-
 #include "models.h"
 #include "textures.h"
 
-#include "core/IVirtualStream.h"
-#include "core/cmdlib.h"
-
 sdPlane g_defaultPlane = { (short)SurfaceType::Concrete, 0, 0, 0, 2048 };
 sdPlane g_seaPlane = { (short)SurfaceType::DeepWater, 0, 16384, 0, 2048 };
-
-// loaded headers
-CBaseLevelRegion::CBaseLevelRegion()
-{
-}
 
 CBaseLevelRegion::~CBaseLevelRegion()
 {
@@ -31,8 +22,8 @@ void CBaseLevelRegion::FreeAll()
 	// do I need that?
 	if(m_spoolInfo && m_spoolInfo->super_region != 0xFF)
 	{
-		int areaDataNum = m_spoolInfo->super_region;
-		int numAreaTpages = m_owner->m_areaData[areaDataNum].num_tpages;
+		const int areaDataNum = m_spoolInfo->super_region;
+		const int numAreaTpages = m_owner->m_areaData[areaDataNum].num_tpages;
 		AreaTpageList& areaTPages = m_owner->m_areaTPages[areaDataNum];
 
 		for (int i = 0; numAreaTpages; i++)
@@ -47,14 +38,13 @@ void CBaseLevelRegion::FreeAll()
 			}
 		}
 	}
-	m_spoolInfo = nullptr;
 
-	delete[] m_cellPointers;
-	m_cellPointers = nullptr;
+	SAFE_DELETE_ARRAY(m_cellPointers);
 
 	if (m_cellObjects)
-		Memory::free(m_cellObjects);
+		PPFree(m_cellObjects);
 	m_cellObjects = nullptr;
+	m_spoolInfo = nullptr;
 	
 	m_loaded = false;
 }
@@ -469,7 +459,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 				continue;
 			}
 
-			ref->model = (MODEL*)Memory::alloc(modelSize);
+			ref->model = (MODEL*)PPAlloc(modelSize);
 			ref->size = modelSize;
 
 			ctx.dataStream->Read(ref->model, modelSize, 1);

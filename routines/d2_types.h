@@ -1,14 +1,10 @@
-#ifndef D2_TYPES
-#define D2_TYPES
-
-#include "core/dktypes.h"
+#pragma once
 #include "math/psx_math_types.h"
 
-#define TEXPAGE_SIZE_X	(128)	// 4 bit. DO NOT CHANGE!
-#define TEXPAGE_SIZE_Y	(256)
-
-#define TEXPAGE_4BIT_SIZE	(TEXPAGE_SIZE_X*TEXPAGE_SIZE_Y)
-#define TEXPAGE_SIZE		(TEXPAGE_SIZE_Y*TEXPAGE_SIZE_Y)
+static constexpr int TEXPAGE_SIZE_X	= 128;	// 4 bit. DO NOT CHANGE!
+static constexpr int TEXPAGE_SIZE_Y = 256;
+static constexpr int TEXPAGE_4BIT_SIZE	= TEXPAGE_SIZE_X * TEXPAGE_SIZE_Y;
+static constexpr int TEXPAGE_SIZE		= TEXPAGE_SIZE_Y * TEXPAGE_SIZE_Y;
 
 enum ETextureSetFlags
 {
@@ -100,7 +96,7 @@ struct OUT_CELL_FILE_HEADER
 //------------------------------------------------------------------------------------------------------------
 
 // car models
-#define MAX_CAR_MODELS		13
+static constexpr int MAX_CAR_MODELS = 13;
 
 struct carmodelentry_t
 {
@@ -112,11 +108,11 @@ struct carmodelentry_t
 // FIXME: it's guessed
 struct POLYF3
 {
-	uchar id;
-	uchar v0;
-	uchar v1;
-	uchar v2;
-	uchar pad;
+	uint8 id;
+	uint8 v0;
+	uint8 v1;
+	uint8 v2;
+	uint8 pad;
 	CVECTOR_NOPAD color;
 	char pad2[4];
 };
@@ -124,69 +120,72 @@ struct POLYF3
 // FIXME: it's guessed
 struct POLYF4
 {
-	uchar id; // 0
-	uchar pad1;
-	uchar pad2;
-	uchar spare;
-	uchar v0; //4
-	uchar v1;
-	uchar v2;
-	uchar v3;
+	uint8 id; // 0
+	uint8 pad1;
+	uint8 pad2;
+	uint8 spare;
+	uint8 v0; //4
+	uint8 v1;
+	uint8 v2;
+	uint8 v3;
 	CVECTOR_NOPAD color;
 	char pad[5];
 };
 
 struct POLYFT4
 {
-	uchar id;
-	uchar texture_set;
-	uchar texture_id;
-	uchar spare;
-	uchar v0, v1, v2, v3;
+	uint8 id;
+	uint8 texture_set;
+	uint8 texture_id;
+	uint8 spare;
+	uint8 v0, v1, v2, v3;
 	UV_INFO uv0, uv1, uv2, uv3;
 	CVECTOR color;
 };
 
 struct POLYGT4
 {
-	uchar id;
-	uchar texture_set;
-	uchar texture_id;
-	uchar spare;
-	uchar v0, v1, v2, v3;
-	uchar n0, n1, n2, n3;
+	uint8 id;
+	uint8 texture_set;
+	uint8 texture_id;
+	uint8 spare;
+	uint8 v0, v1, v2, v3;
+	uint8 n0, n1, n2, n3;
 	UV_INFO uv0, uv1, uv2, uv3;
 	CVECTOR color;
 };
 
 struct POLYFT3
 {
-	uchar id;
-	uchar texture_set;
-	uchar texture_id;
-	uchar spare;
-	uchar v0, v1, v2, pad;
+	uint8 id;
+	uint8 texture_set;
+	uint8 texture_id;
+	uint8 spare;
+	uint8 v0, v1, v2, pad;
 	UV_INFO uv0, uv1, uv2, pad2;
 	CVECTOR color;
 };
 
 struct POLYGT3
 {
-	uchar id;
-	uchar texture_set;
-	uchar texture_id;
-	uchar spare;
-	uchar v0, v1, v2, pad;
-	uchar n0, n1, n2, pad2;
+	uint8 id;
+	uint8 texture_set;
+	uint8 texture_id;
+	uint8 spare;
+	uint8 v0, v1, v2, pad;
+	uint8 n0, n1, n2, pad2;
 	UV_INFO uv0, uv1, uv2, pad3;
 	CVECTOR color;
 };
 
-#define COLLISION_BOX		0
-#define COLLISION_CYLINDER	1
-#define COLLISION_CONE		2
-#define COLLISION_SPHERE	3
-#define	COLLISION_INDOORS	4
+enum CollisionPacketType
+{
+	COLLISION_BOX		= 0,
+	COLLISION_CYLINDER	= 1,
+	COLLISION_CONE		= 2,
+	COLLISION_SPHERE	= 3,
+	COLLISION_INDOORS	= 4,
+};
 
 struct COLLISION_PACKET
 {
@@ -286,7 +285,7 @@ struct MODEL
 
 //------------------------------------------------------------------------------------------------------------
 
-#define OBJECT_SMASHED_MARK			0xFD46FEC0
+static constexpr int OBJECT_SMASHED_MARK = 0xFD46FEC0;
 
 struct CELL_DATA {
 	ushort num; // size=0, offset=0
@@ -490,7 +489,7 @@ struct AreaDataStr
 	uint8	ambient_id;
 };
 
-#define SUPERREGION_NONE	(0xFF)
+static constexpr uint8 SUPERREGION_NONE = 0xFF;
 
 class CTexturePage;
 
@@ -500,7 +499,7 @@ struct AreaTpageList
 	CTexturePage*	tpage[16];
 };
 
-#define REGTEXPAGE_EMPTY	(0xFF)
+static constexpr uint8 REGTEXPAGE_EMPTY = 0xFF;
 
 struct Spool 
 {
@@ -514,7 +513,7 @@ struct Spool
 	uint8	roadh_size;
 };
 
-#define REGION_EMPTY	(0xFFFF)
+static constexpr uint16  REGION_EMPTY = 0xFFFF;
 
 //----------------------------------------------------------------------------
 
@@ -575,5 +574,3 @@ struct CAR_COSMETICS_D2
 	short twistRateZ;
 	short mass;
 };
-
-#endif

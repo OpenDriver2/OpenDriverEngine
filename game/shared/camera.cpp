@@ -1,4 +1,4 @@
-#include "game/pch.h"
+#include "core/core_common.h"
 #include "camera.h"
 
 const float Z_NEAR = 0.01f;
@@ -7,7 +7,7 @@ const float Z_FAR = 100.0f;
 extern int g_windowWidth;
 extern int g_windowHeight;
 
-CameraViewParams CCamera::MainView;
+CViewParams CCamera::MainView;
 Vector3D CCamera::MainViewVelocity;
 
 void CCamera::Lua_Init(sol::state& lua)
@@ -40,14 +40,11 @@ void CCamera::Lua_Init(sol::state& lua)
 //-------------------------------------------------------
 // Sets up the camera matrices
 //-------------------------------------------------------
-void CCamera::SetupViewAndMatrices(const CameraViewParams& cameraParams, Volume& outFrustum)
+void CCamera::SetupViewAndMatrices(const CViewParams& cameraParams, Volume& outFrustum)
 {
 	// calculate view matrices
 	Matrix4x4 view, proj;
-
-	proj = perspectiveMatrixY(DEG2RAD(cameraParams.fov), g_windowWidth, g_windowHeight, Z_NEAR, Z_FAR);
-	view = rotateZXY4(-DEG2RAD(cameraParams.angles.x), -DEG2RAD(cameraParams.angles.y), -DEG2RAD(cameraParams.angles.z));
-	view.translate(-cameraParams.position);
+	cameraParams.GetMatrices(proj, view, g_windowWidth, g_windowHeight, /*cameraParams.GetZNear()*/Z_NEAR, Z_FAR);
 
 	// calculate frustum volume
 	outFrustum.LoadAsFrustum(proj * view);

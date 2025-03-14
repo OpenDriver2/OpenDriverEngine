@@ -1,10 +1,4 @@
-#include "core/dktypes.h"
-#include "core/cmdlib.h"
-#include "core/VirtualStream.h"
-
-#include <nstd/String.hpp>
-#include <nstd/File.hpp>
-
+#include "core/core_common.h"
 #include "regions_d1.h"
 #include "regions_d2.h"
 #include "textures.h"

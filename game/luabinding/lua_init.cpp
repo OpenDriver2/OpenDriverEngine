@@ -1,4 +1,4 @@
-#include "game/pch.h"
+#include "core/core_common.h"
 #include "lua_init.h"
 #include "luamath.h"
 #include "luaengine.h"

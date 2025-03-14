@@ -1,14 +1,10 @@
-
+#include "core/core_common.h"
 #include "regions_d2.h"
 
 #include "level.h"
-#include "core/cmdlib.h"
-#include "core/IVirtualStream.h"
 
 #include "math/isin.h"
 #include "math/ratan2.cpp"
-
-#include <string.h>
 
 #define IS_STRAIGHT_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0 && ((surfid) & 0x1FFF) < m_numStraights)
 #define IS_CURVED_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x4000 && ((surfid) & 0x1FFF) < m_numCurves)
@@ -17,7 +13,7 @@
 extern sdPlane g_defaultPlane;
 extern sdPlane g_seaPlane;
 
-int SdHeightOnPlane(const VECTOR_NOPAD& position, sdPlane* plane, DRIVER2_CURVE* curves)
+static int SdHeightOnPlane(const VECTOR_NOPAD& position, sdPlane* plane, DRIVER2_CURVE* curves)
 {
 	int angle;
 	int i, d;
@@ -60,7 +56,7 @@ int SdHeightOnPlane(const VECTOR_NOPAD& position, sdPlane* plane, DRIVER2_CURVE*
 }
 
 // walk BSP nodes
-short* SdGetBSP(sdNode* node, XZPAIR* pos)
+static short* SdGetBSP(sdNode* node, XZPAIR* pos)
 {
 	while (node->node < 0)
 	{
@@ -76,7 +72,7 @@ short* SdGetBSP(sdNode* node, XZPAIR* pos)
 	return (short*)node;
 }
 
-sdPlane* FindRoadInBSP(sdNode* node, sdPlane* base)
+static sdPlane* FindRoadInBSP(sdNode* node, sdPlane* base)
 {
 	sdPlane* plane;
 
@@ -321,15 +317,15 @@ void CDriver2LevelRegion::FreeAll()
 	CBaseLevelRegion::FreeAll();
 
 	if (m_cells)
-		Memory::free(m_cells);
+		PPFree(m_cells);
 	m_cells = nullptr;
 
 	if (m_packedCellObjects)
-		Memory::free(m_packedCellObjects);
+		PPFree(m_packedCellObjects);
 	m_packedCellObjects = nullptr;
 
 	if (m_pvsData)
-		Memory::free(m_pvsData);
+		PPFree(m_pvsData);
 	m_pvsData = nullptr;
 }
 
@@ -391,12 +387,12 @@ void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	if (UnpackCellPointers(m_cellPointers, packed_cell_pointers, 0, 0) != -1)
 	{
 		// read cell data
-		m_cells = (CELL_DATA*)Memory::alloc(m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE);
+		m_cells = (CELL_DATA*)PPAlloc(m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE);
 		pFile->Seek(ctx.lumpInfo->spooled_offset + cellDataOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
 		pFile->Read(m_cells, m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 
 		// read cell objects
-		m_packedCellObjects = (PACKED_CELL_OBJECT*)Memory::alloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE);
+		m_packedCellObjects = (PACKED_CELL_OBJECT*)PPAlloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE);
 		pFile->Seek(ctx.lumpInfo->spooled_offset + cellObjectsOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
 		pFile->Read(m_packedCellObjects, m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 	}
@@ -428,7 +424,7 @@ void CDriver2LevelRegion::UnpackAllCellObjects()
 	int numCellObjects = (m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE) / sizeof(PACKED_CELL_OBJECT);
 
 	// alloc and convert
-	m_cellObjects = (CELL_OBJECT*)Memory::alloc(numCellObjects * sizeof(CELL_OBJECT));
+	m_cellObjects = (CELL_OBJECT*)PPAlloc(numCellObjects * sizeof(CELL_OBJECT));
 	memset(m_cellObjects, 0, numCellObjects * sizeof(CELL_OBJECT));
 
 	const OUT_CELL_FILE_HEADER& mapInfo = owner->GetMapInfo();
@@ -471,7 +467,7 @@ void CDriver2LevelRegion::ReadHeightmapData(const SPOOL_CONTEXT& ctx)
 	IVirtualStream* pFile = ctx.dataStream;
 
 	int pvsDataSize = 0;
-	m_pvsData = (char*)Memory::alloc(m_spoolInfo->roadm_size * SPOOL_CD_BLOCK_SIZE);
+	m_pvsData = (char*)PPAlloc(m_spoolInfo->roadm_size * SPOOL_CD_BLOCK_SIZE);
 
 	if (m_owner->m_format == LEV_FORMAT_DRIVER2_RETAIL) // retail do have PVS data in the start
 		pFile->Read(&pvsDataSize, 1, sizeof(int));

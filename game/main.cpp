@@ -1,20 +1,17 @@
-#include "game/pch.h"
-#include "core/exception_handler.h"
+#include "core/core_common.h"
 
 #include "shared/input.h"
 #include "luabinding/lua_init.h"
 #include "luabinding/luaengine.h"
-
-#include <SDL_events.h>
-
-#include <backends/imgui_impl_opengl3.h>
-#include <backends/imgui_impl_sdl.h>
-
+#include "shared/camera.h"
+#include "shared/world.h"
+#include "shared/players.h"
+#include "shared/manager_cars.h"
+#include "render/render_sky.h"
 
 //---------------------------------------------------------------------------------------------------------------------------------
 
-String					g_levname;
-sol::state				g_luaState;
+sol::state g_luaState;
 
 // stats counters
 extern int g_drawnCells;
@@ -58,7 +55,7 @@ int UpdateFPSCounter(float deltaTime)
 //-------------------------------------------------------------
 void UpdateStats(float deltaTime)
 {
-	CameraViewParams& view = CCamera::MainView;
+	CViewParams& view = CCamera::MainView;
 
 	auto engineTable = g_luaState["engine"].get_or_create<sol::table>();
 
@@ -211,10 +208,9 @@ void MainLoop()
 		// render main view
 		if (CWorld::IsLevelLoaded())
 		{
-			CameraViewParams& view = CCamera::MainView;
+			CViewParams& view = CCamera::MainView;
 
 			Matrix3x3 vectors = view.GetVectors();
-
 			audioSystem->SetListener(view.position, CCamera::MainViewVelocity, vectors.rows[2], vectors.rows[1]);
 
 			CSky::Draw(view);

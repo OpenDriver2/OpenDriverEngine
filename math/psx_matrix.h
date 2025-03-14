@@ -1,5 +1,4 @@
-#ifndef PSX_MATRIX_H
-#define PSX_MATRIX_H
+#pragma once
 
 // Performs matrix multiplication
 // m2 = m0 x m1
@@ -88,5 +87,3 @@ void GTE_RTV();
 
 #define gte_rtir()		GTE_RTV()
 #define gte_rtv0tr()	GTE_RTV()
-
-#endif // PSX_MATRIX_H
