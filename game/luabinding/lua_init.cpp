@@ -14,77 +14,23 @@
 #include "game/shared/camera.h"
 #include "game/shared/replay.h"
 
+EQSCRIPT_BIND_PROPERTY_REF(bool);
+EQSCRIPT_BIND_PROPERTY_REF(int);
+EQSCRIPT_BIND_PROPERTY_REF(uint);
+EQSCRIPT_BIND_PROPERTY_REF(short);
+EQSCRIPT_BIND_PROPERTY_REF(ushort);
+EQSCRIPT_BIND_PROPERTY_REF(float);
+EQSCRIPT_BIND_PROPERTY_REF(double);
+
 bool OpenDriverLuaInit(const esl::ScriptState& state)
 {
-#if 0
-	lua.open_libraries(sol::lib::base);
-	lua.open_libraries(sol::lib::package);
-	lua.open_libraries(sol::lib::math);
-	lua.open_libraries(sol::lib::bit32);
-	lua.open_libraries(sol::lib::string);
-	lua.open_libraries(sol::lib::table);
-
-	lua.open_libraries(sol::lib::coroutine);
-	lua.open_libraries(sol::lib::os);
-	lua.open_libraries(sol::lib::io);
-
-	lua.open_libraries(sol::lib::debug);
-
-	MAKE_PROPERTY_REF(lua, bool);
-	MAKE_PROPERTY_REF(lua, int);
-	MAKE_PROPERTY_REF(lua, uint);
-	MAKE_PROPERTY_REF(lua, short);
-	MAKE_PROPERTY_REF(lua, ushort);
-	MAKE_PROPERTY_REF(lua, float);
-	MAKE_PROPERTY_REF(lua, double);
-
-	// replace default print with Msg
-	lua["print"] = lua["Msg"] = [](sol::variadic_args va) {
-		for (auto v : va) {
-			Msg("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
-		}
-		Msg("\n");
-	};
-
-	// as well as expose all dev messages
-	lua["MsgWarning"] = [](sol::variadic_args va) {
-		for (auto v : va) {
-			MsgWarning("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
-		}
-		MsgWarning("\n");
-	};
-
-	lua["MsgError"] = [](sol::variadic_args va) {
-		for (auto v : va) {
-			MsgError("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
-		}
-		MsgError("\n");
-	};
-
-	lua["MsgInfo"] = [](sol::variadic_args va) {
-		for (auto v : va) {
-			MsgInfo("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
-		}
-		MsgInfo("\n");
-	};
-
-	lua["MsgAccept"] = [](sol::variadic_args va) {
-		for (auto v : va) {
-			MsgAccept("%s", luaL_tolstring(v.lua_state(), v.stack_index(), nullptr));
-		}
-		MsgAccept("\n");
-	};
-
-	lua["DevMsg"] = &DevMsg;
-
-	lua["Spew"] = lua.create_table_with(
-		"Norm", SPEW_NORM,
-		"Info", SPEW_INFO,
-		"Warning", SPEW_WARNING,
-		"Error", SPEW_ERROR,
-		"Success", SPEW_SUCCESS
-	);
-#endif
+	MAKE_PROPERTY_REF(bool);
+	MAKE_PROPERTY_REF(int);
+	MAKE_PROPERTY_REF(uint);
+	MAKE_PROPERTY_REF(short);
+	MAKE_PROPERTY_REF(ushort);
+	MAKE_PROPERTY_REF(float);
+	MAKE_PROPERTY_REF(double);
 
 	//-----------------------------------
 	// MODULES
