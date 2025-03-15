@@ -1,6 +1,7 @@
 #include "core/core_common.h"
 #include "luamath.h"
-
+#include "math/psx_math_types.h"
+#include "math/psx_matrix.h"
 
 #define VEC_OPERATORS_ONLY(vec_type, name) \
 	/* vec - vec */\

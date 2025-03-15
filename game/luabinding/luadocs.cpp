@@ -1,6 +1,9 @@
 #include "core/core_common.h"
 #include "luadocs.h"
 
+#include "scripting/esl_luaref.h"
+#include "scripting/esl_bind.h"
+
 enum EDocPropType
 {
 	DocProp_Method,
@@ -20,10 +23,10 @@ struct LuaDocItem
 	EqString namespaceName;
 	EqString declName;
 	EqString description;
-	Array<LuaDocProp> members;
+	Array<LuaDocProp> members{ PP_SL };
 };
 
-Array<LuaDocItem*> g_luaDoc_typeList;
+static Array<LuaDocItem*> g_luaDoc_typeList(PP_SL);
 
 CLuaDocumentation::NamespaceGuard::NamespaceGuard(const char* name /*= nullptr*/)
 {
@@ -95,25 +98,39 @@ const char* CLuaDocumentation::TypeGuard::MemberFunc(const char* name, const cha
 //--------------------------------------
 void CLuaDocumentation::Lua_Init(const esl::ScriptState& state)
 {
-	auto& docsTable = lua["docs"].get_or_create<sol::table>();
+	esl::LuaTable docsTable = state.CreateTable();
+	state.SetGlobal("docs", docsTable);
 
-	for (int i = 0; i < g_luaDoc_typeList.numElem(); i++)
+	for (LuaDocItem* doc : g_luaDoc_typeList)
 	{
-		LuaDocItem* doc = g_luaDoc_typeList[i];
-
-		auto& namespaceTable = docsTable[(char*)doc->namespaceName].get_or_create<sol::table>();
-
-		auto& declTable = namespaceTable[(char*)doc->declName].get_or_create<sol::table>();
-		declTable["description"] = (char*)doc->description;
-
-		auto& membersTable = declTable["members"].get_or_create<sol::table>();
-		for (int j = 0; j < doc->members.numElem(); j++)
+		esl::LuaTable namespaceTable = *docsTable.Get<esl::LuaTable>(doc->namespaceName);
+		if(!namespaceTable)
 		{
-			LuaDocProp& prop = doc->members[j];
-			auto& propTable = membersTable[prop.declName.ToCString()].get_or_create<sol::table>();
-			
-			propTable["type"] = prop.type;
-			propTable["desc"] = prop.description;
+			namespaceTable = state.CreateTable();
+			docsTable.Set(doc->namespaceName, namespaceTable);
+		}
+
+		esl::LuaTable declTable = *namespaceTable.Get<esl::LuaTable>(doc->declName);
+		if (!declTable)
+		{
+			declTable = state.CreateTable();
+			namespaceTable.Set(doc->declName, declTable);
+			declTable.Set("description", doc->description);
+		}
+
+		esl::LuaTable membersTable = *declTable.Get<esl::LuaTable>("members");
+		if (!membersTable)
+		{
+			membersTable = state.CreateTable();
+			declTable.Set("members", membersTable);
+		}
+
+		for (LuaDocProp& prop : doc->members)
+		{
+			esl::LuaTable propTable = state.CreateTable();
+			membersTable.Set(prop.declName, propTable);
+			propTable.Set("type", prop.type);
+			propTable.Set("desc", prop.description);
 		}
 
 		delete doc;

@@ -3,6 +3,7 @@
 #include "luaengine.h"
 #include "sys/scripting/sys_esl.h"
 
+#if 0
 void CDebugOverlay_Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
@@ -174,12 +175,13 @@ void IAudioSystem_Lua_Init(const esl::ScriptState& state)
 
 	engine["Audio"] = IAudioSystem::Instance;
 }
+#endif
 
 bool Engine_Lua_Init(const esl::ScriptState& state)
 {
 	ESL_SYS_INIT(Math_Lua_Init);
-	ESL_SYS_INIT(IAudioSystem_Lua_Init);
-	ESL_SYS_INIT(CDebugOverlay_Lua_Init);
+	//ESL_SYS_INIT(IAudioSystem_Lua_Init);
+	//ESL_SYS_INIT(CDebugOverlay_Lua_Init);
 
 	return true;
 }
