@@ -1,6 +1,8 @@
 #pragma once
+#include "scripting/esl_luaref.h"
 #include "math/psx_math_types.h"
 
+class CViewParams;
 class CCar;
 class CDriverLevelModels;
 struct CarCosmetics;
@@ -40,7 +42,7 @@ public:
 	static void				Draw(const CViewParams& view);
 	static void				UpdateTime(int64 ticks);
 
-	static void				Lua_Init(sol::state& lua);
+	static void				Lua_Init(const esl::ScriptState& state);
 protected:
 
 	void					StepCars();
@@ -50,7 +52,7 @@ protected:
 
 	void					CheckScenaryCollisions(CCar* cp);
 
-	ISoundSource*			GetSoundSource(const char* name) const;
+	EqStringRef				GetSoundScriptName(const char* name) const;
 
 	Array<CCar*>			m_active_cars;		// [A] to be renamed as m_carList
 	int						m_carIdCnt{ 0 };
@@ -60,6 +62,6 @@ protected:
 	int64					m_curUpdateTime{ 0 };
 	int						m_lastWorldStep{ -1 };
 
-	sol::function			m_soundSourceGetCbLua;
-	sol::function			m_carEventsLua;
+	esl::LuaFunctionRef		m_soundSourceGetCbLua;
+	esl::LuaFunctionRef		m_carEventsLua;
 };

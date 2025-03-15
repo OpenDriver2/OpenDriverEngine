@@ -194,7 +194,7 @@ void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float dist
 	else
 	{
 		for (int i = 0; i < 4; i++)
-			verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 4) / ONE_F;
+			verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 4) * ONE_F_RECIP;
 
 		meshBuilder.TexturedQuad3(verts[0], verts[1], verts[2], verts[3],
 									uvs[0], uvs[1], uvs[2], uvs[3]);

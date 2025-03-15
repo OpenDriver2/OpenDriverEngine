@@ -1,6 +1,7 @@
 #include "core/core_common.h"
 #include "replay.h"
 #include "world.h"
+#include "players.h"
 
 static constexpr int DRIVER2_REPLAY_MAGIC = 0x14793209;
 static constexpr int REDRIVER2_CHASE_MAGIC = (('D' << 24) | ('2' << 16) | ('C' << 8) | 'R');
@@ -93,7 +94,7 @@ struct PLAYBACKCAMERA
 
 //----------------------------------------
 
-void CReplayData::Lua_Init(sol::state& lua)
+void CReplayData::Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
 
@@ -132,7 +133,7 @@ void CReplayData::Lua_Init(sol::state& lua)
 
 //----------------------------------------
 
-static void PackInput(uint& outPad, char& outSteer, char& outType, const CPlayer::InputData& inputs)
+static void PackInput(uint& outPad, char& outSteer, char& outType, const PlayerInputData& inputs)
 {
 	outPad = 0;
 	outPad |= inputs.accel ? MPAD_CROSS : 0;
@@ -157,7 +158,7 @@ static void PackInput(uint& outPad, char& outSteer, char& outType, const CPlayer
 	}
 }
 
-static void UnpackInput(CPlayer::InputData& outInputs, uint pad, char steer, char type)
+static void UnpackInput(PlayerInputData& outInputs, uint pad, char steer, char type)
 {
 	outInputs.accel = pad & MPAD_CROSS;
 	outInputs.brake = pad & MPAD_SQUARE;
@@ -222,7 +223,7 @@ void CReplayStream::Purge()
 }
 
 // update replay
-bool CReplayStream::Play(CPlayer::InputData& outInputs)
+bool CReplayStream::Play(PlayerInputData& outInputs)
 {
 	// TODO: those Pack/Unpack input functions might be temporary and only for old replay format
 	uint outPad;
@@ -251,7 +252,7 @@ bool CReplayStream::Play(CPlayer::InputData& outInputs)
 	return ret;
 }
 
-bool CReplayStream::Record(CPlayer::InputData& inoutInputs)
+bool CReplayStream::Record(PlayerInputData& inoutInputs)
 {
 	// TODO: those Pack/Unpack input functions might be temporary and only for old replay format
 	uint inoutPad;

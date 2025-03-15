@@ -1,4 +1,10 @@
 #include "core/core_common.h"
+#include "sys/scripting/sys_esl.h"
+
+#include "cars.h"
+
+#include "audio/eqSoundEmitterSystem.h"
+#include "game/luabinding/luarefvalue.h"
 
 #include "routines/d2_types.h"
 #include "routines/models.h"
@@ -8,17 +14,25 @@
 #include "math/convert.h"
 #include "bcoll3d.h"
 #include "bcollide.h"
-#include "cars.h"
 #include "world.h"
 #include "manager_cars.h"
 #include "game/render/render_model.h"
+
+using CarEventsCall = esl::runtime::FunctionCall<void, CCar*, const char*, const esl::LuaTableRef&>;
 
 extern CDriverLevelModels g_levModels;
 
 const short DEFAULT_GRAVITY_FORCE = -7456; // D1 has -10922
 const double Car_Fixed_Timestep = 1.0 / 30.0;
 
-HANDLING_TYPE g_handlingType[7] =
+enum ECarSoundObjId
+{
+	CAR_SOUND_IDLE,
+	CAR_SOUND_REV,
+	CAR_SOUND_SKID
+};
+
+static HANDLING_TYPE g_handlingType[7] =
 {
 	// frictionScaleRatio, aggressiveBraking, fourWheelDrive, autoBrakeOn
 	{ 32,	true,		false,	1 },
@@ -144,7 +158,7 @@ int wetness = 0;					// TODO: CWorld::GetWetness()
 //--------------------------------------------------------
 
 
-void CCar::Lua_Init(sol::state& lua)
+void CCar::Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
 
@@ -517,74 +531,48 @@ void CCar::Destroy()
 {
 	// too simple
 	m_controlType = CONTROL_TYPE_NONE;
-
 	StopSounds();
 }
 
 void CCar::StartSounds()
 {
-	ISoundSource* skidSample = m_owner->GetSoundSource("SkidLoop");
+	EqStringRef skidSoundName = m_owner->GetSoundScriptName("SkidLoop");
+	{
+		EmitParams skidEp(skidSoundName);
+		m_soundObj.EmitSound(CAR_SOUND_SKID, &skidEp);
+	}
 
-	if (!m_engineSound)
-		m_engineSound = IAudioSystem::Instance->CreateSource();
-	m_engineSound->Setup(0, m_cosmetics.revSample, &EngineSoundUpdateCb, this);
+	{
+		EmitParams engineEp(m_cosmetics.revSoundName);
+		m_soundObj.EmitSound(CAR_SOUND_REV, &engineEp);
+	}
 
-	if (!m_idleSound)
-		m_idleSound = IAudioSystem::Instance->CreateSource();
-	m_idleSound->Setup(0, m_cosmetics.idleSample, &IdleSoundUpdateCb, this);
-
-	if (!m_skidSound)
-		m_skidSound = IAudioSystem::Instance->CreateSource();
-	m_skidSound->Setup(0, skidSample, &SkidSoundUpdateCb, this);
-
-	IAudioSource::Params params;
-	params.set_state(IAudioSource::PLAYING);
-	params.set_looping(true);
-	params.set_referenceDistance(512 / ONE_F);
-	params.set_releaseOnStop(true);
-
-	m_skidSound->UpdateParams(params);
-	m_engineSound->UpdateParams(params);
-	m_idleSound->UpdateParams(params);
+	{
+		EmitParams engineEp(m_cosmetics.idleSoundName);
+		m_soundObj.EmitSound(CAR_SOUND_IDLE, &engineEp);
+	}
 }
 
 void CCar::StopSounds()
 {
-	if (m_engineSound)
-		m_engineSound->Release();
-
-	if (m_idleSound)
-		m_idleSound->Release();
-
-	if (m_skidSound)
-		m_skidSound->Release();
-
-	if (m_dirtSound)
-		m_dirtSound->Release();
+	m_soundObj.StopEmitter(CSoundingObject::ID_ALL, true);
 }
 
 void CCar::StartStaticSound(const char* type, float refDist, float volume, float pitch)
 {
-	ISoundSource* soundSample = m_owner->GetSoundSource(type);
-
+	EqStringRef soundSample = m_owner->GetSoundScriptName(type);
 	if (!soundSample)
 	{
 		MsgError("StartStaticSound - '%s' is not valid sound name\n", type);
 		return;
 	}
 
-	IAudioSource* staticSound = IAudioSystem::Instance->CreateSource();
-
-	IAudioSource::Params params;
-	params.set_state(IAudioSource::PLAYING);
-	params.set_position(FromFixedVector(GetPosition()));
-	params.set_releaseOnStop(true);
-	params.set_referenceDistance(refDist);
-	params.set_volume(volume);
-	params.set_pitch(pitch);
-
-	staticSound->Setup(0, soundSample, nullptr, this);
-	staticSound->UpdateParams(params);
+	EmitParams staticSoundEp(m_cosmetics.revSoundName);
+	staticSoundEp.radiusMultiplier = refDist;
+	staticSoundEp.pitch = pitch;
+	staticSoundEp.volume = volume;
+	staticSoundEp.origin = FromFixedVector(GetPosition());
+	g_sounds->EmitSound(&staticSoundEp);
 }
 
 void CCar::CollisionSound(int impact, bool car_vs_car)
@@ -598,7 +586,6 @@ void CCar::CollisionSound(int impact, bool car_vs_car)
 	const char* soundType = "Hit_Car_1";
 
 	int refDist = 256;
-
 	if (car_vs_car)
 	{
 		if (impact > 900)
@@ -620,7 +607,7 @@ void CCar::CollisionSound(int impact, bool car_vs_car)
 			soundType = "Hit_Car_2";
 	}
 
-	StartStaticSound(soundType, refDist / ONE_F, 1.0f, 1.0f);
+	StartStaticSound(soundType, refDist * ONE_F_RECIP, 1.0f, 1.0f);
 	m_crashTimer = 2;
 }
 
@@ -729,26 +716,20 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 			const int compressionDiff = abs(newCompression - oldCompression);
 			if (compressionDiff > 12 && (i & 1U) != 0)
 			{
-				StartStaticSound("HitCurb", 128 / ONE_F, 0.7f, 400 / ONE_F);
+				StartStaticSound("HitCurb", 128 * ONE_F_RECIP, 0.7f, 400 * ONE_F_RECIP);
 			}
 
 			// Lua interaction
 			if (compressionDiff > 12)
 			{
-				if (m_carEventsLua.valid())
+				if (m_carEventsLua)
 				{
-					try {
-						sol::state_view sv(m_carEventsLua.lua_state());
-						sol::table tbl = sv.create_table_with(
-							"wheelNum", i,
-							"newCompression", compressionDiff
-						);
-						m_carEventsLua.call(this, "HitCurb", tbl);
-					}
-					catch (const sol::error& e)
-					{
-						MsgError("CCar event call error: %s\n", e.what());
-					}
+					auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
+					tbl.Set("wheelNum", i);
+					tbl.Set("newCompression", compressionDiff);
+
+					auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitCurb", tbl);
+					LUA_CHECK_CALL(result, "Event HitCurb");
 				}
 			}
 #if 0
@@ -1259,21 +1240,15 @@ void CCar::StepOneCar()
 		} while (componant >= 0);
 
 		// Lua interaction
-		if (m_carEventsLua.valid())
+		if (m_carEventsLua)
 		{
-			try {
-				sol::state_view sv(m_carEventsLua.lua_state());
-				sol::table tbl = sv.create_table_with(
-					"position", LuaPropertyRef(surfacePoint),
-					"normal", LuaPropertyRef(surfaceNormal),
-					"strikeVel", LuaPropertyRef(impulse)		// in reversed code it's probably named incorrectly
-				);
-				m_carEventsLua.call(this, "HitGround", tbl);
-			}
-			catch (const sol::error& e)
-			{
-				MsgError("CCar event call error: %s\n", e.what());
-			}
+			auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
+			tbl.Set("position", LuaPropertyRef(surfacePoint));
+			tbl.Set("normal", LuaPropertyRef(surfaceNormal));
+			tbl.Set("strikeVel", LuaPropertyRef(impulse));		// in reversed code it's probably named incorrectly
+
+			auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitGround", tbl);
+			LUA_CHECK_CALL(result, "Event HitGround");
 		}
 
 		if (impulse > 20000)
@@ -1626,6 +1601,9 @@ void CCar::RebuildCarMatrix(RigidBodyState& st)
 	InitOrientedBox();
 }
 
+#if 0
+// TODO: support custom sound processors
+
 void CCar::EngineSoundUpdateCb(void* obj, IAudioSource::Params& params)
 {
 	CCar* thisCar = (CCar*)obj;
@@ -1638,7 +1616,7 @@ void CCar::EngineSoundUpdateCb(void* obj, IAudioSource::Params& params)
 
 	int pitch = thisCar->m_hd.revs / 4 + thisCar->m_revsvol / 64 + thisCar->m_cosmetics.baseRPM;
 	params.set_volume((10000 + thisCar->m_revsvol) / 10000.0f);
-	params.set_pitch(pitch / ONE_F);
+	params.set_pitch(pitch * ONE_F_RECIP);
 	params.set_position(FromFixedVector(thisCar->GetPosition()));
 	params.set_velocity(FromFixedVector(thisCar->GetLinearVelocity()));
 }
@@ -1655,7 +1633,7 @@ void CCar::IdleSoundUpdateCb(void* obj, IAudioSource::Params& params)
 
 	int pitch = thisCar->m_hd.revs / 4 + 4096;
 	params.set_volume((10000 + thisCar->m_idlevol) / 10000.0f);
-	params.set_pitch(pitch / ONE_F);
+	params.set_pitch(pitch * ONE_F_RECIP);
 	params.set_position(FromFixedVector(thisCar->GetPosition()));
 	params.set_velocity(FromFixedVector(thisCar->GetLinearVelocity()));
 }
@@ -1733,10 +1711,11 @@ void CCar::SkidSoundUpdateCb(void* obj, IAudioSource::Params& params)
 	const int pitch = skidsound * 1024 / 13000 + 3072;
 
 	params.set_volume((10000 + volume) / 10000.0f);
-	params.set_pitch(pitch / ONE_F);
+	params.set_pitch(pitch * ONE_F_RECIP);
 	params.set_position(FromFixedVector(thisCar->GetPosition()));
 	params.set_velocity(FromFixedVector(thisCar->GetLinearVelocity()));		
 }
+#endif
 
 void CCar::CheckCarEffects()
 {
@@ -2141,8 +2120,6 @@ void CCar::SetAutobrake(const int8& value)
 	m_hd.autoBrake = value;
 }
 
-
-
 void CCar::DrawCar()
 {
 	// this potentially could warp matrix. PLEASE consider using quaternions in future
@@ -2198,7 +2175,7 @@ void CCar::DrawCar()
 		else
 			wheelModelBack = m_wheelModels[1];
 
-		const float sizeScale = ((wheelSize * 14142) / 10000) / ONE_F;
+		const float sizeScale = ((wheelSize * 14142) / 10000) * ONE_F_RECIP;
 
 		float wheelSizeInvScale;
 		{
@@ -2383,23 +2360,17 @@ bool CCar::CarBuildingCollision(const BUILDING_BOX& building, CELL_OBJECT* cop, 
 		pointVel[2] = FIXEDH(m_st.n.angularVelocity[0] * lever[1] - m_st.n.angularVelocity[1] * lever[0]) + m_st.n.linearVelocity[2];
 
 		// Lua interaction
-		if (m_carEventsLua.valid())
+		if (m_carEventsLua)
 		{
-			try {
-				sol::state_view sv(m_carEventsLua.lua_state());
-				sol::table tbl = sv.create_table_with(
-					"model", building.modelRef,
-					"cellObject", cop,
-					"position", LuaPropertyRef(collisionResult.hit),
-					"normal", LuaPropertyRef(collisionResult.surfNormal),
-					"pointVel", LuaPropertyRef(pointVel)
-				);
-				m_carEventsLua.call(this, "HitCellObject", tbl);
-			}
-			catch (const sol::error& e)
-			{
-				MsgError("CCar event call error: %s\n", e.what());
-			}
+			auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
+			tbl.Set("model", building.modelRef);
+			tbl.Set("cellObject", cop);
+			tbl.Set("position", LuaPropertyRef(collisionResult.hit));
+			tbl.Set("normal", LuaPropertyRef(collisionResult.surfNormal));
+			tbl.Set("pointVel", LuaPropertyRef(pointVel));
+
+			auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitCellObject", tbl);
+			LUA_CHECK_CALL(result, "Event HitCellObject");
 		}
 
 		/*
@@ -2441,24 +2412,18 @@ bool CCar::CarBuildingCollision(const BUILDING_BOX& building, CELL_OBJECT* cop, 
 				// TODO: World lua callback on smashables
 
 				// Lua interaction
-				if (m_carEventsLua.valid())
+				if (m_carEventsLua)
 				{
-					try {
-						sol::state_view sv(m_carEventsLua.lua_state());
-						sol::table tbl = sv.create_table_with(
-							"model", building.modelRef,
-							"cellObject", cop,
-							"position", LuaPropertyRef(collisionResult.hit),
-							"normal", LuaPropertyRef(collisionResult.surfNormal),
-							"velocity", LuaPropertyRef(velocity),
-							"strikeVel", LuaPropertyRef(strikeVel)
-						);
-						m_carEventsLua.call(this, "HitSmashable", tbl);
-					}
-					catch (const sol::error& e)
-					{
-						MsgError("CCar event call error: %s\n", e.what());
-					}
+					auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
+					tbl.Set("model", building.modelRef);
+					tbl.Set("cellObject", cop);
+					tbl.Set("position", LuaPropertyRef(collisionResult.hit));
+					tbl.Set("normal", LuaPropertyRef(collisionResult.surfNormal));
+					tbl.Set("velocity", LuaPropertyRef(velocity));
+					tbl.Set("strikeVel", LuaPropertyRef(strikeVel));
+
+					auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitSmashable", tbl);
+					LUA_CHECK_CALL(result, "Event HitSmashable");
 				}
 
 				cop->pos.vx = OBJECT_SMASHED_MARK;
@@ -2745,27 +2710,21 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	c2InfiniteMass = (c1->m_controlType == CONTROL_TYPE_CUTSCENE || m2 == 0x7fff);
 
 	// Lua interaction
-	if (m_carEventsLua.valid())
+	if (m_carEventsLua)
 	{
-		try {
-			sol::state_view sv(m_carEventsLua.lua_state());
-			sol::table tbl = sv.create_table_with(
-				"car1", this,
-				"car2", other,
-				"position", LuaPropertyRef(collResult.location),
-				"normal", LuaPropertyRef(collResult.normal),
-				"strikeVel", LuaPropertyRef(strikeVel),
-				"mass1", LuaPropertyRef(m1),
-				"mass2", LuaPropertyRef(m2),
-				"c1InfiniteMass", LuaPropertyRef(c1InfiniteMass),
-				"c2InfiniteMass", LuaPropertyRef(c2InfiniteMass)
-			);
-			m_carEventsLua.call(this, "CarsCollision", tbl);
-		}
-		catch (const sol::error& e)
-		{
-			MsgError("CCar event call error: %s\n", e.what());
-		}
+		auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
+		tbl.Set("car1", this);
+		tbl.Set("car2", other);
+		tbl.Set("position", LuaPropertyRef(collResult.location));
+		tbl.Set("normal", LuaPropertyRef(collResult.normal));
+		tbl.Set("strikeVel", LuaPropertyRef(strikeVel));
+		tbl.Set("mass1", LuaPropertyRef(m1));
+		tbl.Set("mass2", LuaPropertyRef(m2));
+		tbl.Set("c1InfiniteMass", LuaPropertyRef(c1InfiniteMass));
+		tbl.Set("c2InfiniteMass", LuaPropertyRef(c2InfiniteMass));
+
+		auto result = CarEventsCall::Invoke(m_carEventsLua, this, "CarsCollision", tbl);
+		LUA_CHECK_CALL(result, "Event CarsCollision");
 	}
 
 	int do1, do2;
@@ -2808,24 +2767,17 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const VECTOR_NOPAD& lever, const CRET3D& collResult)
 {
 	// Lua interaction
-	if (m_carEventsLua.valid())
+	if (m_carEventsLua)
 	{
-		try {
+		auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
+		tbl.Set("other", other);
+		tbl.Set("position", LuaPropertyRef(collResult.location));
+		tbl.Set("normal", LuaPropertyRef(collResult.normal));
+		tbl.Set("strikeVel", LuaPropertyRef(strikeVel));
+		tbl.Set("infiniteMass", LuaPropertyRef(infiniteMass));
 
-			sol::state_view sv(m_carEventsLua.lua_state());
-			sol::table tbl = sv.create_table_with(
-				"other", other,
-				"position", LuaPropertyRef(collResult.location),
-				"normal", LuaPropertyRef(collResult.normal),
-				"strikeVel", LuaPropertyRef(strikeVel),
-				"infiniteMass", LuaPropertyRef(infiniteMass)
-			);
-			m_carEventsLua.call(this, "HitCar", tbl);
-		}
-		catch (const sol::error& e)
-		{
-			MsgError("CCar event call error: %s\n", e.what());
-		}
+		auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitCar", tbl);
+		LUA_CHECK_CALL(result, "Event HitCar");
 	}
 
 	// apply force to car 0

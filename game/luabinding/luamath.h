@@ -1,8 +1,5 @@
-#ifndef LUA_MATH_H
-#define LUA_MATH_H
+#pragma once
+#include "scripting/esl.h"
 
-#include <sol/forward.hpp>
+bool Math_Lua_Init(const esl::ScriptState& state);
 
-void Math_Lua_Init(sol::state& lua);
-
-#endif // LUA_MATH_H

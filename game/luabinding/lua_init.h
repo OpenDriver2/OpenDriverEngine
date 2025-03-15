@@ -1,8 +1,4 @@
-#ifndef LUA_INIT_H
-#define LUA_INIT_H
+#pragma once
+#include "scripting/esl.h"
 
-#include <sol/forward.hpp>
-
-void LuaInit(sol::state& lua_state);
-
-#endif // LUA_INIT_H
+void LuaInit(const esl::ScriptState& state);

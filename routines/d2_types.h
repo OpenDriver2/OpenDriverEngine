@@ -439,7 +439,7 @@ struct DRIVER1_ROAD
 	short	x, z;
 };
 
-struct DRIVER1_JUNC_ETRY
+struct DRIVER1_JUNC_ENTRY
 {
 	short	fromJunc;
 	short	road;
@@ -454,7 +454,7 @@ struct DRIVER1_JUNCTION
 	char	pad;
 	short	lightsTimer;
 	char	lightsNS, lightsWE;
-	DRIVER1_JUNC_ETRY entries[4];
+	DRIVER1_JUNC_ENTRY entries[4];
 	short	x, z;
 };
 

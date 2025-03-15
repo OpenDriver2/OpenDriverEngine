@@ -3,7 +3,8 @@
 #include "math/math_common.h"
 
 static constexpr int	ONE			= 4096;
-static constexpr float ONE_F		= float(ONE);
+static constexpr float	ONE_F		= float(ONE);
+static constexpr float	ONE_F_RECIP	= 1.0f / ONE_F;
 static constexpr int	ONE_BITS	= 12;
 
 const float TO_RADIAN		= (1.0f / ONE_F * M_PI_F * 2.0f);

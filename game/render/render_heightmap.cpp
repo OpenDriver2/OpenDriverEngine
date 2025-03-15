@@ -9,7 +9,7 @@ extern CBaseLevelMap* g_levMap;
 
 static VECTOR_NOPAD g_debugCellPos;
 
-void DebugDrawSdNode(sdNode* node)
+static void DebugDrawSdNode(sdNode* node)
 {
 	Vector3D cpos(g_debugCellPos.vx - 512, g_debugCellPos.vy, g_debugCellPos.vz - 512);
 	cpos /= ONE_F;
@@ -21,13 +21,13 @@ void DebugDrawSdNode(sdNode* node)
 
 	ColorRGBA color(0, 1, 0, 1);
 	DbgLine()
-		.Start(cpos - dir + tangent * float(node->dist / ONE_F))
-		.End(cpos + dir + tangent * float(node->dist / ONE_F))
+		.Start(cpos - dir + tangent * float(node->dist * ONE_F_RECIP))
+		.End(cpos + dir + tangent * float(node->dist * ONE_F_RECIP))
 		.Color(color);
 }
 
 // recursively walks heightmap nodes
-short* DebugDriver2SdCell_r(sdNode* node, XZPAIR* pos)
+static short* DebugDriver2SdCell_r(sdNode* node, XZPAIR* pos)
 {
 	if (node->node)
 	{
@@ -50,13 +50,13 @@ void DebugDrawDriver2HeightmapCell(const VECTOR_NOPAD& cellPos, const ColorRGBA&
 	int cellMinZ = (((cellPos.vz - 512) >> 10) << 10) + 512;
 
 	Vector3D cMin, cMax;
-	cMin.y = cMax.y = cellPos.vy / ONE_F;
+	cMin.y = cMax.y = cellPos.vy * ONE_F_RECIP;
 
-	cMin.x = cellMinX / ONE_F;
-	cMin.z = cellMinZ / ONE_F;
+	cMin.x = cellMinX * ONE_F_RECIP;
+	cMin.z = cellMinZ * ONE_F_RECIP;
 
-	cMax.x = (cellMinX + 1024) / ONE_F;
-	cMax.z = (cellMinZ + 1024) / ONE_F;
+	cMax.x = (cellMinX + 1024) * ONE_F_RECIP;
+	cMax.z = (cellMinZ + 1024) * ONE_F_RECIP;
 
 	XZPAIR cell;
 	g_levMap->WorldPositionToCellXZ(cell, cellPos);

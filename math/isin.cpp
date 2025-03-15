@@ -1,10 +1,10 @@
 // Based on isin_S4 implementation from coranac:
 // http://www.coranac.com/2009/07/sines/
 
-#define qN	10
-#define qA	12
-#define B	19900
-#define	C	3516
+static constexpr int qN = 10;
+static constexpr int qA = 12;
+static constexpr int B = 19900;
+static constexpr int C = 3516;
 
 /// @param x	angle (with 2^15 units/circle)
 /// @return     Sine value (Q12)

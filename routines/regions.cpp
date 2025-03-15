@@ -20,7 +20,7 @@ void CBaseLevelRegion::FreeAll()
 	m_owner->OnRegionFreed(this);
 	
 	// do I need that?
-	if(m_spoolInfo && m_spoolInfo->super_region != 0xFF)
+	if(m_spoolInfo && m_spoolInfo->super_region != SUPERREGION_NONE)
 	{
 		const int areaDataNum = m_spoolInfo->super_region;
 		const int numAreaTpages = m_owner->m_areaData[areaDataNum].num_tpages;
@@ -28,7 +28,7 @@ void CBaseLevelRegion::FreeAll()
 
 		for (int i = 0; numAreaTpages; i++)
 		{
-			if (areaTPages.pageIndexes[i] == 0xFF)
+			if (areaTPages.pageIndexes[i] == REGTEXPAGE_EMPTY)
 				break;
 
 			if (areaTPages.tpage[i])
@@ -191,20 +191,11 @@ void CBaseLevelMap::FreeAll()
 		free(m_regionSpoolInfo);
 	m_regionSpoolInfo = nullptr;
 
-	delete[] m_regionSpoolInfoOffsets;
-	m_regionSpoolInfoOffsets = nullptr;
-
-	delete[] m_areaTPages;
-	m_areaTPages = nullptr;
-
-	delete[] m_areaData;
-	m_areaData = nullptr;
-
-	delete[] m_areaDataStates;
-	m_areaDataStates = nullptr;
-
-	delete[] m_straddlers;
-	m_straddlers = nullptr;
+	SAFE_DELETE_ARRAY(m_regionSpoolInfoOffsets);
+	SAFE_DELETE_ARRAY(m_areaTPages);
+	SAFE_DELETE_ARRAY(m_areaData);
+	SAFE_DELETE_ARRAY(m_areaDataStates);
+	SAFE_DELETE_ARRAY(m_straddlers);
 }
 
 int	CBaseLevelMap::GetAreaDataCount() const

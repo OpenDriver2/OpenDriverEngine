@@ -491,8 +491,8 @@ void CRenderModel::DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& po
 			Vector3D pos(box->xpos, -box->ypos, box->zpos);
 			Vector3D size(box->xsize / 2, box->ysize / 2, box->zsize / 2);
 
-			CDebugOverlay::SetTransform(world * translate(pos / ONE_F) * rotateY4(boxRotationRad));
-			CDebugOverlay::Box(-size / ONE_F, size / ONE_F, ColorRGBA(1, 1, 0, 0.5f));
+			CDebugOverlay::SetTransform(world * translate(pos * ONE_F_RECIP) * rotateY4(boxRotationRad));
+			CDebugOverlay::Box(-size * ONE_F_RECIP, size * ONE_F_RECIP, ColorRGBA(1, 1, 0, 0.5f));
 		}
 
 		box++;
@@ -558,7 +558,7 @@ void CRenderModel::SetupLightingProperties(float ambientScale /*= 1.0f*/, float 
 	const OUT_CELL_FILE_HEADER& cellHeader = g_levMap->GetMapInfo();
 	
 	Vector3D lightVector = normalize(FromFixedVector(cellHeader.light_source));
-	float lightLevel = cellHeader.ambient_light_level / ONE_F;
+	float lightLevel = cellHeader.ambient_light_level * ONE_F_RECIP;
 	
 	g_worldRenderProperties.ambientColor = ColorRGBA(CRender_Level::RenderProps.ambientColor, 0.8f * ambientScale * lightLevel);
 	g_worldRenderProperties.lightColor = ColorRGBA(CRender_Level::RenderProps.lightColor, 0.8f * lightScale * lightLevel);

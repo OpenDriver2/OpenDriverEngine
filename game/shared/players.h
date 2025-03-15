@@ -1,4 +1,5 @@
 #pragma once
+#include "scripting/esl.h"
 #include "math/psx_math_types.h"
 
 class CCar;
@@ -18,22 +19,24 @@ enum ERubberBandMode
 	Rubberband_Escape
 };
 
+struct PlayerInputData
+{
+	// TODO: pedestrian mapping
+	bool accel{ false };
+	bool brake{ false };
+	bool wheelspin{ false };
+	bool handbrake{ false };
+	bool fastSteer{ false };
+	bool useAnalogue{ false };
+	int steering{ 0 };
+	int horn{ 0 };
+};
+
 class CPlayer
 {
 	friend class CManager_Players;
 public:
-	struct InputData
-	{
-		// TODO: pedestrian mapping
-		bool accel { false };
-		bool brake { false };
-		bool wheelspin { false };
-		bool handbrake { false };
-		bool fastSteer { false };
-		bool useAnalogue { false };
-		int steering { 0 };
-		int horn { 0 };
-	};
+	using InputData = PlayerInputData;
 
 	virtual ~CPlayer();
 
@@ -61,7 +64,7 @@ public:
 	void				UpdateControls(const InputData& input);
 	void				ProcessCarPad();
 
-	static void			Lua_Init(sol::state& lua);
+	static void			Lua_Init(const esl::ScriptState& state);
 
 protected:
 	InputData			m_currentInputs;
@@ -101,7 +104,7 @@ public:
 
 	//----------------------------------------------------
 
-	static void				Lua_Init(sol::state& lua);
+	static void				Lua_Init(const esl::ScriptState& state);
 
 protected:
 	static CPlayer			LocalPlayer;

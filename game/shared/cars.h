@@ -1,5 +1,9 @@
 #pragma once
 #include "audio/eqSoundEmitterObject.h"
+#include "math/psx_math_types.h"
+
+#include "scripting/esl.h"
+#include "scripting/esl_luaref.h"
 
 using LONGVECTOR3 = int[3];
 using LONGVECTOR4 = int[4];
@@ -79,9 +83,9 @@ struct CarCosmetics
 	short mass;
 	short baseRPM;
 
-	EqString revSample;
-	EqString idleSample;
-	EqString hornSample;
+	EqString revSoundName;
+	EqString idleSoundName;
+	EqString hornSoundName;
 
 	SVECTOR& get_wheelDisp(int i)
 	{
@@ -325,7 +329,7 @@ public:
 	const CarCosmetics&		GetCosmetics() const;
 
 	//--------------
-	static void				Lua_Init(sol::state& lua);
+	static void				Lua_Init(const esl::ScriptState& state);
 
 protected:
 
@@ -373,9 +377,9 @@ protected:
 	void				CollisionSound(int impact, bool car_vs_car);
 	void				CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, int doFactor, bool infiniteMass, const VECTOR_NOPAD& lever, const CRET3D& collResult);
 
-	static void			EngineSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
-	static void			IdleSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
-	static void			SkidSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
+	//static void			EngineSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
+	//static void			IdleSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
+	//static void			SkidSoundUpdateCb(void* obj, IEqAudioSource::Params& params);
 
 	// --------------------
 	HANDLING_DATA		m_hd;
@@ -439,7 +443,7 @@ protected:
 	CSoundingObject	m_soundObj;
 
 	// lua callbacks
-	sol::function	m_carEventsLua;
+	esl::LuaFunctionRef	m_carEventsLua;
 	/* car events are: 
 		"HitGround",
 		"HitCurb",

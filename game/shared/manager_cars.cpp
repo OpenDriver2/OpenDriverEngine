@@ -1,5 +1,7 @@
 #include "core/core_common.h"
 
+#include "sys/scripting/sys_esl.h"
+
 #include "math/ratan2.h"
 #include "routines/regions.h"
 #include "manager_cars.h"
@@ -17,9 +19,9 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 const int64 targetMinFrameTime = (1.0f / 240.0f) * 1000000;
 
-/*static*/ void	CManager_Cars::Lua_Init(sol::state& lua)
+/*static*/ void	CManager_Cars::Lua_Init(const esl::ScriptState& state)
 {
-	CCar::Lua_Init(lua);
+	CCar::Lua_Init(state);
 
 	{
 		LUADOC_GLOBAL();
@@ -667,21 +669,17 @@ void CManager_Cars::GlobalTimeStep()
 	}
 }
 
-ISoundSource* CManager_Cars::GetSoundSource(const char* name) const
+EqStringRef CManager_Cars::GetSoundScriptName(const char* name) const
 {
-	if (!m_soundSourceGetCbLua.valid())
+	if (!m_soundSourceGetCbLua)
 		return nullptr;
 
-	ISoundSource* result = nullptr;
-	try {
-		result = m_soundSourceGetCbLua.call(name);
-	}
-	catch (const sol::error& e)
-	{
-		MsgError("CManager_Cars::GetSoundSource error: %s\n", e.what());
-	}
+	using GetSoundScriptNameCall = esl::runtime::FunctionCall<EqStringRef, const char*>;
+	auto result = GetSoundScriptNameCall::Invoke(m_soundSourceGetCbLua, name);
+	if (!LUA_CHECK_CALL(result, "GetSoundScriptName"))
+		return nullptr;
 
-	return result;
+	return *result;
 }
 
 void CManager_Cars::CheckScenaryCollisions(CCar* cp)

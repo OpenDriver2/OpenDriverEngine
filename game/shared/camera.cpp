@@ -10,7 +10,7 @@ extern int g_windowHeight;
 CViewParams CCamera::MainView;
 Vector3D CCamera::MainViewVelocity;
 
-void CCamera::Lua_Init(sol::state& lua)
+void CCamera::Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
 	auto engine = lua["engine"].get_or_create<sol::table>();

@@ -1,10 +1,4 @@
-#ifndef LUA_ENGINE_H
-#define LUA_ENGINE_H
+#pragma once
+#include "scripting/esl.h"
 
-#include <sol/forward.hpp>
-
-void Engine_Lua_Init(sol::state& lua);
-void Engine_Lua_PrintStackTrace(sol::state& lua);
-
-#endif // LUA_ENGINE_H
-
+bool Engine_Lua_Init(const esl::ScriptState& state);

@@ -479,7 +479,7 @@ void CSky::Init()
 	g_skyColorConstantId = GR_GetShaderConstantIndex(g_skyShader, "u_skyColor");
 }
 
-void CSky::Lua_Init(sol::state& lua)
+void CSky::Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
 

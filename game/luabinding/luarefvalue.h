@@ -1,4 +1,5 @@
-#include <sol/forward.hpp>
+#pragma once
+#include "scripting/esl.h"
 
 // the class that allows to change value inside callbacks
 template <typename TType>
@@ -7,7 +8,7 @@ class LuaPropertyRef
 public:
 	LuaPropertyRef(TType& value);
 
-	static void Lua_Init(sol::state& lua, const char* name);
+	static void Lua_Init(const esl::ScriptState& state, const char* name);
 
 	TType& valueRef;
 };
@@ -19,7 +20,7 @@ inline LuaPropertyRef<TType>::LuaPropertyRef(TType& value)
 }
 
 template <typename TType>
-inline void LuaPropertyRef<TType>::Lua_Init(sol::state& lua, const char* name)
+inline void LuaPropertyRef<TType>::Lua_Init(const esl::ScriptState& state, const char* name)
 {
 	lua.new_usertype<LuaPropertyRef<TType>>(
 		name,

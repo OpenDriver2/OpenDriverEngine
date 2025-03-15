@@ -1,4 +1,5 @@
 #pragma once
+#include "scripting/esl.h"
 #include "math/Vector.h"
 #include "render/ViewParams.h"
 
@@ -11,5 +12,5 @@ public:
 
 	static void SetupViewAndMatrices(const CViewParams& cameraParams, Volume& outFrustum);
 
-	static void Lua_Init(sol::state& lua);
+	static void Lua_Init(const esl::ScriptState& state);
 };

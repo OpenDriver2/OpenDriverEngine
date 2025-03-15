@@ -33,7 +33,7 @@
 	sol::meta_function::multiplication, sol::resolve<vec_type(const vec_type&, const float&)>(&operator*),\
 	sol::meta_function::division, sol::resolve<vec_type(const vec_type&, const float&)>(&operator/),\
 
-void Math_Lua_Init(sol::state& lua)
+bool Math_Lua_Init(const esl::ScriptState& state)
 {
 	//-----------------------------------
 	// 3D MATH
@@ -399,7 +399,7 @@ void Math_Lua_Init(sol::state& lua)
 			fix["toGTEAngle"] = TO_GTE_ANGLE;
 
 			fix["ToFixed"]		= [](const float& a)					{ return int(a * ONE_F); };
-			fix["FromFixed"]	= [](const int& a)						{ return float(a) / ONE_F; };
+			fix["FromFixed"]	= [](const int& a)						{ return float(a) * ONE_F_RECIP; };
 			fix["DivHalfRound"]	= [](const int& a, const int& bits)		{ return FixDivHalfRound(a, bits); };
 			fix["DIFF_ANGLES"] = sol::overload(
 				[](const int& x, const int& y)		{ return DIFF_ANGLES(x, y); },
@@ -427,4 +427,6 @@ void Math_Lua_Init(sol::state& lua)
 		gte["SquareRoot0"] = &SquareRoot0;
 		// gte["MulMatrix0"] = &MulMatrix0;
 	}
+
+	return true;
 }

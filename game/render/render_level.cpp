@@ -277,14 +277,14 @@ void CRender_Level::DrawObjectShadow(CMeshBuilder& shadowMesh, const Matrix3x3& 
 
 		if (highDetail)
 		{
-			swap(verts[3], verts[2]);
-			swap(uvs[3], uvs[2]);
+			QuickSwap(verts[3], verts[2]);
+			QuickSwap(uvs[3], uvs[2]);
 			CRender_Util::TesselatedShadowQuad(shadowMesh, verts, uvs);
 		}
 		else
 		{
 			for (int i = 0; i < 4; i++)
-				verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 10) / ONE_F;
+				verts[i].y = (CWorld::MapHeight(ToFixedVector(verts[i])) + 10) * ONE_F_RECIP;
 
 			shadowMesh.TexturedQuad3(verts[0], verts[1], verts[3], verts[2], uvs[0], uvs[1], uvs[3], uvs[2]);
 		}

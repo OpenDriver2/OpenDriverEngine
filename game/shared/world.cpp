@@ -12,6 +12,8 @@
 #include "game/render/render_model.h"
 #include "game/render/render_cars.h"
 
+#include "materialsystem1/IMaterialSystem.h"
+
 OUT_CITYLUMP_INFO		g_levInfo;
 CDriverLevelTextures	g_levTextures;
 CDriverLevelModels		g_levModels;
@@ -37,7 +39,7 @@ inline void UnpackXZCell(XZPAIR& cell, int packedCellId)
 	cell.z = packedCellId >> 16 & 65535;
 }
 
-void CWorld::Lua_Init(sol::state& lua)
+void CWorld::Lua_Init(const esl::ScriptState& state)
 {
 	auto engine = lua["engine"].get_or_create<sol::table>();
 
@@ -302,9 +304,13 @@ void CWorld::InitObjectMatrix()
 
 //-----------------------------------------------------------------
 
-TextureID g_hwTexturePages[128][16];
+static ITexturePtr g_hwTexturePages[128][16];
 ushort g_hwTexturePagesDirty[128] = { 0xFFFF };
-extern TextureID g_whiteTexture;
+static ITexturePtr GetLevelDefaultTexture()
+{
+	// FIXME: use white texture?
+	return g_matSystem->GetErrorCheckerboardTexture();
+}
 
 // Creates hardware texture
 void CWorld::InitHWTexturePage(CTexturePage* tpage)
@@ -323,7 +329,7 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 
 	// alloc 4 channels
 	const int imgSize = TEXPAGE_SIZE * 4;
-	uint* color_data = (uint*)Memory::alloc(imgSize);
+	uint* color_data = (uint*)PPAlloc(imgSize);
 
 	memset(color_data, 0, imgSize);
 
@@ -333,9 +339,9 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 
 	if (g_hwTexturePagesDirty[tpageId] & 1)
 	{
-		TextureID& texture = g_hwTexturePages[tpageId][0];
+		ITexturePtr& texture = g_hwTexturePages[tpageId][0];
 		// create new or update
-		if (texture == g_whiteTexture)
+		if (texture == GetLevelDefaultTexture())
 			texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
 		else
 			GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
@@ -360,8 +366,8 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 
 		if (anyMatched && (g_hwTexturePagesDirty[tpageId] & (1 << pal)))
 		{
-			TextureID& texture = g_hwTexturePages[tpageId][pal];
-			if (texture == g_whiteTexture)
+			ITexturePtr& texture = g_hwTexturePages[tpageId][pal];
+			if (texture == GetLevelDefaultTexture())
 				texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
 			else
 				GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
@@ -371,7 +377,7 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	g_hwTexturePagesDirty[tpageId] = 0;
 	
 	// no longer need in RGBA data
-	Memory::free(color_data);
+	PPFree(color_data);
 }
 
 void CWorld::FreeHWTexturePage(CTexturePage* tpage)
@@ -380,20 +386,20 @@ void CWorld::FreeHWTexturePage(CTexturePage* tpage)
 
 	for (int pal = 0; pal < 16; pal++)
 	{
-		if(g_hwTexturePages[tpageId][pal] != g_whiteTexture)
+		if(g_hwTexturePages[tpageId][pal] != GetLevelDefaultTexture())
 			GR_DestroyTexture(g_hwTexturePages[tpageId][pal]);
 
-		g_hwTexturePages[tpageId][pal] = g_whiteTexture;
+		g_hwTexturePages[tpageId][pal] = GetLevelDefaultTexture();
 		g_hwTexturePagesDirty[tpageId] = 0xffff;
 	}
 }
 
 // returns hardware texture
-TextureID CWorld::GetHWTexture(int tpage, int pal)
+ITexture* CWorld::GetHWTexture(int tpage, int pal)
 {
 	if (tpage < 0 || tpage >= 128 ||
 		pal < 0 || pal >= 16)
-		return g_whiteTexture;
+		return GetLevelDefaultTexture();
 
 	if (g_hwTexturePagesDirty[tpage] & (1 << pal))
 	{
@@ -421,7 +427,7 @@ void CWorld::InitHWTextures()
 	{
 		g_hwTexturePagesDirty[i] = 0xffff;
 		for (int j = 0; j < 16; j++)
-			g_hwTexturePages[i][j] = g_whiteTexture;
+			g_hwTexturePages[i][j] = GetLevelDefaultTexture();
 	}
 
 	// set loading callbacks
@@ -903,7 +909,7 @@ void CWorld::AddDrawable(const DRAWABLE& drawable)
 
 CELL_LIST_DESC& CWorld::CreateCellList(int list)
 {
-	ASSERT(m_CellLists.contains(list) == false);
+	ASSERT(CellLists.contains(list) == false);
 
 	auto& found = CellLists.find(list);
 	if (found != CellLists.end())

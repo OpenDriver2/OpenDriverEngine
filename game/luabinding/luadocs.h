@@ -1,3 +1,6 @@
+#pragma once
+#include "scripting/esl.h"
+
 class CLuaDocumentation
 {
 public:
@@ -7,7 +10,7 @@ public:
 		NamespaceGuard(const char* name = nullptr);
 		~NamespaceGuard();
 
-		String m_name;
+		EqString m_name;
 	};
 
 	class TypeGuard
@@ -25,7 +28,7 @@ public:
 		const char* MemberFunc(const char* name, const char* docText = nullptr);
 	};
 
-	static void		Lua_Init(sol::state& lua);
+	static void		Lua_Init(const esl::ScriptState& state);
 };
 
 //------------------------------------------------------------------------

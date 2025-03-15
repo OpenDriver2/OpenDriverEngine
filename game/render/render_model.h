@@ -1,7 +1,7 @@
 #pragma once
 #include "math/psx_math_types.h"
 
-static constexpr float RENDER_SCALING = (1.0f / ONE_F);
+static constexpr float RENDER_SCALING = ONE_F_RECIP;
 
 struct ModelRef_t;
 struct GrVAO;
@@ -28,8 +28,8 @@ class CRenderModel
 {
 public:
 
-	typedef void		(*ModelVertexCb)(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert);
-	typedef int			(*FindVertexFn)(const ArrayCRef<vertexTuple_t> whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs);
+	using ModelVertexCb = void (*)(int polyNum, const dpoly_t& poly, int polyVertNum, GrVertex& vert);
+	using FindVertexFn = int (*)(const ArrayCRef<vertexTuple_t> whereFind, int flags, int vertexIndex, int normalIndex, ushort uvs);
 
 						CRenderModel();
 	virtual				~CRenderModel();

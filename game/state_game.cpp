@@ -9,6 +9,9 @@
 #include "shared/manager_cars.h"
 #include "render/render_sky.h"
 
+#include "state_game.h"
+
+#if 0
 //---------------------------------------------------------------------------------------------------------------------------------
 
 sol::state g_luaState;
@@ -86,65 +89,65 @@ void SDLPollEvent(sol::table& engineHostTable)
 
 		switch (event.type)
 		{
-			case SDL_QUIT:
+		case SDL_QUIT:
+		{
+			g_quit = 1;
+			break;
+		}
+		case SDL_WINDOWEVENT:
+		{
+			switch (event.window.event)
 			{
+			case SDL_WINDOWEVENT_RESIZED:
+				GR_UpdateWindowSize(event.window.data1, event.window.data2);
+
+				break;
+			case SDL_WINDOWEVENT_CLOSE:
 				g_quit = 1;
 				break;
 			}
-			case SDL_WINDOWEVENT:
+			break;
+		}
+		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONUP:
+		{
+			bool down = (event.type == SDL_MOUSEBUTTONDOWN);
+
+			if (anyWindowFocused)
+				down = false;
+
+			if (event.button.button == 1)
+				g_holdLeft = down;
+			else if (event.button.button == 3)
+				g_holdRight = down;
+			break;
+		}
+		case SDL_KEYDOWN:
+		case SDL_KEYUP:
+		{
+			int nKey = event.key.keysym.scancode;
+			bool down = (event.type == SDL_KEYDOWN);
+
+			// lshift/right shift
+			if (nKey == SDL_SCANCODE_RSHIFT)
+				nKey = SDL_SCANCODE_LSHIFT;
+			else if (nKey == SDL_SCANCODE_RCTRL)
+				nKey = SDL_SCANCODE_LCTRL;
+			else if (nKey == SDL_SCANCODE_RALT)
+				nKey = SDL_SCANCODE_LALT;
+
+			if (nKey == SDL_SCANCODE_PAGEUP && event.type == SDL_KEYDOWN)
 			{
-				switch (event.window.event)
-				{
-				case SDL_WINDOWEVENT_RESIZED:
-					GR_UpdateWindowSize(event.window.data1, event.window.data2);
-
-					break;
-				case SDL_WINDOWEVENT_CLOSE:
-					g_quit = 1;
-					break;
-				}
-				break;
+				g_cellsDrawDistance += 441;
 			}
-			case SDL_MOUSEBUTTONDOWN:
-			case SDL_MOUSEBUTTONUP:
+			else if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
 			{
-				bool down = (event.type == SDL_MOUSEBUTTONDOWN);
-
-				if (anyWindowFocused)
-					down = false;
-
-				if (event.button.button == 1)
-					g_holdLeft = down;
-				else if (event.button.button == 3)
-					g_holdRight = down;
-				break;
+				g_cellsDrawDistance -= 441;
+				if (g_cellsDrawDistance < 441)
+					g_cellsDrawDistance = 441;
 			}
-			case SDL_KEYDOWN:
-			case SDL_KEYUP:
-			{
-				int nKey = event.key.keysym.scancode;
-				bool down = (event.type == SDL_KEYDOWN);
-
-				// lshift/right shift
-				if (nKey == SDL_SCANCODE_RSHIFT)
-					nKey = SDL_SCANCODE_LSHIFT;
-				else if (nKey == SDL_SCANCODE_RCTRL)
-					nKey = SDL_SCANCODE_LCTRL;
-				else if (nKey == SDL_SCANCODE_RALT)
-					nKey = SDL_SCANCODE_LALT;
-
-				if (nKey == SDL_SCANCODE_PAGEUP && event.type == SDL_KEYDOWN)
-				{
-					g_cellsDrawDistance += 441;
-				}
-				else if (nKey == SDL_SCANCODE_PAGEDOWN && event.type == SDL_KEYDOWN)
-				{
-					g_cellsDrawDistance -= 441;
-					if (g_cellsDrawDistance < 441)
-						g_cellsDrawDistance = 441;
-				}
-				break;
-			}
+			break;
+		}
 		}
 	}
 }
@@ -328,4 +331,51 @@ int main(int argc, char* argv[])
 	GR_Shutdown();
 
 	return 0;
+}
+
+#endif
+
+// when changed to this state
+// @from - used to transfer data
+void CState_Game::OnEnter(CAppStateBase* from)
+{
+
+}
+
+// when the state changes to something
+// @to - used to transfer data
+void CState_Game::OnLeave(CAppStateBase* to)
+{
+
+}
+
+// when 'false' returned the next state goes on
+bool CState_Game::Update(float fDt)
+{
+
+}
+
+void CState_Game::HandleKeyPress(int key, bool down)
+{
+
+}
+
+void CState_Game::HandleMouseClick(int x, int y, int buttons, bool down)
+{
+
+}
+
+void CState_Game::HandleMouseMove(int x, int y, float deltaX, float deltaY)
+{
+
+}
+
+void CState_Game::HandleMouseWheel(int x, int y, int scroll)
+{
+
+}
+
+void CState_Game::HandleJoyAxis(short axis, short value)
+{
+
 }

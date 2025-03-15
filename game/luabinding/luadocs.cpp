@@ -1,4 +1,5 @@
 #include "core/core_common.h"
+#include "luadocs.h"
 
 enum EDocPropType
 {
@@ -10,15 +11,15 @@ enum EDocPropType
 struct LuaDocProp
 {
 	EDocPropType type;
-	String declName;
-	String description;
+	EqString declName;
+	EqString description;
 };
 
 struct LuaDocItem
 {
-	String namespaceName;
-	String declName;
-	String description;
+	EqString namespaceName;
+	EqString declName;
+	EqString description;
 	Array<LuaDocProp> members;
 };
 
@@ -26,7 +27,7 @@ Array<LuaDocItem*> g_luaDoc_typeList;
 
 CLuaDocumentation::NamespaceGuard::NamespaceGuard(const char* name /*= nullptr*/)
 {
-	m_name = name ? String::fromCString(name) : "_G";
+	m_name = name ? name : "_G";
 }
 
 CLuaDocumentation::NamespaceGuard::~NamespaceGuard()
@@ -52,8 +53,8 @@ CLuaDocumentation::TypeGuard::~TypeGuard()
 
 const char* CLuaDocumentation::TypeGuard::Init(const char* name, const char* docText /*= nullptr*/)
 {
-	m_item->declName = String::fromCString(name);
-	m_item->description = docText ? String::fromCString(docText) : "";
+	m_item->declName = name;
+	m_item->description = docText;
 	return name;
 }
 
@@ -61,9 +62,9 @@ const char* CLuaDocumentation::TypeGuard::Enum(const char* name, const char* doc
 {
 	m_item->members.append(LuaDocProp{
 		DocProp_Enum,
-		String::fromCString(name),
-		docText ? String::fromCString(docText) : ""
-		});
+		name,
+		docText
+	});
 
 	return name;
 }
@@ -72,9 +73,9 @@ const char* CLuaDocumentation::TypeGuard::Property(const char* name, const char*
 {
 	m_item->members.append(LuaDocProp{
 		DocProp_Property,
-		String::fromCString(name),
-		docText ? String::fromCString(docText) : ""
-		});
+		name,
+		docText
+	});
 
 	return name;
 }
@@ -83,20 +84,20 @@ const char* CLuaDocumentation::TypeGuard::MemberFunc(const char* name, const cha
 {
 	m_item->members.append(LuaDocProp{
 		DocProp_Method,
-		String::fromCString(name),
-		docText ? String::fromCString(docText) : ""
-		});
+		name,
+		docText
+	});
 
 	return name;
 }
 
-//--------------------------------------
 
-void CLuaDocumentation::Lua_Init(sol::state& lua)
+//--------------------------------------
+void CLuaDocumentation::Lua_Init(const esl::ScriptState& state)
 {
 	auto& docsTable = lua["docs"].get_or_create<sol::table>();
 
-	for (usize i = 0; i < g_luaDoc_typeList.size(); i++)
+	for (int i = 0; i < g_luaDoc_typeList.numElem(); i++)
 	{
 		LuaDocItem* doc = g_luaDoc_typeList[i];
 
@@ -106,13 +107,13 @@ void CLuaDocumentation::Lua_Init(sol::state& lua)
 		declTable["description"] = (char*)doc->description;
 
 		auto& membersTable = declTable["members"].get_or_create<sol::table>();
-		for (usize j = 0; j < doc->members.size(); j++)
+		for (int j = 0; j < doc->members.numElem(); j++)
 		{
 			LuaDocProp& prop = doc->members[j];
-			auto& propTable = membersTable[(char*)prop.declName].get_or_create<sol::table>();
+			auto& propTable = membersTable[prop.declName.ToCString()].get_or_create<sol::table>();
 			
 			propTable["type"] = prop.type;
-			propTable["desc"] = (char*)prop.description;
+			propTable["desc"] = prop.description;
 		}
 
 		delete doc;

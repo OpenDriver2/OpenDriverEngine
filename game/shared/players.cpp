@@ -6,7 +6,7 @@
 
 const int REPLAY_STEAM_MAX_LENGTH = 8000;
 
-void CPlayer::Lua_Init(sol::state& lua)
+void CPlayer::Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
 
@@ -409,9 +409,9 @@ void CPlayer::ProcessCarPad()
 CPlayer	CManager_Players::LocalPlayer;
 Array<CPlayer*>	CManager_Players::Players;
 
-void CManager_Players::Lua_Init(sol::state& lua)
+void CManager_Players::Lua_Init(const esl::ScriptState& state)
 {
-	CPlayer::Lua_Init(lua);
+	CPlayer::Lua_Init(state);
 
 	auto engine = lua["engine"].get_or_create<sol::table>();
 	LUADOC_GLOBAL();

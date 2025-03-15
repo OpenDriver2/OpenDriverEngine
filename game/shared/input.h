@@ -1,16 +1,12 @@
-#ifndef INPUT_H
-#define INPUT_H
-
-#include <sol/forward.hpp>
+#pragma once
+#include "scripting/esl.h"
 
 union SDL_Event;
 
 class CInput
 {
 public:
-	static void UpdateEvents(SDL_Event& event, sol::table& engineHostTable, bool imguiFocused);
+	static void UpdateEvents(SDL_Event& event, const esl::LuaTable& engineHostTable, bool imguiFocused);
 
-	static void Lua_Init(sol::state& lua);
+	static void Lua_Init(const esl::ScriptState& state);
 };
-
-#endif // INPUT_H

@@ -1,8 +1,9 @@
 #include "core/core_common.h"
 #include "luamath.h"
+#include "luaengine.h"
+#include "sys/scripting/sys_esl.h"
 
-
-void CDebugOverlay_Lua_Init(sol::state& lua)
+void CDebugOverlay_Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
 	auto engine = lua["engine"].get_or_create<sol::table>();
@@ -26,7 +27,7 @@ void CDebugOverlay_Lua_Init(sol::state& lua)
 	
 }
 
-void IAudioSystem_Lua_Init(sol::state& lua)
+void IAudioSystem_Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_GLOBAL();
 
@@ -174,43 +175,11 @@ void IAudioSystem_Lua_Init(sol::state& lua)
 	engine["Audio"] = IAudioSystem::Instance;
 }
 
-void Engine_Lua_PrintStackTrace(sol::state& lua)
+bool Engine_Lua_Init(const esl::ScriptState& state)
 {
-	lua_State* L = lua;
-	lua_Debug ar;
-	int depth = 0;
+	ESL_SYS_INIT(Math_Lua_Init);
+	ESL_SYS_INIT(IAudioSystem_Lua_Init);
+	ESL_SYS_INIT(CDebugOverlay_Lua_Init);
 
-	Msg("\nLua stack trace:\n");
-
-	while (lua_getstack(L, depth, &ar))
-	{
-		int status = lua_getinfo(L, "Sln", &ar);
-		assert(status);
-
-		Msg("\t %s:", ar.short_src);
-		if (ar.currentline > 0)
-			Msg("%d:", ar.currentline);
-		if (*ar.namewhat != '\0')  /* is there a name? */
-			Msg(" in function '%s'", ar.name);
-		else
-		{
-			if (*ar.what == 'm')  /* main? */
-				Msg(" in main chunk");
-			else if (*ar.what == 'C' || *ar.what == 't')
-				Msg(" ?");  /* C function or tail call */
-			else
-				Msg(" in function <%s:%d>",
-					ar.short_src, ar.linedefined);
-		}
-		Msg("\n");
-		depth++;
-	}
-	Msg("\n");
-}
-
-void Engine_Lua_Init(sol::state& lua)
-{
-	Math_Lua_Init(lua);
-	IAudioSystem_Lua_Init(lua);
-	CDebugOverlay_Lua_Init(lua);
+	return true;
 }

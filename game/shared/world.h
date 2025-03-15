@@ -1,7 +1,10 @@
 #pragma once
+#include "scripting/esl.h"
 #include "math/psx_math_types.h"
 #include "camera.h"
 #include "routines/d2_types.h"
+
+class ITexture;
 
 class CTexturePage;
 struct TexDetailInfo_t;
@@ -89,7 +92,7 @@ public:
 	static void				InitHWTexturePage(CTexturePage* tpage);
 	static void				FreeHWTexturePage(CTexturePage* tpage);
 
-	static TextureID		GetHWTexture(int tpage, int pal);
+	static ITexture*		GetHWTexture(int tpage, int pal);
 	static CTexturePage*	GetTPage(int tpage);
 	static TexDetailInfo_t*	FindTextureDetail(const char* name);
 
@@ -157,7 +160,7 @@ public:
 
 	//------------------------------------------
 
-	static void				Lua_Init(sol::state& lua);
+	static void				Lua_Init(const esl::ScriptState& state);
 
 protected:
 	static Array<DRAWABLE>				Drawables;

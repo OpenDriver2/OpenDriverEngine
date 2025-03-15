@@ -1,7 +1,6 @@
 #include "core/core_common.h"
 
 #include <SDL.h>
-#include <sol/sol.hpp>
 
 #include "input.h"
 
@@ -257,7 +256,7 @@ const CommonEnum KeyboardScancodes[] = {
 	{ NULL,				-1				}
 };
 
-void CInput::Lua_Init(sol::state& lua)
+void CInput::Lua_Init(const esl::ScriptState& state)
 {
 	LUADOC_NAMESPACE("SDL");
 

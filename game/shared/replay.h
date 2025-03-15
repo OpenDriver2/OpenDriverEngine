@@ -1,6 +1,8 @@
 #pragma once
+#include "scripting/esl.h"
 #include "math/psx_math_types.h"
-#include "players.h"
+
+struct PlayerInputData;
 
 // TODO: mission.h
 struct SAVED_PLAYER_POS
@@ -65,10 +67,10 @@ public:
 	void					Purge();
 
 	// Updates playback. Returns false if out of tape
-	bool					Play(CPlayer::InputData& outInputs);
+	bool					Play(PlayerInputData& outInputs);
 
 	// Records controls if there is difference. Returns false if out of tape
-	bool					Record(CPlayer::InputData& inoutInputs);
+	bool					Record(PlayerInputData& inoutInputs);
 
 protected:
 	bool					Put(uint pt0);
@@ -87,5 +89,5 @@ protected:
 class CReplayData
 {
 public:
-	static void				Lua_Init(sol::state& lua);
+	static void				Lua_Init(const esl::ScriptState& state);
 };
