@@ -1,7 +1,6 @@
 #pragma once
 #include "scripting/esl.h"
-#include "scripting/esl_luaref.h"
-#include "scripting/esl_bind.h"
+
 #include "math/psx_math_types.h"
 #include "luarefvalue.h"
 

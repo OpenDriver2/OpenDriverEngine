@@ -1,5 +1,8 @@
 #include "core/core_common.h"
-#include "sys/scripting/sys_esl_math.h"
+
+#include "scripting/esl_luaref.h"
+#include "scripting/esl_bind.h"
+
 #include "luamath.h"
 #include "luadocs.h"
 #include "math/psx_matrix.h"

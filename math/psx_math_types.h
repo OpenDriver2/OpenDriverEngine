@@ -25,7 +25,7 @@ struct TPSX_VECTOR
 {
 	T vx, vy, vz;
 
-	TPSX_VECTOR<T>() {}
+	TPSX_VECTOR<T>() = default;
 
 	template <class T2>
 	TPSX_VECTOR(const TPSX_VECTOR<T2>& other)
@@ -430,17 +430,21 @@ struct SVECTOR
 {
 	short vx, vy, vz, pad;
 
+	SVECTOR() = default;
+
 	SVECTOR(short xyz)
 		: vx(xyz)
 		, vy(xyz)
 		, vz(xyz)
+		, pad(0)
 	{
 	}
 
-	SVECTOR(short x, short y, short z)
+	SVECTOR(short x, short y, short z, short pad = 0)
 		: vx(x)
 		, vy(y)
 		, vz(z)
+		, pad(pad)
 	{
 	}
 
@@ -448,6 +452,7 @@ struct SVECTOR
 		: vx(v.vx)
 		, vy(v.vy)
 		, vz(v.vz)
+		, pad(0)
 	{
 	}
 
