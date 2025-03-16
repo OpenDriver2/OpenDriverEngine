@@ -5,6 +5,7 @@
 
 #include "audio/eqSoundEmitterSystem.h"
 #include "game/luabinding/luarefvalue.h"
+#include "game/luabinding/luadocs.h"
 
 #include "routines/d2_types.h"
 #include "routines/models.h"
@@ -157,9 +158,295 @@ int wetness = 0;					// TODO: CWorld::GetWetness()
 
 //--------------------------------------------------------
 
+GEAR_DESC GEAR_DESC::FromTable(const esl::LuaTable & table)
+{
+	return GEAR_DESC{
+		table["lowidl_ws"],
+		table["low_ws"],
+		table["hi_ws"],
+		table["ratio_ac"],
+		table["ratio_id"]
+	};
+}
+
+EQSCRIPT_TYPE_BEGIN(GEAR_DESC)
+	EQSCRIPT_BIND_STATIC_FUNC("FromTable", GEAR_DESC::FromTable)
+	EQSCRIPT_BIND_VAR(lowidl_ws)
+	EQSCRIPT_BIND_VAR(low_ws)
+	EQSCRIPT_BIND_VAR(hi_ws)
+	EQSCRIPT_BIND_VAR(ratio_ac)
+	EQSCRIPT_BIND_VAR(ratio_id)
+EQSCRIPT_TYPE_END
+
+HANDLING_TYPE HANDLING_TYPE::FromTable(const esl::LuaTable& table)
+{
+	return HANDLING_TYPE {
+		table["frictionScaleRatio"],
+		table["aggressiveBraking"],
+		table["fourWheelDrive"],
+		table["autoBrakeOn"]
+	};
+}
+
+EQSCRIPT_TYPE_BEGIN(HANDLING_TYPE)
+	EQSCRIPT_BIND_STATIC_FUNC("FromTable", HANDLING_TYPE::FromTable)
+	EQSCRIPT_BIND_VAR(frictionScaleRatio)
+	EQSCRIPT_BIND_VAR(aggressiveBraking)
+	EQSCRIPT_BIND_VAR(fourWheelDrive)
+	EQSCRIPT_BIND_VAR(autoBrakeOn)
+EQSCRIPT_TYPE_END
+
+ExtraLightInfo ExtraLightInfo::FromTable(const esl::LuaTable& table)
+{
+	return ExtraLightInfo {
+		table["backOffset"],
+		table["frontOffset"],
+		table["frontDouble"],
+		table["backDouble"],
+		table["frontVertical"],
+		table["backVertical"],
+		table["hasBackLights"]
+	};
+}
+
+EQSCRIPT_TYPE_BEGIN(ExtraLightInfo)
+	EQSCRIPT_BIND_STATIC_FUNC("FromTable", ExtraLightInfo::FromTable)
+	EQSCRIPT_BIND_VAR(backOffset)
+	EQSCRIPT_BIND_VAR(frontOffset)
+	EQSCRIPT_BIND_VAR(frontDouble)
+	EQSCRIPT_BIND_VAR(backDouble)
+	EQSCRIPT_BIND_VAR(frontVertical)
+	EQSCRIPT_BIND_VAR(backVertical)
+	EQSCRIPT_BIND_VAR(hasBackLights)
+EQSCRIPT_TYPE_END
+
+CarCosmetics CarCosmetics::FromTable(const esl::LuaTable& table)
+{
+	esl::ScriptState state(table.GetState());
+
+	esl::LuaTable wheelDispTable = table["wheelDisp"];
+	esl::LuaTable cPointsTable = table["cPoints"];
+	esl::LuaTable gearsTable = table["gears"];
+
+	CarCosmetics newCosmetics;
+
+	if (!table)
+		return {};
+
+	if (!wheelDispTable)
+	{
+		state.ThrowError("wheelDisp is null for CarCosmetics");
+		return {};
+	}
+
+	if (!cPointsTable)
+	{
+		state.ThrowError("cPoints is null for CarCosmetics");
+		return {};
+	}
+
+	if (wheelDispTable.Length() != 4)
+	{
+		state.ThrowError("wheelDisp count must be 4!");
+		return {};
+	}
+
+	if (cPointsTable.Length() != 12)
+	{
+		state.ThrowError("cPoints count is not 12!");
+		return {};
+	}
+
+	if (gearsTable && gearsTable.Length())
+	{
+		newCosmetics.gears.clear();
+		for (uint i = 0; i < gearsTable.Length(); i++)
+		{
+			GEAR_DESC newGear = gearsTable[i + 1];
+			newCosmetics.gears.append(newGear);
+		}
+	}
+
+	if (table["handlingType"])
+		newCosmetics.handlingType = table["handlingType"];
+
+	newCosmetics.headLight = table["headLight"];
+	newCosmetics.frontInd = table["frontInd"];
+	newCosmetics.backInd = table["backInd"];
+	newCosmetics.brakeLight = table["brakeLight"];
+	newCosmetics.revLight = table["revLight"];
+	newCosmetics.policeLight = table["policeLight"];
+	newCosmetics.exhaust = table["exhaust"];
+	newCosmetics.smoke = table["smoke"];
+	newCosmetics.fire = table["fire"];
+	newCosmetics.gravity = table["gravity"];
+
+	for (int i = 0; i < 4; i++)
+		newCosmetics.wheelDisp[i] = wheelDispTable[i + 1];
+
+	for (int i = 0; i < 12; i++)
+		newCosmetics.cPoints[i] = cPointsTable[i + 1];
+
+	newCosmetics.wheelspinMaxSpeed = table["wheelspinMaxSpeed"];
+	newCosmetics.extraInfo = table["extraInfo"];
+	newCosmetics.powerRatio = table["powerRatio"];
+	newCosmetics.cbYoffset = table["cbYoffset"];
+	newCosmetics.susCoeff = table["susCoeff"];
+	newCosmetics.susCompressionLimit = table["susCompressionLimit"];
+	newCosmetics.susTopLimit = table["susTopLimit"];
+	newCosmetics.traction = table["traction"];
+	newCosmetics.wheelSize = table["wheelSize"];
+	newCosmetics.colBox = table["colBox"];
+	newCosmetics.cog = table["cog"];
+	newCosmetics.twistRateX = table["twistRateX"];
+	newCosmetics.twistRateY = table["twistRateY"];
+	newCosmetics.twistRateZ = table["twistRateZ"];
+	newCosmetics.mass = table["mass"];
+	newCosmetics.baseRPM = table["baseRPM"];
+
+	newCosmetics.revSoundName = table["revSoundName"].As<EqString>();
+	newCosmetics.idleSoundName = table["idleSoundName"].As<EqString>();
+	newCosmetics.hornSoundName = table["hornSoundName"].As<EqString>();
+
+	return newCosmetics;
+}
+
+esl::LuaTable CarCosmetics::ToTable(const esl::ScriptState& state) const
+{
+	esl::LuaTable table = state.CreateTable();
+	table["headLight"] = headLight;
+	table["frontInd"] = frontInd;
+	table["backInd"] = backInd;
+	table["brakeLight"] = brakeLight;
+	table["revLight"] = revLight;
+	table["policeLight"] = policeLight;
+	table["exhaust"] = exhaust;
+	table["smoke"] = smoke;
+	table["fire"] = fire;
+	table["gravity"] = gravity;
+	table["handlingType"] = handlingType;
+
+	esl::LuaTable wheelDispTable = table["wheelDisp"].CreateTable();
+	for (int i = 0; i < 4; i++)
+		wheelDispTable[i + 1] = wheelDisp[i];
+
+	esl::LuaTable cPointsTable = table["cPoints"].CreateTable();
+	for (int i = 0; i < 12; i++)
+		cPointsTable[i + 1] = cPoints[i];
+
+	table["wheelspinMaxSpeed"] = wheelspinMaxSpeed;
+	table["extraInfo"] = extraInfo;
+	table["powerRatio"] = powerRatio;
+	table["cbYoffset"] = cbYoffset;
+	table["susCoeff"] = susCoeff;
+	table["susCompressionLimit"] = susCompressionLimit;
+	table["susTopLimit"] = susTopLimit;
+	table["traction"] = traction;
+	table["wheelSize"] = wheelSize;
+	table["colBox"] = colBox;
+	table["cog"] = cog;
+	table["twistRateX"] = twistRateX;
+	table["twistRateY"] = twistRateY;
+	table["twistRateZ"] = twistRateZ;
+	table["mass"] = mass;
+	table["baseRPM"] = baseRPM;
+
+	table["revSoundName"] = revSoundName;
+	table["idleSoundName"] = idleSoundName;
+	table["hornSoundName"] = hornSoundName;
+
+	return table;
+}
+
+EQSCRIPT_TYPE_BEGIN(CarCosmetics)
+	EQSCRIPT_BIND_VAR(handlingType)
+	EQSCRIPT_BIND_VAR(headLight)
+	EQSCRIPT_BIND_VAR(frontInd)
+	EQSCRIPT_BIND_VAR(backInd)
+	EQSCRIPT_BIND_VAR(brakeLight)
+	EQSCRIPT_BIND_VAR(revLight)
+	EQSCRIPT_BIND_VAR(policeLight)
+	EQSCRIPT_BIND_VAR(exhaust)
+	EQSCRIPT_BIND_VAR(smoke)
+	EQSCRIPT_BIND_VAR(fire)
+	// TODO: gears table
+	EQSCRIPT_BIND_STATIC_FUNC("wheelDisp", +[](const CarCosmetics& self, int i) {
+		return self.wheelDisp[i - 1];
+	})
+	EQSCRIPT_BIND_STATIC_FUNC("setWheelDisp", +[](CarCosmetics& self, int i, SVECTOR& v) {
+		self.wheelDisp[i - 1] = v;
+	})
+	EQSCRIPT_BIND_VAR(wheelspinMaxSpeed)
+	EQSCRIPT_BIND_VAR(extraInfo)
+	EQSCRIPT_BIND_VAR(powerRatio)
+	EQSCRIPT_BIND_VAR(cbYoffset)
+	EQSCRIPT_BIND_VAR(susCoeff)
+	EQSCRIPT_BIND_VAR(traction)
+	EQSCRIPT_BIND_VAR(wheelSize)
+	EQSCRIPT_BIND_STATIC_FUNC("cPoints", +[](CarCosmetics& self, int i) {
+		return self.cPoints[i];
+	})
+	EQSCRIPT_BIND_STATIC_FUNC("setcPoints", [](CarCosmetics& self, int i, SVECTOR& v) {
+		self.cPoints[i - 1] = v;
+	})
+	EQSCRIPT_BIND_VAR(colBox)
+	EQSCRIPT_BIND_VAR(cog)
+	EQSCRIPT_BIND_VAR(twistRateX)
+	EQSCRIPT_BIND_VAR(twistRateY)
+	EQSCRIPT_BIND_VAR(twistRateZ)
+	EQSCRIPT_BIND_VAR(mass)
+	EQSCRIPT_BIND_VAR(baseRPM)
+	EQSCRIPT_BIND_VAR(revSoundName)
+	EQSCRIPT_BIND_VAR(idleSoundName)
+	EQSCRIPT_BIND_VAR(hornSoundName)
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(CCar)
+	EQSCRIPT_BIND_FUNC(Destroy)
+	EQSCRIPT_BIND_VAR_NAMED("controlType", m_controlType)
+	EQSCRIPT_BIND_VAR_NAMED("cosmetics", m_cosmetics)
+
+	// inputs
+	EQSCRIPT_BIND_VAR_NAMED("thrust", m_thrust)
+	EQSCRIPT_BIND_VAR_NAMED("wheelAngle", m_wheel_angle)
+	EQSCRIPT_BIND_VAR_NAMED("handbrake", m_handbrake)
+	EQSCRIPT_BIND_VAR_NAMED("wheelspin", m_wheelspin)
+	EQSCRIPT_BIND_VAR_EX_GET_SET("autobrake", GetAutobrake, SetAutobrake)
+
+	// driving properties
+	EQSCRIPT_BIND_FUNC(GetChangingGear)
+	EQSCRIPT_BIND_FUNC(GetWheelSpeed)
+	EQSCRIPT_BIND_FUNC(GetSpeed)
+
+	// physics properties
+	EQSCRIPT_BIND_FUNC(GetLinearVelocity)
+	EQSCRIPT_BIND_FUNC(GetAngularVelocity)
+
+	// transform
+	EQSCRIPT_BIND_VAR_EX_GET_SET("position", GetPosition, SetPosition)
+
+	EQSCRIPT_BIND_FUNC(GetCogPosition)
+
+	EQSCRIPT_BIND_VAR_EX_GET_SET("direction", GetDirection, SetDirection)
+
+	// interpolated transform
+	EQSCRIPT_BIND_FUNC(GetInterpolatedPosition)
+	EQSCRIPT_BIND_FUNC(GetInterpolatedCogPosition)
+	EQSCRIPT_BIND_FUNC(GetInterpolatedDirection)
+	EQSCRIPT_BIND_FUNC(GetInterpolatedDrawMatrix)
+
+	// Events
+	EQSCRIPT_BIND_VAR_NAMED("eventCallback", m_carEventsLua)
+EQSCRIPT_TYPE_END
 
 void CCar::Lua_Init(const esl::ScriptState& state)
 {
+	state.RegisterClass<GEAR_DESC>();
+	state.RegisterClass<HANDLING_TYPE>();
+	state.RegisterClass<ExtraLightInfo>();
+	state.RegisterClass<CarCosmetics>();
+	state.RegisterClass<CCar>();
+#if 0
 	LUADOC_GLOBAL();
 
 	{
@@ -419,20 +706,18 @@ void CCar::Lua_Init(const esl::ScriptState& state)
 			&CarCosmetics::hornSample
 		);
 	}
-
+#endif
 	{
-		LUADOC_TYPE();
-		LUA_BEGIN_ENUM(ECarControlType);
-		lua.new_enum<ECarControlType>(LUADOC_T("CarControlType"),{ 
-			LUA_ENUM(CONTROL_TYPE_NONE, "None"),
-			LUA_ENUM(CONTROL_TYPE_PLAYER, "Player", "controlled by player inputs"),
-			LUA_ENUM(CONTROL_TYPE_CIV_AI, "CivAI", "Civilian car. May be a passive cop car with CONTROL_FLAG_COP flag."),
-			LUA_ENUM(CONTROL_TYPE_PURSUER_AI, "PursuerAI", "Police pursuer car. Always chases player"),
-			LUA_ENUM(CONTROL_TYPE_LEAD_AI, "LeadAI", "FreeRoamer AI"),
-			LUA_ENUM(CONTROL_TYPE_CUTSCENE, "Cutscene", "Pretty same as player car but controllled by cutscene. Can be a chase car."),
-		});
+		esl::LuaTable controlTypeTbl = state.CreateTable();
+		state.SetGlobal("CarControlType", controlTypeTbl);
+		controlTypeTbl["None"] = CONTROL_TYPE_NONE;
+		controlTypeTbl["Player"] = CONTROL_TYPE_PLAYER;
+		controlTypeTbl["CivAI"] = CONTROL_TYPE_CIV_AI;
+		controlTypeTbl["PursuerAI"] = CONTROL_TYPE_PURSUER_AI;
+		controlTypeTbl["LeadAI"] = CONTROL_TYPE_LEAD_AI;
+		controlTypeTbl["Cutscene"] = CONTROL_TYPE_CUTSCENE;
 	}
-
+#if 0
 	{
 		MAKE_PROPERTY_REF(lua, CCar*);
 		LUADOC_TYPE();
@@ -509,6 +794,7 @@ void CCar::Lua_Init(const esl::ScriptState& state)
 			&CCar::m_carEventsLua
 		);
 	}
+#endif
 }
 
 //--------------------------------------------------------

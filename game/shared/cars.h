@@ -4,6 +4,7 @@
 
 #include "scripting/esl.h"
 #include "scripting/esl_luaref.h"
+#include "scripting/esl_bind.h"
 
 using LONGVECTOR3 = int[3];
 using LONGVECTOR4 = int[4];
@@ -18,6 +19,7 @@ struct CELL_OBJECT;
 struct CDATA2D;
 struct CRET2D; 
 struct CRET3D;
+class CCar;
 
 struct BOUND_BOX
 {
@@ -27,12 +29,16 @@ struct BOUND_BOX
 
 struct GEAR_DESC
 {
+	static GEAR_DESC FromTable(const esl::LuaTable& table);
+
 	int lowidl_ws, low_ws, hi_ws;
 	int ratio_ac, ratio_id;
 };
 
 struct HANDLING_TYPE
 {
+	static HANDLING_TYPE FromTable(const esl::LuaTable& table);
+
 	int frictionScaleRatio;
 	bool aggressiveBraking, fourWheelDrive;
 	int autoBrakeOn;
@@ -40,6 +46,8 @@ struct HANDLING_TYPE
 
 struct ExtraLightInfo
 {
+	static ExtraLightInfo FromTable(const esl::LuaTable& table);
+
 	ushort backOffset;
 	ushort frontOffset;
 
@@ -55,8 +63,12 @@ struct ExtraLightInfo
 struct CarCosmetics
 {
 	CarCosmetics();
+
 	void InitFrom(const CAR_COSMETICS_D2& srcCos);
 	void InitFrom(const CAR_COSMETICS_D1& srcCos);
+
+	static CarCosmetics FromTable(const esl::LuaTable& table);
+	esl::LuaTable ToTable(const esl::ScriptState& state) const;
 
 	HANDLING_TYPE handlingType;
 	FixedArray<GEAR_DESC, 8> gears;
@@ -263,6 +275,13 @@ enum ECarControlFlags
 	CONTROL_FLAG_WAS_PARKED = (1 << 2),			// car pinged in as parked. Really nothing to do with it
 	CONTROL_FLAG_PLAYER_START_CAR = (1 << 3),	// car owned by player
 };
+
+EQSCRIPT_BIND_TYPE_NO_PARENT(GEAR_DESC, "GEAR_DESC", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(HANDLING_TYPE, "HANDLING_TYPE", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(ExtraLightInfo, "ExtraLightInfo", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(CarCosmetics, "CarCosmetics", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(CCar, "CCar", BY_REF)
+
 //------------------------------------------------------------------
 
 extern const double Car_Fixed_Timestep;
@@ -273,6 +292,8 @@ class CCar
 {
 	friend class CManager_Cars;
 	friend class CPlayer;
+	EQSCRIPT_PUBLIC_BINDER(CCar);
+	
 public:
 	CCar();
 	~CCar();
