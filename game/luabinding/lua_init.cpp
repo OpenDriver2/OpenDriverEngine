@@ -6,7 +6,6 @@
 #include "luarefvalue.h"
 #include "luadocs.h"
 
-#include "game/shared/input.h"
 #include "game/shared/players.h"
 #include "game/shared/manager_cars.h"
 #include "game/shared/world.h"
@@ -35,7 +34,6 @@ bool OpenDriverLuaInit(const esl::ScriptState& state)
 	//-----------------------------------
 	// MODULES
 	Engine_Lua_Init(state);
-	CInput::Lua_Init(state);
 	CManager_Players::Lua_Init(state);
 	CManager_Cars::Lua_Init(state);
 	CWorld::Lua_Init(state);
