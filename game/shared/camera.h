@@ -1,9 +1,11 @@
 #pragma once
 #include "scripting/esl.h"
+
 #include "math/Vector.h"
 #include "render/ViewParams.h"
 
 class Volume;
+
 class CCamera
 {
 public:

@@ -1,4 +1,7 @@
 #include "core/core_common.h"
+
+#include "sys/scripting/sys_esl.h"
+
 #include "camera.h"
 
 const float Z_NEAR = 0.01f;
@@ -12,29 +15,12 @@ Vector3D CCamera::MainViewVelocity;
 
 void CCamera::Lua_Init(const esl::ScriptState& state)
 {
-	LUADOC_GLOBAL();
-	auto engine = lua["engine"].get_or_create<sol::table>();
+	esl::LuaTable engine = eslSys::GetOrCreateGlobalTable(state, "engine");
+	esl::LuaTable cameraTbl = state.CreateTable();
+	engine.Set("Camera", cameraTbl);
 
-	auto world = engine["Camera"].get_or_create<sol::table>();
-
-	world["MainView"] = &MainView;
-	world["MainViewVelocity"] = &MainViewVelocity;
-
-	// level properties
-	{
-		LUADOC_TYPE();
-		engine.new_usertype<CameraViewParams>(
-			LUADOC_T("CameraViewParams"),
-
-			LUADOC_P("position", "<vec.vec3>"), & CameraViewParams::position,
-			LUADOC_P("angles", "<vec.vec3>"), &CameraViewParams::angles,
-			LUADOC_P("fov", "<float>"), &CameraViewParams::fov,
-			LUADOC_P("right", "<vec.vec3>"), sol::property(&CameraViewParams::GetRight),
-			LUADOC_P("up", "<vec.vec3>"), sol::property(&CameraViewParams::GetUp),
-			LUADOC_P("forward", "<vec.vec3>"), sol::property(&CameraViewParams::GetForward),
-			LUADOC_P("vectors", "<mat3> (readonly)"), sol::property(&CameraViewParams::GetVectors)
-		);
-	}
+	cameraTbl.Set("MainView", &MainView);
+	cameraTbl.Set("MainViewVelocity", &MainViewVelocity);
 }
 
 //-------------------------------------------------------
