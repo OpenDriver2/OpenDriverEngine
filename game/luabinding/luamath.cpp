@@ -1,44 +1,70 @@
 #include "core/core_common.h"
+#include "sys/scripting/sys_esl_math.h"
 #include "luamath.h"
-#include "math/psx_math_types.h"
+#include "luadocs.h"
 #include "math/psx_matrix.h"
+#include "math/convert.h"
+#include "math/isin.h"
+#include "math/ratan2.h"
+#include "math/squareroot0.h"
+//
+// Vector3D
+//
+EQSCRIPT_TYPE_BEGIN(VECTOR_NOPAD)
+	EQSCRIPT_CLONE_FUNC()
+	EQSCRIPT_BIND_CONSTRUCTOR(int)
+	EQSCRIPT_BIND_CONSTRUCTOR(int, int, int)
 
-#define VEC_OPERATORS_ONLY(vec_type, name) \
-	/* vec - vec */\
-	sol::meta_function::addition, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator+),\
-	sol::meta_function::subtraction, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator-),\
-	sol::meta_function::multiplication, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator*),\
-	sol::meta_function::division, sol::resolve<vec_type(const vec_type&, const vec_type&)>(&operator/),\
-	/* negate */\
-	sol::meta_function::unary_minus, sol::resolve<vec_type(const vec_type&)>(&operator-)
+	EQSCRIPT_BIND_OP(add)
+	EQSCRIPT_BIND_OP(sub)
+	EQSCRIPT_BIND_OP(mul)
+	EQSCRIPT_BIND_OP(div)
+	EQSCRIPT_BIND_OP(unm)
+	EQSCRIPT_BIND_OP(shl)
+	EQSCRIPT_BIND_OP(shr)
+	EQSCRIPT_BIND_OP(band)
+	EQSCRIPT_BIND_OP(bor)
+	EQSCRIPT_BIND_OP(xor)
 
+	EQSCRIPT_BIND_VAR(vx)
+	EQSCRIPT_BIND_VAR(vy)
+	EQSCRIPT_BIND_VAR(vz)
+EQSCRIPT_TYPE_END
 
-#define VEC_OPERATORS(vec_type, name) \
-	VEC_OPERATORS_ONLY(vec_type, name),\
-	/* common functions */ \
-	LUADOC_M("dot", "(a: " name ", b: " name "): float"), sol::resolve<float(const vec_type&, const vec_type&)>(dot),\
-	LUADOC_M("normalize", "(v: " name "): " name), sol::resolve<vec_type(const vec_type&)>(normalize),\
-	LUADOC_M("length", "(v: " name "): float"), sol::resolve<float(const vec_type&)>(length),\
-	LUADOC_M("lengthSqr", "(v: " name "): float"), sol::resolve<float(const vec_type&)>(lengthSqr),\
-	LUADOC_M("distance", "(a: " name ", b: " name "): float"), sol::resolve<float(const vec_type&, const vec_type&)>(distance),\
-	LUADOC_M("lerp", "(a: " name ", b: " name ", v: float): " name), sol::resolve<vec_type(const vec_type&, const vec_type&, float)>(lerp),\
-	LUADOC_M("cerp", "(a: " name ", b: " name ", c: " name ", v: float): " name), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&, const vec_type&, float)>(cerp),\
-	LUADOC_M("sign", "(v: " name "): " name), sol::resolve<vec_type(const vec_type&)>(sign),\
-	LUADOC_M("clamp", "(v: " name ", min: " name ", max: " name "): " name), sol::resolve<vec_type(const vec_type&, const vec_type&, const vec_type&)>(clamp),
+EQSCRIPT_TYPE_BEGIN(SVECTOR)
+	EQSCRIPT_CLONE_FUNC()
+	EQSCRIPT_BIND_CONSTRUCTOR(short)
+	EQSCRIPT_BIND_CONSTRUCTOR(short, short, short)
+	EQSCRIPT_BIND_CONSTRUCTOR(const VECTOR_NOPAD&)
 
-// NOT USED - conflicting (SAD)
-#define VEC_FLOAT_OPERATORS(vec_type) \
-	/* vec - float */\
-	sol::meta_function::addition, sol::resolve<vec_type(const vec_type&, const float&)>(&operator+),\
-	sol::meta_function::subtraction, sol::resolve<vec_type(const vec_type&, const float&)>(&operator-),\
-	sol::meta_function::multiplication, sol::resolve<vec_type(const vec_type&, const float&)>(&operator*),\
-	sol::meta_function::division, sol::resolve<vec_type(const vec_type&, const float&)>(&operator/),\
+	EQSCRIPT_BIND_VAR(vx)
+	EQSCRIPT_BIND_VAR(vy)
+	EQSCRIPT_BIND_VAR(vz)
+EQSCRIPT_TYPE_END
+
+static Vector3D L_FromFixedVector(const esl::ScriptState& state)
+{
+	esl::Object<const VECTOR_NOPAD> a(state, 1);
+	esl::Object<const SVECTOR> b(state, 1);
+	//esl::Object<const SVECTOR_NOPAD> c(state, 1);
+
+	if (a)
+		return FromFixedVector(a.Get());
+	if (b)
+		return FromFixedVector(b.Get());
+	//if (c)
+	//	return FromFixedVector(c.Get());
+
+	state.ThrowError("FromFixedVector expects VECTOR_NOPAD or SVECTOR or SVECTOR_NOPAD");
+	return vec3_zero;
+}
 
 bool Math_Lua_Init(const esl::ScriptState& state)
 {
 	//-----------------------------------
 	// 3D MATH
 	{
+#if 0
 		LUADOC_NAMESPACE("vec");
 
 		auto& vec = lua["vec"].get_or_create<sol::table>();
@@ -317,12 +343,12 @@ bool Math_Lua_Init(const esl::ScriptState& state)
 		}
 
 		//----------------------------------------------------
-
 		vec["AngleVectors"] = [](const Vector3D& v) {
 			Vector3D forward, right, up;
 			AngleVectors(v, &forward, &right, &up);
 			return std::make_tuple(forward, right, up);
 		};
+#endif
 	}
 
 	//
@@ -330,103 +356,46 @@ bool Math_Lua_Init(const esl::ScriptState& state)
 	//
 	{
 		LUADOC_NAMESPACE("fix");
-		auto& fix = lua["fix"].get_or_create<sol::table>();
+		esl::LuaTable fix = state.CreateTable();
+		state.SetGlobal("fix", fix);
 
-		VECTOR_NOPAD test = (VECTOR_NOPAD{ 0, 10, 0 }) + (VECTOR_NOPAD{ 15, 5, 0 });
-		test += VECTOR_NOPAD{ 1, 4, 1 };
-
-		//
-		// Fixed Vector 3D
-		//
 		{
-			{
-				MAKE_PROPERTY_REF(lua, VECTOR_NOPAD);
-				LUADOC_TYPE();
-				fix.new_usertype<VECTOR_NOPAD>(
-					LUADOC_T("VECTOR", "Three dimensional vector (32 bit)"),
-					sol::call_constructor, sol::factories(
-						[](const int& x, const int& y, const int& z) {
-							return VECTOR_NOPAD{ x, y, z };
-						},
-						[](const sol::table& table) {
-							return VECTOR_NOPAD{ table["x"], table["y"], table["z"] };
-						},
-						[](const SVECTOR& vec) {
-							return VECTOR_NOPAD{ vec.vx, vec.vy, vec.vz };
-						},
-						[]() { return VECTOR_NOPAD{ 0 }; }),
-					LUADOC_P("vx"), &VECTOR_NOPAD::vx,
-					LUADOC_P("vy"), &VECTOR_NOPAD::vy,
-					LUADOC_P("vz"), &VECTOR_NOPAD::vz,
-					/* vec - vec */
-					sol::meta_function::addition, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator+),
-					sol::meta_function::subtraction, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator-),
-					sol::meta_function::multiplication, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator*),
-					sol::meta_function::division, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator/),
-					/* negate */
-					sol::meta_function::unary_minus, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&)>(&operator-),
-					/* bit shifts*/
-					sol::meta_function::bitwise_left_shift, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator<<),
-					sol::meta_function::bitwise_right_shift, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&operator>>),
-					sol::meta_function::bitwise_and, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const int&)>(&(operator&)),
-					sol::meta_function::bitwise_or, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const int&)>(&(operator|)),
-					sol::meta_function::bitwise_xor, sol::resolve<VECTOR_NOPAD(const VECTOR_NOPAD&, const VECTOR_NOPAD&)>(&(operator^))
-				);
-			}
-
-			// Fixed Short vector 3D (for car cosmetics and shit)
-			{
-				MAKE_PROPERTY_REF(lua, SVECTOR);
-				LUADOC_TYPE();
-				fix.new_usertype<SVECTOR>(
-					LUADOC_T("SVECTOR", "Three dimensional vector (16 bit)"),
-					sol::call_constructor, sol::factories(
-						[](const short& x, const short& y, const short& z) {
-							return SVECTOR{ x, y, z, 0 };
-						},
-						[](const sol::table& table) {
-							return SVECTOR{ (short)table["x"], (short)table["y"], (short)table["z"], 0 };
-						},
-						[]() { return SVECTOR{ 0 }; }),
-					LUADOC_P("vx"), &SVECTOR::vx,
-					LUADOC_P("vy"), &SVECTOR::vy,
-					LUADOC_P("vz"), &SVECTOR::vz
-				);
-			}
-
-			fix["ONE"] = ONE;
-			fix["ONE_BITS"] = ONE_BITS;
-			fix["toRadian"] = TO_RADIAN;
-			fix["toGTEAngle"] = TO_GTE_ANGLE;
-
-			fix["ToFixed"]		= [](const float& a)					{ return int(a * ONE_F); };
-			fix["FromFixed"]	= [](const int& a)						{ return float(a) * ONE_F_RECIP; };
-			fix["DivHalfRound"]	= [](const int& a, const int& bits)		{ return FixDivHalfRound(a, bits); };
-			fix["DIFF_ANGLES"] = sol::overload(
-				[](const int& x, const int& y)		{ return DIFF_ANGLES(x, y); },
-				[](const float& x, const float& y)	{ return DIFF_ANGLES_F(x, y); }
-			);
-
-			fix["ToFixedVector"] = &ToFixedVector;
-			fix["FromFixedVector"] = sol::overload(
-				sol::resolve<Vector3D(const VECTOR_NOPAD&)>(&FromFixedVector), 
-				sol::resolve<Vector3D(const SVECTOR&)>(&FromFixedVector),
-				sol::resolve<Vector3D(const SVECTOR_NOPAD&)>(&FromFixedVector)
-			);
+			LUADOC_TYPE("VECTOR", "Three dimensional vector (32 bit)");
+			MAKE_PROPERTY_REF(VECTOR_NOPAD);
+			state.RegisterClass<VECTOR_NOPAD>();
 		}
+
+		{
+			LUADOC_TYPE("SVECTOR", "Three dimensional vector (16 bit)");
+			MAKE_PROPERTY_REF(SVECTOR);
+			state.RegisterClass<SVECTOR>();
+		}
+
+		fix.Set("ONE", ONE);
+		fix.Set("ONE_BITS", ONE_BITS);
+		fix.Set("toRadian", TO_RADIAN);
+		fix.Set("toGTEAngle", TO_GTE_ANGLE);
+		fix.Set("ToFixed", EQSCRIPT_CFUNC(+[](const float a) { return int(a * ONE_F); }));
+		fix.Set("FromFixed", EQSCRIPT_CFUNC(+[](const int a) { return float(a) * ONE_F_RECIP; }));
+		fix.Set("DivHalfRound", EQSCRIPT_CFUNC(+[](const int a, const int bits) { return FixDivHalfRound(a, bits); }));
+		fix.Set("DIFF_ANGLES_F", EQSCRIPT_CFUNC(+[](const float x, const float y) { return DIFF_ANGLES_F(x, y); }));
+		fix.Set("DIFF_ANGLES", EQSCRIPT_CFUNC(+[](const int x, const int y) { return DIFF_ANGLES(x, y); }));
+
+		fix.Set("ToFixedVector", EQSCRIPT_CFUNC(ToFixedVector));
+		fix.Set("FromFixedVector", EQSCRIPT_CFUNC(L_FromFixedVector));
 	}
 
 	{
 		LUADOC_NAMESPACE("gte");
 
 		// extend Lua math
-		auto& gte = lua["gte"].get_or_create<sol::table>();
-
-		gte["isin"] = &isin;
-		gte["icos"] = &icos;
-		gte["ratan2"] = &ratan2;
-		gte["SquareRoot0"] = &SquareRoot0;
-		// gte["MulMatrix0"] = &MulMatrix0;
+		esl::LuaTable gte = state.CreateTable();
+		state.SetGlobal("gte", gte);
+		gte.Set("isin", EQSCRIPT_CFUNC(isin));
+		gte.Set("icos", EQSCRIPT_CFUNC(icos));
+		gte.Set("ratan2", EQSCRIPT_CFUNC(ratan2));
+		gte.Set("SquareRoot0", EQSCRIPT_CFUNC(SquareRoot0));
+		// gte.Set("MulMatrix0", EQSCRIPT_CFUNC(MulMatrix0));
 	}
 
 	return true;
