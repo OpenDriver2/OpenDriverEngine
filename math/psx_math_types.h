@@ -357,9 +357,21 @@ TPSX_VECTOR<T> operator << (const TPSX_VECTOR<T>& v, const T2 s)
 }
 
 template <typename T, typename T2>
-TPSX_VECTOR<T> operator & (const TPSX_VECTOR<T>& v, const T2 s)
+TPSX_VECTOR<T> operator & (const TPSX_VECTOR<T>& u, const TPSX_VECTOR<T2>& v)
 {
-	return TPSX_VECTOR<T>(v.vx & s, v.vy & s, v.vz & s);
+	return TPSX_VECTOR<T>(u.vx & v.vx, u.vy & u.vy, u.vz & v.vz);
+}
+
+template <typename T, typename T2>
+TPSX_VECTOR<T> operator | (const TPSX_VECTOR<T>& u, const TPSX_VECTOR<T2>& v)
+{
+	return TPSX_VECTOR<T>(u.vx | v.vx, u.vy | u.vy, u.vz | v.vz);
+}
+
+template <typename T, typename T2>
+TPSX_VECTOR<T> operator ^ (const TPSX_VECTOR<T>& u, const TPSX_VECTOR<T2>& v)
+{
+	return TPSX_VECTOR<T>(u.vx ^ v.vx, u.vy ^ u.vy, u.vz ^ v.vz);
 }
 
 template <typename T, typename T2>
@@ -375,12 +387,6 @@ TPSX_VECTOR<T> operator ^ (const TPSX_VECTOR<T>& v, const T2 s)
 }
 
 template <typename T, typename T2>
-inline TPSX_VECTOR<T> operator ^ (const TPSX_VECTOR<T>& u, const TPSX_VECTOR<T2>& v)
-{
-	return TPSX_VECTOR<T>(u.vx ^ v.vx, u.vy ^ v.vy, u.vz ^ v.vz);
-}
-
-template <typename T, typename T2>
 inline TPSX_VECTOR<T> operator / (const T s, const TPSX_VECTOR<T2>& v)
 {
 	return TPSX_VECTOR<T>(s / v.vx, s / v.vy, s / v.vz);
@@ -390,12 +396,6 @@ template <typename T, typename T2>
 inline bool operator == (const TPSX_VECTOR<T>& u, const TPSX_VECTOR<T2>& v)
 {
 	return (u.vx == v.vx && u.vy == v.vy && u.vz == v.vz);
-}
-
-template <typename T, typename T2>
-inline T operator & (const TPSX_VECTOR<T>& u, const TPSX_VECTOR<T2>& v)
-{
-	return u.vx * v.vx + u.vy * v.vy + u.vz * v.vz;
 }
 
 template <typename T, typename T2>
@@ -429,6 +429,27 @@ typedef TPSX_VECTOR<uint16> USVECTOR_NOPAD;
 struct SVECTOR
 {
 	short vx, vy, vz, pad;
+
+	SVECTOR(short xyz)
+		: vx(xyz)
+		, vy(xyz)
+		, vz(xyz)
+	{
+	}
+
+	SVECTOR(short x, short y, short z)
+		: vx(x)
+		, vy(y)
+		, vz(z)
+	{
+	}
+
+	SVECTOR(const VECTOR_NOPAD& v)
+		: vx(v.vx)
+		, vy(v.vy)
+		, vz(v.vz)
+	{
+	}
 
 	SVECTOR_NOPAD& p() const { return *(SVECTOR_NOPAD*)&vx; }
 	operator short* () const { return (short*)&vx; }
