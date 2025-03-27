@@ -11,6 +11,7 @@
 #include "game/render/render_model.h"
 #include "game/render/render_level.h"
 #include "game/render/render_cars.h"
+#include "game/luabinding/luadocs.h"
 
 extern CBaseLevelMap* g_levMap;
 
@@ -19,109 +20,84 @@ CManager_Cars* g_cars = &s_carManagerInstance;
 
 const int64 targetMinFrameTime = (1.0f / 240.0f) * 1000000;
 
+POSITION_INFO::POSITION_INFO(const int x, const int y, const int z, const int direction)
+	: position(VECTOR_NOPAD{ x, y, z })
+	, direction(direction)
+{
+}
+POSITION_INFO::POSITION_INFO(const VECTOR_NOPAD& position, const int direction)
+	: position(position)
+	, direction(direction)
+{
+}
+POSITION_INFO::POSITION_INFO(const esl::LuaTable& table)
+{
+	//position = VECTOR_NOPAD{ table["x"].SafeGet(0), table["y"].SafeGet(0), table["z"].SafeGet(0) };
+	direction = table["direction"];
+}
+
+EQSCRIPT_TYPE_BEGIN(POSITION_INFO)
+	EQSCRIPT_BIND_CONSTRUCTOR(int, int, int, int)
+	EQSCRIPT_BIND_CONSTRUCTOR(const VECTOR_NOPAD&, int)
+	EQSCRIPT_BIND_CONSTRUCTOR(const esl::LuaTable&)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(direction)
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(CManager_Cars)
+	EQSCRIPT_BIND_FUNC(UnloadAllModels)
+
+	EQSCRIPT_BIND_FUNC(Create)
+	EQSCRIPT_BIND_FUNC(Remove)
+	EQSCRIPT_BIND_FUNC(RemoveAll)
+
+	EQSCRIPT_BIND_FUNC(UpdateControl)
+	EQSCRIPT_BIND_FUNC(GlobalTimeStep)
+	EQSCRIPT_BIND_VAR_NAMED("soundSourceGetCallback", m_soundSourceGetCbLua)
+	EQSCRIPT_BIND_VAR_NAMED("eventCallback", m_carEventsLua)
+
+	EQSCRIPT_BIND_STATIC_FUNC("LoadModel", +[](CManager_Cars& self, int residentModel) {
+		return self.LoadModel(residentModel);
+	})
+	EQSCRIPT_BIND_STATIC_FUNC("LoadCosmeticsFileD2", +[](const esl::ScriptState& state, CManager_Cars& self, const EqStringRef& filename, int residentModel) -> esl::Any<1> {
+		CarCosmetics cosmetic;
+		if (self.LoadDriver2CosmeticsFile(cosmetic, filename, residentModel))
+		{
+			esl::runtime::New<CarCosmetics>(state, cosmetic);
+			return {};
+		}
+		lua_pushnil(state);
+		return {};
+	})
+	EQSCRIPT_BIND_STATIC_FUNC("LoadCosmeticsFileD1", +[](const esl::ScriptState& state, CManager_Cars& self, const EqStringRef& filename, int cosmeticIdx) -> esl::Any<1> {
+		CarCosmetics cosmetic;
+		if (self.LoadDriver1CosmeticsFile(cosmetic, filename, cosmeticIdx))
+		{
+			esl::runtime::New<CarCosmetics>(state, cosmetic);
+			return {};
+		}
+		lua_pushnil(state);
+		return {};
+	})
+	EQSCRIPT_BIND_STATIC_FUNC("GetCarModels", +[](const esl::ScriptState& state, const CManager_Cars& self) -> esl::LuaTable
+	{
+		auto table = state.CreateTable();
+		for (int i = 0; i < self.m_carModels.numElem(); i++)
+			table[i + 1] = self.m_carModels[i];
+
+		return table;
+	})
+EQSCRIPT_TYPE_END
+
 /*static*/ void	CManager_Cars::Lua_Init(const esl::ScriptState& state)
 {
 	CCar::Lua_Init(state);
 
-	{
-		LUADOC_GLOBAL();
+	state.RegisterClass<POSITION_INFO>();
+	state.RegisterClass<CManager_Cars>();
 
-		{
-			LUADOC_TYPE();
-			lua.new_usertype<POSITION_INFO>(
-				LUADOC_T("POSITION_INFO", "Car creation position info"),
-				sol::call_constructor, sol::factories(
-					[](const int& x, const int& y, const int& z, const int& direction) {
-						return POSITION_INFO{ VECTOR_NOPAD{x, y, z}, direction };
-					},
-					[](const VECTOR_NOPAD& position, const int& direction) {
-						return POSITION_INFO{ position, direction };
-					},
-					[](const sol::table& table) {
-						return POSITION_INFO{ VECTOR_NOPAD{ table["x"], table["y"].get_or(0), table["z"] }, table["direction"].get_or(0) };
-					},
-					[]() { return POSITION_INFO{ 0 }; }),
-				LUADOC_P("position"), &POSITION_INFO::position,
-				LUADOC_P("direction"), &POSITION_INFO::direction
-			);
-		}
-
-		//-------------------------------------------
-		{
-			LUADOC_TYPE();
-			lua.new_usertype<CManager_Cars>(
-				LUADOC_T("CManager_Cars", "Car manager"),
-
-				LUADOC_M("LoadModel", "loads car model with specified index"),
-				[](CManager_Cars& self, int residentModel) {
-					return self.LoadModel(residentModel);
-				},
-
-				LUADOC_M("LoadCosmeticsFileD2", "Loads specified LCF file and cosmetic index"),
-				[](CManager_Cars& self, std::string& filename, int residentModel, sol::this_state s) {
-					sol::state_view lua(s);
-					CarCosmetics cosmetic;
-					bool result = self.LoadDriver2CosmeticsFile(cosmetic, filename.c_str(), residentModel);
-
-					if (result)
-						return sol::make_object(lua, cosmetic);
-					return sol::make_object(lua, sol::nil);
-				},
-
-				LUADOC_M("LoadCosmeticsFileD1", "Loads specified LCF file and cosmetic index"),
-				[](CManager_Cars& self, std::string& filename, int cosmeticIdx, sol::this_state s) {
-					sol::state_view lua(s);
-					CarCosmetics cosmetic;
-					bool result = self.LoadDriver1CosmeticsFile(cosmetic, filename.c_str(), cosmeticIdx);
-
-					if (result)
-						return sol::make_object(lua, cosmetic);
-					return sol::make_object(lua, sol::nil);
-				},
-
-				LUADOC_P("carModels", "Loaded car models table"),
-				sol::property([](CManager_Cars& self, sol::this_state s)
-				{
-					sol::state_view lua(s);
-					auto& table = lua.create_table();
-
-					for (usize i = 0; i < self.m_carModels.size(); i++)
-						table[i + 1] = self.m_carModels[i];
-
-					return table;
-				}),
-
-				LUADOC_M("UnloadAllModels", "removes all cars and unload all models"), 
-				&UnloadAllModels,
-
-				LUADOC_M("Create", "(cosmetic: CAR_COSMETICS, control: number, modelId: number, positionInfo: POSITION_INFO) : CCar - create new car."), 
-				&Create,
-
-				LUADOC_M("Remove", "(car: CCar) - removes specific car"), 
-				&Remove,
-
-				LUADOC_M("RemoveAll", "(void) - Deletes all car from the world"),
-				&RemoveAll,
-
-				LUADOC_M("UpdateControl", "(void) - updates car controls. Must be called before GlobalTimeStep"), 
-				&UpdateControl,
-
-				LUADOC_M("GlobalTimeStep", "(void) - updates car physics globally"), 
-				&GlobalTimeStep,
-
-				LUADOC_P("soundSourceGetCallback", "<(name: string)>"),
-				&CManager_Cars::m_soundSourceGetCbLua,
-
-				LUADOC_P("eventCallback", "<(self, name: 'HitGround' | 'HitCurb' | 'HitCellObject' | 'HitSmashable' | 'CarsCollision' | 'HitCar', params: table)> - events callback"),
-				&CManager_Cars::m_carEventsLua
-				
-			);
-		}
-	}
-
-	auto engine = lua["engine"].get_or_create<sol::table>();
-
-	engine["Cars"] = g_cars;
+	esl::LuaTable engineTbl = eslSys::GetOrCreateGlobalTable(state, "engine");
+	engineTbl["Cars"] = g_cars;
 }
 
 extern CDriverLevelModels g_levModels;
