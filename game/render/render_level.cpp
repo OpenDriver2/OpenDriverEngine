@@ -13,7 +13,7 @@ extern CDriverLevelModels		g_levModels;
 extern CBaseLevelMap*			g_levMap;
 
 LevelRenderProps CRender_Level::RenderProps;
-GrVAO* CRender_Level::ShadowVAO = nullptr;
+IGPUBufferPtr CRender_Level::ShadowGeomBuffer = {};
 
 struct RenderLevelFrame
 {

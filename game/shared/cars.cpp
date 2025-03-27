@@ -260,7 +260,7 @@ CarCosmetics CarCosmetics::FromTable(const esl::LuaTable& table)
 	if (gearsTable && gearsTable.Length())
 	{
 		newCosmetics.gears.clear();
-		for (uint i = 0; i < gearsTable.Length(); i++)
+		for (int i = 0; i < gearsTable.Length(); i++)
 		{
 			GEAR_DESC newGear = gearsTable[i + 1];
 			newCosmetics.gears.append(newGear);

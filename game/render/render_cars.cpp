@@ -14,7 +14,7 @@
 	- Add car model rendering and denting stuff
 */
 
-GrVAO* CRender_Cars::ShadowVAO = nullptr;
+IGPUBufferPtr CRender_Cars::ShadowGeomBuffer = {};
 TexDetailInfo_t* CRender_Cars::ShadowDetail = nullptr;
 Vector4D CRender_Cars::ShadowUV(0.0f);
 

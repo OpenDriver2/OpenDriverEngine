@@ -5,6 +5,9 @@ class CMeshBuilder;
 class CCar;
 struct TexDetailInfo_t;
 
+class IGPUBuffer;
+using IGPUBufferPtr = CRefPtr<IGPUBuffer>;
+
 class CRender_Cars
 {
 public:
@@ -17,7 +20,7 @@ public:
 
 private:
 	static void				AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float distance);
-	static GrVAO*			ShadowVAO;
+	static IGPUBufferPtr	ShadowGeomBuffer;
 	static Vector4D			ShadowUV;
 	static TexDetailInfo_t* ShadowDetail;
 };

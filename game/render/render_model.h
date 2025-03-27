@@ -4,7 +4,8 @@
 static constexpr float RENDER_SCALING = ONE_F_RECIP;
 
 struct ModelRef_t;
-struct GrVAO;
+class IGPUBuffer;
+using IGPUBufferPtr = CRefPtr<IGPUBuffer>;
 
 struct modelBatch_t
 {
@@ -22,6 +23,13 @@ struct vertexTuple_t
 	short	vertexIndex;
 	short	normalIndex;		// point normal index
 	ushort	uvs;
+};
+
+struct GrVertex
+{
+	float vx, vy, vz, tc_u;
+	float nx, ny, nz, tc_v;
+	float cr, cg, cb, ca;
 };
 
 class CRenderModel
@@ -66,7 +74,8 @@ protected:
 
 	BoundingBox			m_bbox;
 
-	ModelRef_t*			m_sourceModel { nullptr };
-	GrVAO*				m_vao { nullptr };
+	ModelRef_t*			m_sourceModel{ nullptr };
+	IGPUBufferPtr		m_vertexBuffer { nullptr };
+	IGPUBufferPtr		m_indexBuffer{ nullptr };
 	Array<modelBatch_t>	m_batches;
 };

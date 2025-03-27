@@ -1,5 +1,8 @@
 #pragma once
 
+class IGPUBuffer;
+using IGPUBufferPtr = CRefPtr<IGPUBuffer>;
+class CMeshBuilder;
 class Volume;
 struct DRAWABLE;
 
@@ -53,5 +56,5 @@ private:
 
 	static void DrawObjectShadow(CMeshBuilder& shadowMesh, const Matrix3x3& shadowMat, const ModelRef_t* ref, const Vector3D& position, float distance);
 
-	static GrVAO* ShadowVAO;
+	static IGPUBufferPtr ShadowGeomBuffer;
 };
