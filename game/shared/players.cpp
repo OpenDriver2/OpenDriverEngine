@@ -1,4 +1,5 @@
 #include "core/core_common.h"
+#include "sys/scripting/sys_esl.h"
 
 #include "players.h"
 #include "replay.h"
@@ -6,92 +7,56 @@
 
 const int REPLAY_STEAM_MAX_LENGTH = 8000;
 
+EQSCRIPT_TYPE_BEGIN(PlayerInputData)
+	EQSCRIPT_BIND_CONSTRUCTOR(const esl::LuaTable&)
+	EQSCRIPT_BIND_VAR(accel)
+	EQSCRIPT_BIND_VAR(brake)
+	EQSCRIPT_BIND_VAR(wheelspin)
+	EQSCRIPT_BIND_VAR(handbrake)
+	EQSCRIPT_BIND_VAR(fastSteer)
+	EQSCRIPT_BIND_VAR(useAnalogue)
+	EQSCRIPT_BIND_VAR(steering)
+	EQSCRIPT_BIND_VAR(horn)
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(CPlayer)
+	EQSCRIPT_BIND_FUNC(CPlayer::InitReplay)
+
+	EQSCRIPT_BIND_VAR_EX_GET_SET(currentCar, GetCurrentCar, SetCurrentCar)
+	EQSCRIPT_BIND_VAR_NAMED("controlType", m_controlType)
+	EQSCRIPT_BIND_VAR_EX_SET_NAMED("input", m_currentInputs, UpdateControls)
+
+	EQSCRIPT_BIND_VAR_EX_GET_SET("rubberbandPowerRatio", GetRubberbandPowerRatio, SetRubberbandPowerRatio)
+	EQSCRIPT_BIND_VAR_EX_GET_SET("rubberbandPoint", GetRubberbandPoint, SetRubberbandPoint)
+	EQSCRIPT_BIND_VAR_EX_GET_SET("rubberbandMode", GetRubberbandMode, SetRubberbandMode)
+
+	EQSCRIPT_BIND_VAR_NAMED("playbackStream", m_playbackStream)
+	EQSCRIPT_BIND_VAR_NAMED("recordStream", m_recordStream)
+EQSCRIPT_TYPE_END
+
+PlayerInputData::PlayerInputData(const esl::LuaTable& table)
+{
+	accel = table["accel"];
+	brake = table["brake"];
+	wheelspin = table["wheelspin"];
+	handbrake = table["handbrake"];
+	fastSteer = table["fastSteer"];
+	steering = table["steering"];
+	useAnalogue = table["useAnalogue"];
+	horn = table["horn"];
+}
+
 void CPlayer::Lua_Init(const esl::ScriptState& state)
 {
-	LUADOC_GLOBAL();
+	state.RegisterClass<PlayerInputData>();
+	state.RegisterClass<CPlayer>();
 
 	{
-		LUADOC_TYPE();
-		lua.new_usertype<InputData>(
-			LUADOC_T("PlayerInputData"),
-			sol::call_constructor, sol::factories(
-				[](const sol::table& table) {
-					InputData in;
-
-					in.accel = table["accel"];
-					in.brake = table["brake"];
-					in.wheelspin = table["wheelspin"];
-					in.handbrake = table["handbrake"];
-					in.fastSteer = table["fastSteer"];
-					in.steering = table["steering"];
-					in.useAnalogue = table["useAnalogue"];
-					in.horn = table["horn"];
-
-					return in;
-				},
-				[]() { return InputData(); }),
-			LUADOC_P("accel"), &InputData::accel,
-			LUADOC_P("brake"), &InputData::brake,
-			LUADOC_P("wheelspin"),  &InputData::wheelspin,
-			LUADOC_P("handbrake"),  &InputData::handbrake,
-			LUADOC_P("fastSteer"),  &InputData::fastSteer,
-			LUADOC_P("steering"), &InputData::steering,
-			LUADOC_P("useAnalogue"), &InputData::useAnalogue,
-					
-			LUADOC_P("horn"), &InputData::horn
-		);
-	}
-
-	{
-		LUADOC_TYPE();
-		lua.new_usertype<CPlayer>(
-			LUADOC_T("Player"),
-
-			LUADOC_P("InitReplay", "(inputStream?: ReplayStream) - initializes replay stream. If inputStream is null, only recording is initiated"),
-			&CPlayer::InitReplay,
-
-			LUADOC_P("currentCar", "<CCar> - get/set player car. If replay is initialized empty, it will be initialized"), 
-			sol::property(&CPlayer::GetCurrentCar, &CPlayer::SetCurrentCar),
-
-			LUADOC_P("controlType", "<CarControlType>"),
-			&CPlayer::m_controlType,
-
-			LUADOC_P("input", "<PlayerInputData> - player control buttons data"), 
-			sol::property(&CPlayer::m_currentInputs, &CPlayer::UpdateControls),
-
-			LUADOC_P("rubberbandPowerRatio", "<int> - chase power ratio of rubber band (usually target car value)"),
-			sol::property(&CPlayer::GetRubberbandPowerRatio, &CPlayer::SetRubberbandPowerRatio),
-
-			LUADOC_P("rubberbandPoint", "<fix.VECTOR> - world position for computing rubberbanding scale"),
-			sol::property(&CPlayer::GetRubberbandPoint, &CPlayer::SetRubberbandPoint),
-
-			LUADOC_P("rubberbandMode", "<RubberbandMode> - rubberbanding mode preset"),
-			sol::property(&CPlayer::GetRubberbandMode, &CPlayer::SetRubberbandMode),
-
-			LUADOC_P("playbackStream", "<ReplayStream> (mayBeNull readonly) - replay playback stream"),
-			sol::property([](const CPlayer& ply) { 
-				CReplayStream& ptr = *ply.m_playbackStream;
-				return &ptr;
-			}),
-
-			LUADOC_P("recordStream", "<ReplayStream> (mayBeNull readonly) - replay recording stream (if null - no recording is done)"),
-			sol::property([](const CPlayer& ply) {
-				CReplayStream& ptr = *ply.m_recordStream;
-				return &ptr;
-			})
-
-			
-		);
-	}
-
-	{
-		LUADOC_TYPE();
-		LUA_BEGIN_ENUM(ERubberBandMode);
-		lua.new_enum<ERubberBandMode>(LUADOC_T("RubberbandMode"), {
-			LUA_ENUM(Rubberband_Off, "Off"),
-			LUA_ENUM(Rubberband_Chaser, "Chaser"),
-			LUA_ENUM(Rubberband_Escape, "Escape"),
-		});
+		esl::LuaTable rubberbandModeTbl = state.CreateTable();
+		state.SetGlobal("RubberbandMode", rubberbandModeTbl);
+		rubberbandModeTbl["Off"] = Rubberband_Off;
+		rubberbandModeTbl["Chaser"] = Rubberband_Chaser;
+		rubberbandModeTbl["Escape"] = Rubberband_Escape;
 	}
 }
 
@@ -407,35 +372,21 @@ void CPlayer::ProcessCarPad()
 //-------------------------------------------------------------
 
 CPlayer	CManager_Players::LocalPlayer;
-Array<CPlayer*>	CManager_Players::Players;
+Array<CPlayer*>	CManager_Players::Players{ PP_SL };
 
 void CManager_Players::Lua_Init(const esl::ScriptState& state)
 {
 	CPlayer::Lua_Init(state);
 
-	auto engine = lua["engine"].get_or_create<sol::table>();
-	LUADOC_GLOBAL();
+	esl::LuaTable engineTbl = eslSys::GetOrCreateGlobalTable(state, "engine");
 	{
-		LUADOC_TYPE("Players");
-		auto players = engine["Players"].get_or_create<sol::table>();
-
-		players[LUADOC_P("localPlayer", "<Player> - current player")]
-			= &LocalPlayer;
-
-		players[LUADOC_M("GetPlayerByCar", "(car: CCar) : Player")]
-			= &GetPlayerByCar;
-
-		players[LUADOC_M("CreatePlayer", "() : Player")]
-			= &CreatePlayer;
-
-		players[LUADOC_M("RemovePlayer", "(Player)")]
-			= &RemovePlayer;
-
-		players[LUADOC_M("RemoveAllPlayers", "(void)")]
-			= &RemoveAllPlayers;
-
-		players[LUADOC_M("Update", "()")]
-			= &Update;
+		auto playersTbl = engineTbl["Players"].CreateTable();
+		playersTbl["localPlayer"] = LocalPlayer;
+		playersTbl["GetPlayerByCar"] = EQSCRIPT_CFUNC(GetPlayerByCar);
+		playersTbl["CreatePlayer"] = EQSCRIPT_CFUNC(CreatePlayer);
+		playersTbl["RemovePlayer"] = EQSCRIPT_CFUNC(RemovePlayer);
+		playersTbl["RemoveAllPlayers"] = EQSCRIPT_CFUNC(RemoveAllPlayers);
+		playersTbl["Update"] = EQSCRIPT_CFUNC(Update);
 	}
 
 	// make local player default

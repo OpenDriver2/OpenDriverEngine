@@ -1,8 +1,9 @@
 #pragma once
-#include "scripting/esl.h"
+#include "scripting/esl_luaref.h"
 #include "math/psx_math_types.h"
 
 class CCar;
+class CPlayer;
 class CReplayStream;
 using CReplayStreamPtr = CRefPtr<CReplayStream>;
 
@@ -21,6 +22,9 @@ enum ERubberBandMode
 
 struct PlayerInputData
 {
+	PlayerInputData() = default;
+	PlayerInputData(const esl::LuaTable& table);
+
 	// TODO: pedestrian mapping
 	bool accel{ false };
 	bool brake{ false };
@@ -32,9 +36,13 @@ struct PlayerInputData
 	int horn{ 0 };
 };
 
+EQSCRIPT_BIND_TYPE_NO_PARENT(PlayerInputData, "PlayerInputData", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(CPlayer, "Player", BY_REF)
+
 class CPlayer
 {
 	friend class CManager_Players;
+	EQSCRIPT_PUBLIC_BINDER(CPlayer);
 public:
 	using InputData = PlayerInputData;
 
