@@ -3,6 +3,7 @@
 #include "math/psx_math_types.h"
 
 struct PlayerInputData;
+class CReplayStream;
 
 // TODO: mission.h
 struct SAVED_PLAYER_POS
@@ -48,6 +49,9 @@ struct STREAM_SOURCE
 //-------------------------------------------------
 
 struct PADRECORD;
+
+EQSCRIPT_BIND_TYPE_NO_PARENT(STREAM_SOURCE, "STREAM_SOURCE", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(CReplayStream, "ReplayStream", REF_PTR)
 
 class CReplayStream : public RefCountedObject<CReplayStream>
 {

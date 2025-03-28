@@ -1,4 +1,5 @@
 #include "core/core_common.h"
+#include "sys/scripting/sys_esl.h"
 #include "replay.h"
 #include "world.h"
 #include "players.h"
@@ -94,41 +95,34 @@ struct PLAYBACKCAMERA
 
 //----------------------------------------
 
+EQSCRIPT_TYPE_BEGIN(STREAM_SOURCE)
+	EQSCRIPT_BIND_VAR(type)
+	EQSCRIPT_BIND_VAR(model)
+	EQSCRIPT_BIND_VAR(palette)
+	EQSCRIPT_BIND_VAR(flags)
+	EQSCRIPT_BIND_VAR(rotation)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(totaldamage)
+	//EQSCRIPT_BIND_VAR(damage)		// ESL TODO: FixedArray binding
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(CReplayStream)
+	EQSCRIPT_BIND_FUNC(Reset)
+	EQSCRIPT_BIND_FUNC(Purge)
+	EQSCRIPT_BIND_FUNC(Clone)
+
+	EQSCRIPT_BIND_FUNC(Play)
+	EQSCRIPT_BIND_FUNC(Record)
+
+	EQSCRIPT_BIND_FUNC(GetSourceParams)
+	EQSCRIPT_BIND_FUNC(IsEmpty)
+	EQSCRIPT_BIND_FUNC(IsAtEnd)
+EQSCRIPT_TYPE_END
+
 void CReplayData::Lua_Init(const esl::ScriptState& state)
 {
-	LUADOC_GLOBAL();
-
-	{
-		LUADOC_TYPE();
-		lua.new_usertype<STREAM_SOURCE>(
-			LUADOC_T("STREAM_SOURCE"),
-			LUADOC_P("type", "<int> - 1 = car, 2 = ped"), &STREAM_SOURCE::type,
-			LUADOC_P("model", "<int>"), &STREAM_SOURCE::model,
-			LUADOC_P("palette", "<int>"), &STREAM_SOURCE::palette,
-			LUADOC_P("flags", "<int>"), &STREAM_SOURCE::flags,
-			LUADOC_P("rotation", "<int>"), &STREAM_SOURCE::rotation,
-			LUADOC_P("position", "<fix.VECTOR>"), &STREAM_SOURCE::position,
-			LUADOC_P("totaldamage", "<int>"), &STREAM_SOURCE::totaldamage,
-			LUADOC_P("damage", "<int[6]> - body damage array"), &STREAM_SOURCE::damage
-		);
-	}
-
-	{
-		LUADOC_TYPE();
-		lua.new_usertype<CReplayStream>(
-			LUADOC_T("ReplayStream"),
-			LUADOC_M("Reset", "(void) - resets to start"), &CReplayStream::Reset,
-			LUADOC_M("Purge", "(void) - clears replay stream"), &CReplayStream::Purge,
-			LUADOC_M("Clone", "(void) - clones this replay for playback purposes"), &CReplayStream::Clone,
-
-			LUADOC_M("Play", "(inputs: PlayerInputData) : boolean - Updates playback. Returns false if out of tape"), &CReplayStream::Play,
-			LUADOC_M("Record", "(inputs: PlayerInputData) : boolean - Records controls if there is difference. Returns false if out of tape"), &CReplayStream::Record,
-
-			LUADOC_P("sourceParams", "<STREAM_SOURCE> (readonly) - stream start parameters"), sol::property(&CReplayStream::GetSourceParams),
-			LUADOC_P("isEmpty", "<boolean>"), sol::property(&CReplayStream::IsEmpty),
-			LUADOC_P("isAtEnd", "<boolean>"), sol::property(&CReplayStream::IsAtEnd)
-		);
-	}
+	state.RegisterClass<STREAM_SOURCE>();
+	state.RegisterClass<CReplayStream>();
 }
 
 //----------------------------------------
