@@ -18,8 +18,6 @@
 #include "manager_cars.h"
 #include "game/render/render_model.h"
 
-using CarEventsCall = esl::runtime::FunctionCall<void, CCar*, const char*, const esl::LuaTableRef&>;
-
 extern CDriverLevelModels g_levModels;
 
 const short DEFAULT_GRAVITY_FORCE = -7456; // D1 has -10922
@@ -438,6 +436,103 @@ EQSCRIPT_TYPE_BEGIN(CCar)
 	EQSCRIPT_BIND_VAR_NAMED("eventCallback", m_carEventsLua)
 EQSCRIPT_TYPE_END
 
+struct EvtHitGround
+{
+	VECTOR_NOPAD position;
+	VECTOR_NOPAD normal;
+	int strikeVel;
+};
+using EvtHitGroundCall = esl::runtime::FunctionCall<void, CCar*, const char*, EvtHitGround&>;
+EQSCRIPT_BIND_TYPE_NO_PARENT(EvtHitGround, "EvtHitGround", BY_REF)
+EQSCRIPT_TYPE_BEGIN(EvtHitGround)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(normal)
+	EQSCRIPT_BIND_VAR(strikeVel)
+EQSCRIPT_TYPE_END
+
+struct EvtHitCellObject
+{
+	const ModelRef_t* model;
+	CELL_OBJECT* obj;
+	VECTOR_NOPAD position;
+	VECTOR_NOPAD normal;
+	VECTOR_NOPAD pointVel;
+};
+using EvtHitCellObjectCall = esl::runtime::FunctionCall<void, CCar*, const char*, EvtHitCellObject&>;
+EQSCRIPT_BIND_TYPE_NO_PARENT(EvtHitCellObject, "EvtHitCellObject", BY_REF)
+EQSCRIPT_TYPE_BEGIN(EvtHitCellObject)
+	EQSCRIPT_BIND_VAR(model)
+	EQSCRIPT_BIND_VAR(obj)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(normal)
+	EQSCRIPT_BIND_VAR(pointVel)
+EQSCRIPT_TYPE_END
+
+struct EvtHitSmashable
+{
+	const ModelRef_t* model;
+	CELL_OBJECT* obj;
+	VECTOR_NOPAD position;
+	VECTOR_NOPAD normal;
+	VECTOR_NOPAD velocity;
+	int strikeVel;
+};
+using EvtHitSmashableCall = esl::runtime::FunctionCall<void, CCar*, const char*, EvtHitSmashable&>;
+EQSCRIPT_BIND_TYPE_NO_PARENT(EvtHitSmashable, "EvtHitSmashable", BY_REF)
+EQSCRIPT_TYPE_BEGIN(EvtHitSmashable)
+	EQSCRIPT_BIND_VAR(model)
+	EQSCRIPT_BIND_VAR(obj)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(normal)
+	EQSCRIPT_BIND_VAR(velocity)
+	EQSCRIPT_BIND_VAR(strikeVel)
+EQSCRIPT_TYPE_END
+
+struct EvtCarsCollision
+{
+	CCar* car1;
+	CCar* car2;
+	VECTOR_NOPAD position;
+	VECTOR_NOPAD normal;
+	int strikeVel;
+	int mass1;
+	int mass2;
+	int c1InfiniteMass;
+	int c2InfiniteMass;
+};
+using EvtCarsCollisionCall = esl::runtime::FunctionCall<void, CCar*, const char*, EvtCarsCollision&>;
+EQSCRIPT_BIND_TYPE_NO_PARENT(EvtCarsCollision, "EvtCarsCollision", BY_REF)
+EQSCRIPT_TYPE_BEGIN(EvtCarsCollision)
+	EQSCRIPT_BIND_VAR(car1)
+	EQSCRIPT_BIND_VAR(car2)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(normal)
+	EQSCRIPT_BIND_VAR(strikeVel)
+	EQSCRIPT_BIND_VAR(mass1)
+	EQSCRIPT_BIND_VAR(mass2)
+	EQSCRIPT_BIND_VAR(c1InfiniteMass)
+	EQSCRIPT_BIND_VAR(c2InfiniteMass)
+EQSCRIPT_TYPE_END
+
+struct EvtHitCar
+{
+	CCar* other;
+	VECTOR_NOPAD position;
+	VECTOR_NOPAD normal;
+	int strikeVel;
+	int infiniteMass;
+};
+using EvtHitCarCall = esl::runtime::FunctionCall<void, CCar*, const char*, const EvtHitCar&>;
+EQSCRIPT_BIND_TYPE_NO_PARENT(EvtHitCar, "EvtHitCar", BY_REF)
+EQSCRIPT_TYPE_BEGIN(EvtHitCar)
+	EQSCRIPT_BIND_VAR(other)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(normal)
+	EQSCRIPT_BIND_VAR(strikeVel)
+	EQSCRIPT_BIND_VAR(infiniteMass)
+EQSCRIPT_TYPE_END
+
+
 void CCar::Lua_Init(const esl::ScriptState& state)
 {
 	state.RegisterClass<GEAR_DESC>();
@@ -445,6 +540,12 @@ void CCar::Lua_Init(const esl::ScriptState& state)
 	state.RegisterClass<ExtraLightInfo>();
 	state.RegisterClass<CarCosmetics>();
 	state.RegisterClass<CCar>();
+
+	state.RegisterClass<EvtHitGround>();
+	state.RegisterClass<EvtHitCellObject>();
+	state.RegisterClass<EvtHitSmashable>();
+	state.RegisterClass<EvtCarsCollision>();
+	state.RegisterClass<EvtHitCar>();
 
 	{
 		esl::LuaTable controlTypeTbl = state.CreateTable();
@@ -675,7 +776,8 @@ void CCar::AddWheelForcesDriver1(CAR_LOCALS& cl)
 					tbl.Set("wheelNum", i);
 					tbl.Set("newCompression", compressionDiff);
 
-					auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitCurb", tbl);
+					using EvtHitCurbCall = esl::runtime::FunctionCall<void, CCar*, const char*, const esl::LuaTable&>;
+					auto result = EvtHitCurbCall::Invoke(m_carEventsLua, this, "HitCurb", tbl);
 					LUA_CHECK_CALL(result, "Event HitCurb");
 				}
 			}
@@ -1189,13 +1291,15 @@ void CCar::StepOneCar()
 		// Lua interaction
 		if (m_carEventsLua)
 		{
-			auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
-			tbl.Set("position", LuaPropertyRef(surfacePoint));
-			tbl.Set("normal", LuaPropertyRef(surfaceNormal));
-			tbl.Set("strikeVel", LuaPropertyRef(impulse));		// in reversed code it's probably named incorrectly
+			EvtHitGround hitGround{ surfacePoint, surfaceNormal, impulse };
 
-			auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitGround", tbl);
+			auto result = EvtHitGroundCall::Invoke(m_carEventsLua, this, "HitGround", hitGround);
 			LUA_CHECK_CALL(result, "Event HitGround");
+
+			// get results back
+			surfacePoint = hitGround.position;
+			surfaceNormal = hitGround.normal;
+			impulse = hitGround.strikeVel;
 		}
 
 		if (impulse > 20000)
@@ -2311,15 +2415,21 @@ bool CCar::CarBuildingCollision(const BUILDING_BOX& building, CELL_OBJECT* cop, 
 		// Lua interaction
 		if (m_carEventsLua)
 		{
-			auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
-			tbl.Set("model", building.modelRef);
-			tbl.Set("cellObject", cop);
-			tbl.Set("position", LuaPropertyRef(collisionResult.hit));
-			tbl.Set("normal", LuaPropertyRef(collisionResult.surfNormal));
-			tbl.Set("pointVel", LuaPropertyRef(pointVel));
+			EvtHitCellObject evt{
+				building.modelRef,
+				cop,
+				collisionResult.hit,
+				collisionResult.surfNormal,
+				pointVel
+			};
 
-			auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitCellObject", tbl);
+			auto result = EvtHitCellObjectCall::Invoke(m_carEventsLua, this, "HitCellObject", evt);
 			LUA_CHECK_CALL(result, "Event HitCellObject");
+
+			// get results
+			collisionResult.hit = evt.position;
+			collisionResult.surfNormal = evt.normal;
+			pointVel = evt.pointVel;
 		}
 
 		/*
@@ -2363,16 +2473,22 @@ bool CCar::CarBuildingCollision(const BUILDING_BOX& building, CELL_OBJECT* cop, 
 				// Lua interaction
 				if (m_carEventsLua)
 				{
-					auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
-					tbl.Set("model", building.modelRef);
-					tbl.Set("cellObject", cop);
-					tbl.Set("position", LuaPropertyRef(collisionResult.hit));
-					tbl.Set("normal", LuaPropertyRef(collisionResult.surfNormal));
-					tbl.Set("velocity", LuaPropertyRef(velocity));
-					tbl.Set("strikeVel", LuaPropertyRef(strikeVel));
+					EvtHitSmashable evt{
+						building.modelRef,
+						cop,
+						collisionResult.hit,
+						collisionResult.surfNormal,
+						velocity,
+						strikeVel,
+					};
 
-					auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitSmashable", tbl);
+					auto result = EvtHitSmashableCall::Invoke(m_carEventsLua, this, "HitSmashable", evt);
 					LUA_CHECK_CALL(result, "Event HitSmashable");
+
+					collisionResult.hit = evt.position;
+					collisionResult.surfNormal = evt.normal;
+					velocity = evt.velocity;
+					strikeVel = evt.strikeVel;
 				}
 
 				cop->pos.vx = OBJECT_SMASHED_MARK;
@@ -2661,19 +2777,28 @@ bool CCar::CarCarCollision(CCar* other, int RKstep)
 	// Lua interaction
 	if (m_carEventsLua)
 	{
-		auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
-		tbl.Set("car1", this);
-		tbl.Set("car2", other);
-		tbl.Set("position", LuaPropertyRef(collResult.location));
-		tbl.Set("normal", LuaPropertyRef(collResult.normal));
-		tbl.Set("strikeVel", LuaPropertyRef(strikeVel));
-		tbl.Set("mass1", LuaPropertyRef(m1));
-		tbl.Set("mass2", LuaPropertyRef(m2));
-		tbl.Set("c1InfiniteMass", LuaPropertyRef(c1InfiniteMass));
-		tbl.Set("c2InfiniteMass", LuaPropertyRef(c2InfiniteMass));
+		EvtCarsCollision evt{
+			this,
+			other,
+			collResult.location,
+			collResult.normal,
+			strikeVel,
+			m1,
+			m2,
+			c1InfiniteMass,
+			c2InfiniteMass,
+		};
 
-		auto result = CarEventsCall::Invoke(m_carEventsLua, this, "CarsCollision", tbl);
+		auto result = EvtCarsCollisionCall::Invoke(m_carEventsLua, this, "CarsCollision", evt);
 		LUA_CHECK_CALL(result, "Event CarsCollision");
+
+		collResult.location = evt.position;
+		collResult.normal = evt.normal;
+		strikeVel = evt.strikeVel;
+		m1 = evt.mass1;
+		m2 = evt.mass2;
+		c1InfiniteMass = evt.c1InfiniteMass;
+		c2InfiniteMass = evt.c2InfiniteMass;
 	}
 
 	int do1, do2;
@@ -2718,14 +2843,15 @@ void CCar::CollisionResponse(RigidBodyState& delta, CCar* other, int strikeVel, 
 	// Lua interaction
 	if (m_carEventsLua)
 	{
-		auto tbl = esl::ScriptState(m_carEventsLua.GetState()).CreateTable();
-		tbl.Set("other", other);
-		tbl.Set("position", LuaPropertyRef(collResult.location));
-		tbl.Set("normal", LuaPropertyRef(collResult.normal));
-		tbl.Set("strikeVel", LuaPropertyRef(strikeVel));
-		tbl.Set("infiniteMass", LuaPropertyRef(infiniteMass));
+		EvtHitCar evt{
+			other,
+			collResult.location,
+			collResult.normal,
+			strikeVel,
+			infiniteMass
+		};
 
-		auto result = CarEventsCall::Invoke(m_carEventsLua, this, "HitCar", tbl);
+		auto result = EvtHitCarCall::Invoke(m_carEventsLua, this, "HitCar", evt);
 		LUA_CHECK_CALL(result, "Event HitCar");
 	}
 

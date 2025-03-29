@@ -74,13 +74,11 @@ bool Math_Lua_Init(const esl::ScriptState& state)
 
 		{
 			LUADOC_TYPE("VECTOR", "Three dimensional vector (32 bit)");
-			MAKE_PROPERTY_REF(VECTOR_NOPAD);
 			state.RegisterClass<VECTOR_NOPAD>();
 		}
 
 		{
 			LUADOC_TYPE("SVECTOR", "Three dimensional vector (16 bit)");
-			MAKE_PROPERTY_REF(SVECTOR);
 			state.RegisterClass<SVECTOR>();
 		}
 
