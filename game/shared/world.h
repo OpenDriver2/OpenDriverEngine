@@ -1,8 +1,9 @@
 #pragma once
-#include "scripting/esl_luaref.h"
 #include "math/psx_math_types.h"
 #include "camera.h"
 #include "routines/d2_types.h"
+
+#include "sys/scripting/sys_esl.h"
 
 class ITexture;
 

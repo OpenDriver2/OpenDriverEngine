@@ -5,6 +5,8 @@ using IGPUBufferPtr = CRefPtr<IGPUBuffer>;
 class CMeshBuilder;
 class Volume;
 struct DRAWABLE;
+struct CELL_OBJECT;
+struct ModelRef_t;
 
 struct LevelRenderProps
 {

@@ -1,6 +1,5 @@
 #include "core/core_common.h"
-
-#include "sys/scripting/sys_esl.h"
+#include "core/IFileSystem.h"
 
 #include "math/squareroot0.h"
 #include "math/convert.h"
@@ -425,15 +424,15 @@ extern CDriverLevelTextures		g_levTextures;
 extern CDriverLevelModels		g_levModels;
 extern CBaseLevelMap*			g_levMap;
 
-FILE* g_levFile = nullptr;
+static IFilePtr g_levFile = nullptr;
 
 //-------------------------------------------------------
 // Perorms level loading and renderer data initialization
 //-------------------------------------------------------
 bool CWorld::LoadLevel(const char* fileName)
 {
-	FILE* fp = fopen(fileName, "rb");
-	if (!fp)
+	g_levFile = g_fileSystem->Open(fileName, FS_OPEN_READ);
+	if (!g_levFile)
 	{
 		MsgError("Cannot open '%s'\n", fileName);
 		return false;
@@ -441,15 +440,11 @@ bool CWorld::LoadLevel(const char* fileName)
 
 	UnloadLevel();
 
-	g_levFile = fp;
-
 	// seek to begin
 	MsgWarning("-----------\nLoading LEV file '%s'\n", fileName);
 
-	CMemoryStream stream(g_levFile, false);
-	ELevelFormat levFormat = CDriverLevelLoader::DetectLevelFormat(&stream);
-
-	stream.Seek(0, VS_SEEK_SET);
+	ELevelFormat levFormat = CDriverLevelLoader::DetectLevelFormat(g_levFile);
+	g_levFile->Seek(0, VS_SEEK_SET);
 
 	// create map accordingly
 	if (levFormat >= LEV_FORMAT_DRIVER2_ALPHA16 || levFormat == LEV_FORMAT_AUTODETECT)
@@ -460,7 +455,7 @@ bool CWorld::LoadLevel(const char* fileName)
 	CDriverLevelLoader loader;
 	loader.Initialize(g_levInfo, &g_levTextures, &g_levModels, g_levMap);
 
-	bool result = loader.Load(&stream);
+	bool result = loader.Load(g_levFile);
 
 	CRender_Cars::Init();
 	CRender_Level::Init();
@@ -487,10 +482,8 @@ void CWorld::UnloadLevel()
 		g_levTextures.FreeAll();
 		g_levModels.FreeAll();
 
-		delete g_levMap;
-		g_levMap = nullptr;
+		SAFE_DELETE(g_levMap);
 
-		fclose(g_levFile);
 		g_levFile = nullptr;
 	}
 }
@@ -549,10 +542,8 @@ int CWorld::SpoolRegions(const VECTOR_NOPAD& position, int radius)
 	if (!IsLevelLoaded())
 		return 0;
 
-	CMemoryStream stream(g_levFile, false);
-
 	SPOOL_CONTEXT spoolContext;
-	spoolContext.dataStream = &stream;
+	spoolContext.dataStream = g_levFile;
 	spoolContext.lumpInfo = &g_levInfo;
 
 	const int regionsAcross = g_levMap->GetRegionsAcross();
@@ -607,10 +598,8 @@ void CWorld::SpoolAllRegions()
 
 	Msg("Spooling ALL regions...\n");
 
-	CMemoryStream stream(g_levFile, false);
-
 	SPOOL_CONTEXT spoolContext;
-	spoolContext.dataStream = &stream;
+	spoolContext.dataStream = g_levFile;
 	spoolContext.lumpInfo = &g_levInfo;
 
 	int totalRegions = g_levMap->GetRegionsAcross() * g_levMap->GetRegionsDown();
