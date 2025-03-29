@@ -47,6 +47,7 @@ struct ModelRef_t
 
 	const char* name{ nullptr };
 	MODEL*		model{ nullptr };
+	void*		userData{ nullptr }; // might contain a hardware model pointer
 
 	short		index{ -1 };
 	ushort		size{ 0 };
@@ -55,8 +56,6 @@ struct ModelRef_t
 	ushort		lowDetailId{ 0xffff };
 
 	float		lightingLevel{ 1.0f };
-	
-	void*		userData{ nullptr }; // might contain a hardware model pointer
 
 	bool		enabled { true };
 };

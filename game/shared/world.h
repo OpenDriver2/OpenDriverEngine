@@ -1,5 +1,5 @@
 #pragma once
-#include "scripting/esl.h"
+#include "scripting/esl_luaref.h"
 #include "math/psx_math_types.h"
 #include "camera.h"
 #include "routines/d2_types.h"
@@ -11,6 +11,7 @@ struct TexDetailInfo_t;
 struct ModelRef_t;
 struct EFFECT_DESC;
 struct CELL_ITERATOR_CACHE;
+struct LevelRenderProps;
 
 struct BUILDING_BOX
 {
@@ -22,10 +23,14 @@ struct BUILDING_BOX
 
 struct DRAWABLE
 {
-	Vector3D position;
-	Vector3D angles;
-	Vector3D scale;
-	int model;
+	DRAWABLE() = default;
+	DRAWABLE(const Vector3D& position, const Vector3D& angles, const Vector3D& scale, const int model);
+	DRAWABLE(const esl::LuaTable& table);
+
+	Vector3D position = vec3_zero;
+	Vector3D angles = vec3_zero;
+	Vector3D scale = vec3_zero;
+	int model = 0;
 };
 
 struct CELL_LIST_DESC
@@ -38,6 +43,10 @@ struct CELL_LIST_DESC
 	VECTOR_NOPAD position{ 0 };
 	bool visible{ true };
 	bool dirty{ false };
+
+	void SetPivotMatrix(const Matrix4x4& newPivot);
+	void SetPosition(const VECTOR_NOPAD& newPos);
+	void SetRotation(const VECTOR_NOPAD& newRot);
 };
 
 // almost like SURFACE and SINFO
@@ -77,6 +86,13 @@ using BoxCollisionFn = EqFunction<bool(const BUILDING_BOX& box, CELL_OBJECT* co)
 
 extern Matrix4x4 g_objectMatrix[64];
 extern MATRIX g_objectMatrixFixed[64];
+
+EQSCRIPT_BIND_TYPE_NO_PARENT(DRAWABLE, "DRAWABLE", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(BUILDING_BOX, "BUILDING_BOX", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(CELL_LIST_DESC, "CELL_LIST_DESC", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(LevelRenderProps, "LevelRenderProps", BY_VALUE)
+EQSCRIPT_BIND_TYPE_NO_PARENT(ModelRef_t, "ModelRef", BY_REF)
+EQSCRIPT_BIND_TYPE_NO_PARENT(CELL_OBJECT, "CELL_OBJECT", BY_REF)
 
 class CWorld
 {
@@ -155,8 +171,8 @@ public:
 	// game steps
 	static void				EndStep();
 	static void				ResetStep();
-	static int				StepCount;		// aka CameraCnt
 
+	static int				StepCount;		// aka CameraCnt
 
 	//------------------------------------------
 

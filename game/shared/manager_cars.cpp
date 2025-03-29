@@ -32,7 +32,7 @@ POSITION_INFO::POSITION_INFO(const VECTOR_NOPAD& position, const int direction)
 }
 POSITION_INFO::POSITION_INFO(const esl::LuaTable& table)
 {
-	//position = VECTOR_NOPAD{ table["x"].SafeGet(0), table["y"].SafeGet(0), table["z"].SafeGet(0) };
+	position = VECTOR_NOPAD{ *table.Get<int>("x"), table.SafeGet<int>("y", 0), table.Get<int>("z") };
 	direction = table["direction"];
 }
 

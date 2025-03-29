@@ -1,4 +1,7 @@
 #include "core/core_common.h"
+
+#include "sys/scripting/sys_esl.h"
+
 #include "math/squareroot0.h"
 #include "math/convert.h"
 #include "math/psx_matrix.h"
@@ -39,250 +42,199 @@ inline void UnpackXZCell(XZPAIR& cell, int packedCellId)
 	cell.z = packedCellId >> 16 & 65535;
 }
 
+DRAWABLE::DRAWABLE(const Vector3D& position, const Vector3D& angles, const Vector3D& scale, const int model)
+	: position(position), angles(angles), scale(scale), model(model)
+{
+}
+
+DRAWABLE::DRAWABLE(const esl::LuaTable& table)
+{
+	scale = table.SafeGet<Vector3D>("scale", vec3_unit);
+	position = table["position"];
+	angles = table["angles"];
+	scale = table["model"];
+}
+
+void CELL_LIST_DESC::SetPivotMatrix(const Matrix4x4& newPivot)
+{
+	pivotMatrix = newPivot;
+	dirty = true;
+}
+
+void CELL_LIST_DESC::SetPosition(const VECTOR_NOPAD& newPos)
+{
+	position = newPos;
+	dirty = true;
+}
+
+void CELL_LIST_DESC::SetRotation(const VECTOR_NOPAD& newRot)
+{
+	rotation = newRot;
+	dirty = true;
+}
+
+EQSCRIPT_TYPE_BEGIN(DRAWABLE)
+	EQSCRIPT_BIND_CONSTRUCTOR()
+	EQSCRIPT_BIND_CONSTRUCTOR(const Vector3D&, const Vector3D&, const Vector3D&, int)
+	EQSCRIPT_BIND_CONSTRUCTOR(const esl::LuaTable&)
+	EQSCRIPT_BIND_VAR(position)
+	EQSCRIPT_BIND_VAR(scale)
+	EQSCRIPT_BIND_VAR(angles)
+	EQSCRIPT_BIND_VAR(model)
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(BUILDING_BOX)
+	EQSCRIPT_BIND_VAR(pos)
+	EQSCRIPT_BIND_VAR(xsize)
+	EQSCRIPT_BIND_VAR(zsize)
+	EQSCRIPT_BIND_VAR(theta)
+	EQSCRIPT_BIND_VAR(height)
+	EQSCRIPT_BIND_VAR(modelRef)
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(CELL_LIST_DESC)
+	EQSCRIPT_BIND_VAR_EX_SET(position, SetPosition)
+	EQSCRIPT_BIND_VAR_EX_SET(rotation, SetRotation)
+	EQSCRIPT_BIND_VAR_EX_SET(pivotMatrix, SetPivotMatrix)
+	EQSCRIPT_BIND_VAR(visible)
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(LevelRenderProps)
+	EQSCRIPT_BIND_VAR(ambientColor)
+	EQSCRIPT_BIND_VAR(lightColor)
+
+	EQSCRIPT_BIND_VAR(fogColor)
+	EQSCRIPT_BIND_VAR(fogParams)
+
+	EQSCRIPT_BIND_VAR(nightAmbientScale)
+	EQSCRIPT_BIND_VAR(nightLightScale)
+	EQSCRIPT_BIND_VAR(ambientScale)
+	EQSCRIPT_BIND_VAR(lightScale)
+	EQSCRIPT_BIND_VAR(nightMode)
+	EQSCRIPT_BIND_VAR(noLod)
+
+	EQSCRIPT_BIND_VAR(displayCollisionBoxes)
+	EQSCRIPT_BIND_VAR(displayHeightMap)
+	EQSCRIPT_BIND_VAR(displayAllCellLevels)
+	EQSCRIPT_BIND_VAR(displayCellObjectList)
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(ModelRef_t)
+	EQSCRIPT_BIND_VAR(name)
+	EQSCRIPT_BIND_VAR(index)
+	EQSCRIPT_BIND_VAR(highDetailId)
+	EQSCRIPT_BIND_VAR(lowDetailId)
+	EQSCRIPT_BIND_VAR(enabled)
+	EQSCRIPT_BIND_VAR(lightingLevel)
+	EQSCRIPT_BIND_STATIC_FUNC("GetShapeFlags", +[](const ModelRef_t& thisRef) {
+		return thisRef.model ? thisRef.model->shape_flags : 0;
+	})
+	EQSCRIPT_BIND_STATIC_FUNC("GetModelFlags", +[](const ModelRef_t& thisRef) {
+		return thisRef.model ? thisRef.model->flags2 : 0;
+	})
+EQSCRIPT_TYPE_END
+
+EQSCRIPT_TYPE_BEGIN(CELL_OBJECT)
+	//sol::call_constructor, sol::factories(
+	//[](const VECTOR_NOPAD& position, const ubyte& yang, const ushort& type) {
+	//	return CELL_OBJECT{ position, 0, yang, type };
+	//},
+	//[](const sol::table& table) {
+	//	return CELL_OBJECT{ (VECTOR_NOPAD&)table["position"], 0, table["yang"], table["type"] };
+	//},
+	//[]() { return CELL_OBJECT{ 0 }; }),
+	EQSCRIPT_BIND_CONSTRUCTOR()
+	EQSCRIPT_BIND_VAR(pos)
+	EQSCRIPT_BIND_VAR(yang)
+	EQSCRIPT_BIND_VAR(type)
+EQSCRIPT_TYPE_END
+
+
 void CWorld::Lua_Init(const esl::ScriptState& state)
 {
-	auto engine = lua["engine"].get_or_create<sol::table>();
+	state.RegisterClass<DRAWABLE>();
+	state.RegisterClass<BUILDING_BOX>();
+	state.RegisterClass<CELL_LIST_DESC>();
+	state.RegisterClass<LevelRenderProps>();
+	state.RegisterClass<ModelRef_t>();
+	state.RegisterClass<CELL_OBJECT>();
 
-	LUADOC_GLOBAL();
+	esl::LuaTable engineTbl = eslSys::GetOrCreateGlobalTable(state, "engine");
+
 	{
-		LUADOC_TYPE("World");
+		esl::LuaTable world = engineTbl["World"].CreateTable();
 
-		auto world = engine["World"].get_or_create<sol::table>();
+		world["FindTextureDetail"] = EQSCRIPT_CFUNC(FindTextureDetail);
+		world["StepTextureDetailPalette"] = EQSCRIPT_CFUNC(StepTextureDetailPalette);
+		world["LoadLevel"] = EQSCRIPT_CFUNC(LoadLevel);
+		world["UnloadLevel"] = EQSCRIPT_CFUNC(UnloadLevel);
 
-		world[LUADOC_M("FindTextureDetail", "(name: string) : TexDetailInfo - returns texture detail with specific name")]
-			= &FindTextureDetail;
+		world["SpoolAllRegions"] = EQSCRIPT_CFUNC(SpoolAllRegions);
+		world["SpoolRegions"] = EQSCRIPT_CFUNC(SpoolRegions);
+		world["IsLevelLoaded"] = EQSCRIPT_CFUNC(IsLevelLoaded);
 
-		world[LUADOC_M("StepTextureDetailPalette", "(detail: TexDetailInfo, start: int, end: int) - steps the texture detail palette at specific range")]
-			= &StepTextureDetailPalette;
+		world["GetModelByIndex"] = EQSCRIPT_CFUNC(GetModelByIndex);
+		world["GetModelByName"] = EQSCRIPT_CFUNC(GetModelByName);
 
-		world[LUADOC_M("LoadLevel", "(filename: string) : boolean - loads level from file")] 
-			= &LoadLevel;
+		world["MapHeight"] = EQSCRIPT_CFUNC(MapHeight);
+		world["GetSurfaceIndex"] = EQSCRIPT_CFUNC(GetSurfaceIndex);
 
-		world[LUADOC_M("UnloadLevel", "(void)")]
-			= &UnloadLevel;
-
-		world[LUADOC_M("SpoolAllRegions", "(void) - load all models, regions and textures")] 
-			= &SpoolAllRegions;
-
-		world[LUADOC_M("SpoolRegions", "(position: fix.VECTOR, radius: int) : int - spool regions at specified point and radius")]
-			= &SpoolRegions;
-
-		world[LUADOC_M("IsLevelLoaded", "(void) : boolean")]
-			= &IsLevelLoaded;
-
-		world[LUADOC_M("GetModelByIndex", "(index: int) : ModelRef - returns model reference by specified index")] 
-			= &GetModelByIndex;
-
-		world[LUADOC_M("GetModelByName", "(name: string) : ModelRef - returns model reference by specified name")]
-			= &GetModelByName;
-
-		world[LUADOC_M("MapHeight", "(position: fix.VECTOR) : int - returns height value at specified 3D point")]
-			= &MapHeight;
-
-		world[LUADOC_M("GetSurfaceIndex", "(position: fix.VECTOR) : int - returns surface (road) index value at specified 3D point")]
-			= &GetSurfaceIndex;
-
-		world[LUADOC_M("QueryCollision", "(queryPos: fix.VECTOR, queryDist: int, func: function(box: BUILDING_BOX, cellObj: CELL_OBJECT)) - performs cell object query")]
-			= [](const VECTOR_NOPAD& queryPos, int queryDist, sol::function& func) {
+		world["QueryCollision"] = EQSCRIPT_CFUNC(+[](const VECTOR_NOPAD& queryPos, int queryDist, esl::LuaFunctionRef& func) {
 			QueryCollision(queryPos, queryDist, [&func](const BUILDING_BOX& box, CELL_OBJECT* co) {
-				bool result = func.call(box, co);
-				return result;
+				using QueryFuncCall = esl::runtime::FunctionCall<bool, const BUILDING_BOX&, CELL_OBJECT*>;
+				auto result = QueryFuncCall::Invoke(func, box, co);
+				if (!LUA_CHECK_CALL(result, "QueryCollision func"))
+					return false;
+				return *result;
+				});
 			});
-		},
 
-		world[LUADOC_M("PushCellObject", "(cellObj: CELL_OBJECT) - push event cell object. Any collision checks afterwards will have an effect with it")]
-			= &PushCellObject;
+		world["PushCellObject"] = EQSCRIPT_CFUNC(PushCellObject);
+		world["PurgeCellObjects"] = EQSCRIPT_CFUNC(PurgeCellObjects);
+		world["AddDrawable"] = EQSCRIPT_CFUNC(AddDrawable);
 
-		world[LUADOC_M("PurgeCellObjects", "(void) - purges list of recently added objects by PushCellObject")]
-			= &PurgeCellObjects;
+		world["CreateCellList"] = EQSCRIPT_CFUNC(CreateCellList);
+		world["RemoveCellList"] = EQSCRIPT_CFUNC(RemoveCellList);
 
-		world[LUADOC_M("AddDrawable", "(drawable: DRAWABLE) - add a DRAWABLE object. No collisions will be made with it")]
-			= &AddDrawable;
-
-		world[LUADOC_M("CreateCellList", "(listNumber: int) : CELL_LIST_DESC - add cell list handler for renderer")]
-			= &CreateCellList;
-
-		world[LUADOC_M("RemoveCellList", "(listNumber: int) - removes cell list. All objects will not be rendered")]
-			= &RemoveCellList;
-
-		world[LUADOC_M("EndStep", "(void) - finalizes the game step, incrementing step count by 1.")]
-			= &EndStep;
-
-		world[LUADOC_M("ResetStep", "(void) - resets world step count")]
-			= &ResetStep;
-
-		world[LUADOC_M("StepCount", "(void) : int - world step count")]
-			= []() {return StepCount; };
+		world["EndStep"] = EQSCRIPT_CFUNC(EndStep);
+		world["ResetStep"] = EQSCRIPT_CFUNC(ResetStep);
+		world["StepCount"] = EQSCRIPT_CFUNC(+[]() {return StepCount; });
 	}
 
 	{
-		LUADOC_TYPE();
-		lua.new_usertype<DRAWABLE>(
-			LUADOC_T("DRAWABLE"),
-			sol::call_constructor, sol::factories(
-				[](const Vector3D& position, const Vector3D& angles, const Vector3D& scale, const int& model) {
-					return DRAWABLE{ position, angles, scale, model };
-				},
-				[](const sol::table& table) {
-					Vector3D default(1.0f);
-					Vector3D scale = table.get_or<Vector3D>("scale", default);
-					return DRAWABLE{ (Vector3D&)table["position"], (Vector3D&)table["angles"], scale, table["model"] };
-				},
-				[]() { return DRAWABLE{ 0 }; }),
-			LUADOC_P("position", "<vec.vec3>"), 
-			&DRAWABLE::position,
-
-			LUADOC_P("scale", "<vec.vec3>"),
-			&DRAWABLE::scale,
-
-			LUADOC_P("angles", "<vec.vec3> - radian angles"),
-			&DRAWABLE::angles,
-
-			LUADOC_P("model", "<int> - model index"),
-			&DRAWABLE::model
-		);
-	}
-
-	// collision query box
-	{
-		LUADOC_TYPE();
-		lua.new_usertype<BUILDING_BOX>(
-			LUADOC_T("BUILDING_BOX"),
-
-			LUADOC_P("name"), &BUILDING_BOX::pos,
-			LUADOC_P("xsize", "<int>"), & BUILDING_BOX::xsize,
-			LUADOC_P("zsize", "<int>"), & BUILDING_BOX::zsize,
-			LUADOC_P("theta", "<int>"), & BUILDING_BOX::theta,
-			LUADOC_P("height", "<int>"), & BUILDING_BOX::height,
-			LUADOC_P("modelRef", "<int>"), & BUILDING_BOX::modelRef
-		);
+		esl::LuaTable modelFlags2Tbl = state.CreateTable();
+		state.SetGlobal("ModelFlags2", modelFlags2Tbl);
+		modelFlags2Tbl["Median"] = MODEL_FLAG_MEDIAN;
+		modelFlags2Tbl["Junction"] = MODEL_FLAG_JUNC;
+		modelFlags2Tbl["Alley"] = MODEL_FLAG_ALLEY;
+		modelFlags2Tbl["Indoors"] = MODEL_FLAG_INDOORS;
+		modelFlags2Tbl["Chair"] = MODEL_FLAG_CHAIR;
+		modelFlags2Tbl["Barrier"] = MODEL_FLAG_BARRIER;
+		modelFlags2Tbl["Smashable"] = MODEL_FLAG_SMASHABLE;
+		modelFlags2Tbl["Lamp"] = MODEL_FLAG_LAMP;
+		modelFlags2Tbl["Tree"] = MODEL_FLAG_TREE;
+		modelFlags2Tbl["Grass"] = MODEL_FLAG_GRASS;
+		modelFlags2Tbl["Path"] = MODEL_FLAG_PATH;
 	}
 
 	{
-		LUADOC_TYPE();
-		lua.new_usertype<CELL_LIST_DESC>(
-			LUADOC_T("CELL_LIST_DESC"),
-			LUADOC_P("position", "<fix.VECTOR>"), 
-			sol::property([](const CELL_LIST_DESC& self) {return self.position; }, [](CELL_LIST_DESC& dest, const VECTOR_NOPAD& vec) {dest.position = vec; dest.dirty = true; }),
-
-			LUADOC_P("rotation", "<fix.VECTOR>"), 
-			sol::property([](const CELL_LIST_DESC& self) {return self.rotation; }, [](CELL_LIST_DESC& dest, const VECTOR_NOPAD& vec) {dest.rotation = vec; dest.dirty = true; }),
-
-			LUADOC_P("pivotMatrix", "<vec.mat4> - offset matrix which makes pivot point"), 
-			sol::property([](const CELL_LIST_DESC& self) {return self.pivotMatrix; }, [](CELL_LIST_DESC& dest, const Matrix4x4& newMat) {dest.pivotMatrix = newMat; dest.dirty = true; }),
-
-			LUADOC_P("visible", "<boolean>"), 
-			&CELL_LIST_DESC::visible
-		);
+		esl::LuaTable modelShapeFlagsTbl = state.CreateTable();
+		state.SetGlobal("ModelShapeFlags", modelShapeFlagsTbl);
+		modelShapeFlagsTbl["LitPoly"] = SHAPE_FLAG_LITPOLY;
+		modelShapeFlagsTbl["BSPData"] = SHAPE_FLAG_BSPDATA;
+		modelShapeFlagsTbl["Trans"] = SHAPE_FLAG_TRANS;
+		modelShapeFlagsTbl["NoCollide"] = SHAPE_FLAG_NOCOLLIDE;
+		modelShapeFlagsTbl["Water"] = SHAPE_FLAG_WATER;
+		modelShapeFlagsTbl["Ambient2"] = SHAPE_FLAG_AMBIENT2;
+		modelShapeFlagsTbl["Ambient1"] = SHAPE_FLAG_AMBIENT1;
+		modelShapeFlagsTbl["Tile"] = SHAPE_FLAG_TILE;
+		modelShapeFlagsTbl["Shadow"] = SHAPE_FLAG_SHADOW;
+		modelShapeFlagsTbl["Alpha"] = SHAPE_FLAG_ALPHA;
+		modelShapeFlagsTbl["Road"] = SHAPE_FLAG_ROAD;
+		modelShapeFlagsTbl["Sprite"] = SHAPE_FLAG_SPRITE;
 	}
 
-	// level properties
-	{
-		LUADOC_TYPE();
-		lua.new_usertype<LevelRenderProps>(
-			LUADOC_T("LevelRenderProps"),
-
-			LUADOC_P("ambientColor", "<vec.vec3>"), &LevelRenderProps::ambientColor,
-			LUADOC_P("lightColor", "<vec.vec3>"), &LevelRenderProps::lightColor,
-
-			LUADOC_P("fogColor", "<vec.vec3>"), &LevelRenderProps::fogColor,
-			LUADOC_P("fogParams", "<vec.vec3>"), &LevelRenderProps::fogParams,
-
-			LUADOC_P("nightAmbientScale", "<float>"), &LevelRenderProps::nightAmbientScale,
-			LUADOC_P("nightLightScale", "<float>"), &LevelRenderProps::nightLightScale,
-			LUADOC_P("ambientScale", "<float>"), &LevelRenderProps::ambientScale,
-			LUADOC_P("lightScale", "<float>"), &LevelRenderProps::lightScale,
-			LUADOC_P("nightMode", "<boolean>"), &LevelRenderProps::nightMode,
-			LUADOC_P("noLod", "<boolean>"), &LevelRenderProps::noLod,
-
-			LUADOC_P("displayCollisionBoxes", "<boolean>"), &LevelRenderProps::displayCollisionBoxes,
-			LUADOC_P("displayHeightMap", "<boolean>"), &LevelRenderProps::displayHeightMap,
-			LUADOC_P("displayAllCellLevels", "<boolean>"), &LevelRenderProps::displayAllCellLevels,
-			LUADOC_P("displayCellObjectList", "<int>"), & LevelRenderProps::displayCellObjectList
-		);
-	}
-
-	{
-		MAKE_PROPERTY_REF(lua, ModelRef_t*);
-		LUADOC_TYPE();
-		lua.new_usertype<ModelRef_t>(
-			LUADOC_T("ModelRef"),
-
-			LUADOC_P("name"), &ModelRef_t::name,
-			LUADOC_P("index", "<int>"), &ModelRef_t::index,
-			LUADOC_P("highDetailId", "<int>"), &ModelRef_t::highDetailId,
-			LUADOC_P("lowDetailId", "<int>"), &ModelRef_t::lowDetailId,
-			LUADOC_P("enabled", "<boolean>"), &ModelRef_t::enabled,
-			LUADOC_P("lightingLevel", "<float>"), &ModelRef_t::lightingLevel,
-			LUADOC_P("shapeFlags", "<ShapeFlags>"), sol::property([](const ModelRef_t& thisRef) {
-				return thisRef.model ? thisRef.model->shape_flags : 0;
-			}),
-			LUADOC_P("modelFlags", "<ModelFlags>"), sol::property([](const ModelRef_t& thisRef) {
-				return thisRef.model ? thisRef.model->flags2 : 0;
-			})
-		);
-	}
-
-	{
-		LUADOC_TYPE();
-		LUA_BEGIN_ENUM(ModelFlags2);
-		lua.new_enum<ModelFlags2>(LUADOC_T("ModelFlags"), {
-			LUA_ENUM(MODEL_FLAG_MEDIAN, "Median"),
-			LUA_ENUM(MODEL_FLAG_JUNC, "Junction"),
-			LUA_ENUM(MODEL_FLAG_ALLEY, "Alley"),
-			LUA_ENUM(MODEL_FLAG_INDOORS, "Indoors"),
-			LUA_ENUM(MODEL_FLAG_CHAIR, "Chair"),
-			LUA_ENUM(MODEL_FLAG_BARRIER, "Barrier"),
-			LUA_ENUM(MODEL_FLAG_SMASHABLE, "Smashable"),
-			LUA_ENUM(MODEL_FLAG_LAMP, "Lamp"),
-			LUA_ENUM(MODEL_FLAG_TREE, "Tree"),
-			LUA_ENUM(MODEL_FLAG_GRASS, "Grass"),
-			LUA_ENUM(MODEL_FLAG_PATH, "Path"),
-		});
-	}
-
-	{
-		LUADOC_TYPE();
-		LUA_BEGIN_ENUM(ModelShapeFlags);
-		lua.new_enum<ModelShapeFlags>(LUADOC_T("ShapeFlags"), {
-			LUA_ENUM(SHAPE_FLAG_LITPOLY, "LitPoly"),
-			LUA_ENUM(SHAPE_FLAG_BSPDATA, "BSPData"),
-			LUA_ENUM(SHAPE_FLAG_TRANS, "Trans"),
-			LUA_ENUM(SHAPE_FLAG_NOCOLLIDE, "NoCollide"),
-			LUA_ENUM(SHAPE_FLAG_WATER, "Water"),
-			LUA_ENUM(SHAPE_FLAG_AMBIENT2, "Ambient2"),
-			LUA_ENUM(SHAPE_FLAG_AMBIENT1, "Ambient1"),
-			LUA_ENUM(SHAPE_FLAG_TILE, "Tile"),
-			LUA_ENUM(SHAPE_FLAG_SHADOW, "Shadow"),
-			LUA_ENUM(SHAPE_FLAG_ALPHA, "Alpha"),
-			LUA_ENUM(SHAPE_FLAG_ROAD, "Road"),
-			LUA_ENUM(SHAPE_FLAG_SPRITE, "Sprite"),
-		});
-	}
-
-	// level properties
-	{
-		MAKE_PROPERTY_REF(lua, CELL_OBJECT);
-		MAKE_PROPERTY_REF(lua, CELL_OBJECT*);
-		LUADOC_TYPE();
-		lua.new_usertype<CELL_OBJECT>(
-			LUADOC_T("CELL_OBJECT"),
-
-			sol::call_constructor, sol::factories(
-				[](const VECTOR_NOPAD& position, const ubyte& yang, const ushort& type) {
-					return CELL_OBJECT{ position, 0, yang, type };
-				},
-				[](const sol::table& table) {
-					return CELL_OBJECT{ (VECTOR_NOPAD&)table["position"], 0, table["yang"], table["type"] };
-				},
-				[]() { return CELL_OBJECT{ 0 }; }),
-			LUADOC_P("pos", "<fix.VECTOR>"), & CELL_OBJECT::pos,
-			LUADOC_P("yang", "<int> angle (0 - 63)"), &CELL_OBJECT::yang,
-			LUADOC_P("type", "<int> model index"), &CELL_OBJECT::type
-		);
-	}
-
-	engine["LevelRenderProps"] = &CRender_Level::RenderProps;
+	engineTbl["LevelRenderProps"] = &CRender_Level::RenderProps;
 }
 
 //-----------------------------------------------------------------
