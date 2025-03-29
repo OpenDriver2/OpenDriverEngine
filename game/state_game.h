@@ -1,5 +1,6 @@
 #pragma once
 #include "sys/sys_state.h"
+#include "states.h"
 
 class CState_Game : public CAppStateBase
 {

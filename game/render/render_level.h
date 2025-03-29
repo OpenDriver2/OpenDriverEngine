@@ -2,6 +2,7 @@
 
 class IGPUBuffer;
 using IGPUBufferPtr = CRefPtr<IGPUBuffer>;
+
 class CMeshBuilder;
 class Volume;
 struct DRAWABLE;

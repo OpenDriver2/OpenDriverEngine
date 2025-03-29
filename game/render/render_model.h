@@ -77,5 +77,5 @@ protected:
 	ModelRef_t*			m_sourceModel{ nullptr };
 	IGPUBufferPtr		m_vertexBuffer { nullptr };
 	IGPUBufferPtr		m_indexBuffer{ nullptr };
-	Array<modelBatch_t>	m_batches;
+	Array<modelBatch_t>	m_batches{ PP_SL };
 };

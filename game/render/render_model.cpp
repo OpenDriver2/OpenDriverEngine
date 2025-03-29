@@ -95,8 +95,8 @@ bool CRenderModel::Initialize(ModelRef_t* model)
 
 void CRenderModel::Destroy()
 {
-	GR_DestroyVAO(m_vao);
-	m_vao = nullptr;
+	//GR_DestroyVAO(m_vao);
+	//m_vao = nullptr;
 	m_sourceModel = nullptr;
 	m_batches.clear();
 }
@@ -131,7 +131,7 @@ int CRenderModel::FindGrVertexIndex(const ArrayCRef<vertexTuple_t> whereFind, in
 
 struct genBatch_t
 {
-	Array<uint16> indices;
+	Array<uint16> indices{ PP_SL };
 	int tpage;
 };
 
@@ -150,9 +150,9 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 	if (!lookupFn)
 		lookupFn = FindGrVertexIndex;
 
-	Array<genBatch_t*>		batches;
-	Array<GrVertex>			vertices;
-	Array<vertexTuple_t>	verticesMap;
+	Array<genBatch_t*>		batches{ PP_SL };
+	Array<GrVertex>			vertices{ PP_SL };
+	Array<vertexTuple_t>	verticesMap{ PP_SL };
 	
 	MODEL* model = m_sourceModel->model;
 	MODEL* vertex_ref = model;
@@ -327,7 +327,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 				verticesMap.append(vertMap);
 
 				// vertices and verticesMap should be equal
-				ASSERT(verticesMap.size() == vertices.size());
+				ASSERT(verticesMap.numElem() == vertices.numElem());
 			}
 			
 			// add index
@@ -369,7 +369,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 		}
 	}
 
-	Array<uint16> indices;
+	Array<uint16> indices{ PP_SL };
 
 	// merge batches
 	for(genBatch_t* srcBatch : batches)
@@ -387,7 +387,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 		
 		delete srcBatch;
 	}
-	
+#if 0
 	// if has existing one - regenerate
 	if (m_vao)
 		GR_DestroyVAO(m_vao);
@@ -398,9 +398,8 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 	{
 		MsgError("Cannot create Model VAO!\n");
 	}
+#endif
 }
-
-extern TextureID g_whiteTexture;
 
 int CRenderModel::GetNumBatches() const
 {
@@ -409,15 +408,18 @@ int CRenderModel::GetNumBatches() const
 
 void CRenderModel::SetupRendering(bool setupShader, bool setupVAO)
 {
+#if 0
 	if(setupShader)
 		SetupModelShader();
 
 	if(setupVAO)
 		GR_SetVAO(m_vao);
+#endif
 }
 
 void CRenderModel::DrawBatch(int batchNum, bool setupTexture /*= true*/, int paletteSet /*= 0*/)
 {
+#if 0
 	modelBatch_t& batch = m_batches[batchNum];
 
 	if (setupTexture)
@@ -432,10 +434,12 @@ void CRenderModel::DrawBatch(int batchNum, bool setupTexture /*= true*/, int pal
 	}
 
 	GR_DrawIndexed(PRIM_TRIANGLES, batch.startIndex, batch.numIndices);
+#endif
 }
 
 void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 {
+#if 0
 	if(fullSetup)
 		SetupModelShader();
 
@@ -456,6 +460,7 @@ void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 
 		GR_DrawIndexed(PRIM_TRIANGLES, batch.startIndex, batch.numIndices);
 	}
+#endif
 }
 
 //--------------------------------------------------------------------------------------------------------------
@@ -465,6 +470,7 @@ void CRenderModel::Draw(bool fullSetup /*= true*/, int paletteSet /*= 0*/)
 //-------------------------------------------------------
 void CRenderModel::DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& position, int rotation)
 {
+#if 0
 	if (ref->baseInstance)
 		ref = ref->baseInstance;
 
@@ -499,8 +505,9 @@ void CRenderModel::DrawModelCollisionBox(ModelRef_t* ref, const VECTOR_NOPAD& po
 	}
 
 	CDebugOverlay::SetTransform(identity4());
+#endif
 }
-
+#if 0
 struct ModelShaderInfo
 {
 	ShaderID	shader{ 0 };
@@ -511,7 +518,7 @@ struct ModelShaderInfo
 	int			cid_fogParams{ -1 };
 	int			cid_fogColor{ -1 };
 } g_modelShader;
-
+#endif
 struct WorldRenderProperties
 {
 	Vector4D ambientColor;
@@ -526,6 +533,7 @@ struct WorldRenderProperties
 // compiles model shader
 void CRenderModel::InitModelShader()
 {
+#if 0
 	// create shader
 	g_modelShader.shader = GR_CompileShader(model_shader);
 
@@ -535,12 +543,14 @@ void CRenderModel::InitModelShader()
 
 	g_modelShader.cid_fogParams = GR_GetShaderConstantIndex(g_modelShader.shader, "u_fogParams");
 	g_modelShader.cid_fogColor = GR_GetShaderConstantIndex(g_modelShader.shader, "u_fogColor");
+#endif
 }
 
 // prepares shader for rendering
 // used for Models
 void CRenderModel::SetupModelShader()
 {
+#if 0
 	GR_SetShader(g_modelShader.shader);
 	GR_SetShaderConstantVector4D(g_modelShader.cid_ambientColor, g_worldRenderProperties.ambientColor);
 	GR_SetShaderConstantVector4D(g_modelShader.cid_lightColor, g_worldRenderProperties.lightColor);
@@ -548,6 +558,7 @@ void CRenderModel::SetupModelShader()
 
 	GR_SetShaderConstantVector4D(g_modelShader.cid_fogParams, g_worldRenderProperties.fogParams);
 	GR_SetShaderConstantVector4D(g_modelShader.cid_fogColor, g_worldRenderProperties.fogColor);
+#endif
 }
 
 extern CBaseLevelMap* g_levMap;

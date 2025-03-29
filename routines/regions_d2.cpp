@@ -4,7 +4,7 @@
 #include "level.h"
 
 #include "math/isin.h"
-#include "math/ratan2.cpp"
+#include "math/ratan2.h"
 
 #define IS_STRAIGHT_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0 && ((surfid) & 0x1FFF) < m_numStraights)
 #define IS_CURVED_SURFACE(surfid)			(((surfid) > -1) && ((surfid) & 0xFFFFE000) == 0x4000 && ((surfid) & 0x1FFF) < m_numCurves)
@@ -56,7 +56,7 @@ static int SdHeightOnPlane(const VECTOR_NOPAD& position, sdPlane* plane, DRIVER2
 }
 
 // walk BSP nodes
-static short* SdGetBSP(sdNode* node, XZPAIR* pos)
+short* SdGetBSP(sdNode* node, XZPAIR* pos)
 {
 	while (node->node < 0)
 	{

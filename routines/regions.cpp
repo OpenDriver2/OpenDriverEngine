@@ -171,14 +171,6 @@ void CBaseLevelRegion::LoadAreaData(const SPOOL_CONTEXT& ctx)
 //-------------------------------------------------------------------------------------------
 
 
-CBaseLevelMap::CBaseLevelMap()
-{
-}
-
-CBaseLevelMap::~CBaseLevelMap()
-{
-}
-
 void CBaseLevelMap::Init(CDriverLevelModels* models, CDriverLevelTextures* textures)
 {
 	m_models = models;

@@ -4,7 +4,6 @@
 #include "cars.h"
 
 #include "audio/eqSoundEmitterSystem.h"
-#include "game/luabinding/luarefvalue.h"
 #include "game/luabinding/luadocs.h"
 
 #include "routines/d2_types.h"
@@ -224,9 +223,9 @@ CarCosmetics CarCosmetics::FromTable(const esl::LuaTable& table)
 {
 	esl::ScriptState state(table.GetState());
 
-	esl::LuaTable wheelDispTable = table["wheelDisp"];
-	esl::LuaTable cPointsTable = table["cPoints"];
-	esl::LuaTable gearsTable = table["gears"];
+	esl::LuaTable wheelDispTable = table["wheelDisp"].As<esl::LuaTable>();
+	esl::LuaTable cPointsTable = table["cPoints"].As<esl::LuaTable>();
+	esl::LuaTable gearsTable = table["gears"].As<esl::LuaTable>();
 
 	CarCosmetics newCosmetics;
 
@@ -386,7 +385,7 @@ EQSCRIPT_TYPE_BEGIN(CarCosmetics)
 	EQSCRIPT_BIND_STATIC_FUNC("cPoints", +[](CarCosmetics& self, int i) {
 		return self.cPoints[i];
 	})
-	EQSCRIPT_BIND_STATIC_FUNC("setcPoints", [](CarCosmetics& self, int i, SVECTOR& v) {
+	EQSCRIPT_BIND_STATIC_FUNC("setcPoints", +[](CarCosmetics& self, int i, SVECTOR& v) {
 		self.cPoints[i - 1] = v;
 	})
 	EQSCRIPT_BIND_VAR(colBox)
@@ -2070,6 +2069,7 @@ void CCar::SetAutobrake(const int8& value)
 
 void CCar::DrawCar()
 {
+#if 0
 	// this potentially could warp matrix. PLEASE consider using quaternions in future
 	Matrix4x4 drawCarMat = GetInterpolatedDrawMatrix4();
 
@@ -2189,6 +2189,7 @@ void CCar::DrawCar()
 			renderModel->DrawBatch(0);
 		}
 	}
+#endif
 }
 
 bool CCar::CarBuildingCollision(const BUILDING_BOX& building, CELL_OBJECT* cop, int flags)

@@ -31,7 +31,7 @@ class CBaseLevelRegion
 	friend class CDriver1LevelMap;
 	friend class CDriver2LevelMap;
 public:
-	CBaseLevelRegion();
+	CBaseLevelRegion() = default;
 	virtual ~CBaseLevelRegion();
 
 	virtual void			FreeAll();
@@ -69,7 +69,7 @@ class CBaseLevelMap
 	friend class CDriver2LevelRegion;
 public:
 	CBaseLevelMap() = default;
-	virtual ~CBaseLevelMap();
+	virtual ~CBaseLevelMap() = default;
 
 	void						Init(CDriverLevelModels* models, CDriverLevelTextures* textures);
 	virtual void				FreeAll();

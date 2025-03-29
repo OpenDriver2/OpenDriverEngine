@@ -21,9 +21,9 @@ CDriverLevelTextures	g_levTextures;
 CDriverLevelModels		g_levModels;
 CBaseLevelMap*			g_levMap = nullptr;
 
-Array<DRAWABLE>					CWorld::Drawables(PP_SL);
-Map<int, Array<CELL_OBJECT>>	CWorld::CellObjects(PP_SL);
-Map<int, CELL_LIST_DESC>		CWorld::CellLists(PP_SL);
+Array<DRAWABLE>					CWorld::Drawables{ PP_SL };
+Map<int, Array<CELL_OBJECT>>	CWorld::CellObjects{ PP_SL };
+Map<int, CELL_LIST_DESC>		CWorld::CellLists{ PP_SL };
 int								CWorld::StepCount = 0;
 
 Matrix4x4	g_objectMatrix[64];
@@ -48,10 +48,10 @@ DRAWABLE::DRAWABLE(const Vector3D& position, const Vector3D& angles, const Vecto
 
 DRAWABLE::DRAWABLE(const esl::LuaTable& table)
 {
-	scale = table.SafeGet<Vector3D>("scale", vec3_unit);
+	scale = table["scale"].SafeGet<const Vector3D&>(vec3_unit);
 	position = table["position"];
 	angles = table["angles"];
-	scale = table["model"];
+	model = table["model"];
 }
 
 void CELL_LIST_DESC::SetPivotMatrix(const Matrix4x4& newPivot)
@@ -133,6 +133,9 @@ EQSCRIPT_TYPE_BEGIN(ModelRef_t)
 	})
 EQSCRIPT_TYPE_END
 
+EQSCRIPT_TYPE_BEGIN(TexDetailInfo_t)
+EQSCRIPT_TYPE_END
+
 EQSCRIPT_TYPE_BEGIN(CELL_OBJECT)
 	//sol::call_constructor, sol::factories(
 	//[](const VECTOR_NOPAD& position, const ubyte& yang, const ushort& type) {
@@ -156,6 +159,7 @@ void CWorld::Lua_Init(const esl::ScriptState& state)
 	state.RegisterClass<CELL_LIST_DESC>();
 	state.RegisterClass<LevelRenderProps>();
 	state.RegisterClass<ModelRef_t>();
+	state.RegisterClass<TexDetailInfo_t>();
 	state.RegisterClass<CELL_OBJECT>();
 
 	esl::LuaTable engineTbl = eslSys::GetOrCreateGlobalTable(state, "engine");
@@ -292,10 +296,10 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 	{
 		ITexturePtr& texture = g_hwTexturePages[tpageId][0];
 		// create new or update
-		if (texture == GetLevelDefaultTexture())
-			texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-		else
-			GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+		//if (texture == GetLevelDefaultTexture())
+		//	texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+		//else
+		//	GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
 	}
 
 	// also load different palettes
@@ -318,10 +322,10 @@ void CWorld::InitHWTexturePage(CTexturePage* tpage)
 		if (anyMatched && (g_hwTexturePagesDirty[tpageId] & (1 << pal)))
 		{
 			ITexturePtr& texture = g_hwTexturePages[tpageId][pal];
-			if (texture == GetLevelDefaultTexture())
-				texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
-			else
-				GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+			//if (texture == GetLevelDefaultTexture())
+			//	texture = GR_CreateRGBATexture(TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
+			//else
+			//	GR_UpdateRGBATexture(texture, TEXPAGE_SIZE_Y, TEXPAGE_SIZE_Y, (ubyte*)color_data);
 		}
 	}
 
@@ -337,8 +341,8 @@ void CWorld::FreeHWTexturePage(CTexturePage* tpage)
 
 	for (int pal = 0; pal < 16; pal++)
 	{
-		if(g_hwTexturePages[tpageId][pal] != GetLevelDefaultTexture())
-			GR_DestroyTexture(g_hwTexturePages[tpageId][pal]);
+		//if(g_hwTexturePages[tpageId][pal] != GetLevelDefaultTexture())
+		//	GR_DestroyTexture(g_hwTexturePages[tpageId][pal]);
 
 		g_hwTexturePages[tpageId][pal] = GetLevelDefaultTexture();
 		g_hwTexturePagesDirty[tpageId] = 0xffff;
@@ -499,8 +503,8 @@ void CWorld::RenderLevelView(const CViewParams& view)
 	CRenderModel::SetupModelShader();
 	CCamera::SetupViewAndMatrices(view, frustumVolume);
 
-	GR_SetDepthMode(1, 1);
-	GR_SetCullMode(CULL_FRONT);
+	//GR_SetDepthMode(1, 1);
+	//GR_SetCullMode(CULL_FRONT);
 
 	// reset lighting
 	CRenderModel::SetupLightingProperties();
@@ -508,7 +512,7 @@ void CWorld::RenderLevelView(const CViewParams& view)
 	const bool driver2Map = g_levMap->GetFormat() >= LEV_FORMAT_DRIVER2_ALPHA16;
 	
 	CRender_Level::DrawMap(view.GetOrigin(), view.GetAngles().y, frustumVolume);
-	GR_SetCullMode(CULL_FRONT);
+	//GR_SetCullMode(CULL_FRONT);
 	{
 		const VECTOR_NOPAD cameraPosition = ToFixedVector(view.GetOrigin());
 		XZPAIR cameraPosCell;
@@ -674,8 +678,8 @@ void CWorld::QueryCollision(const VECTOR_NOPAD& queryPos, int queryDist, const B
 	XZPAIR initial;
 	g_levMap->WorldPositionToCellXZ(initial, queryPos, XZPAIR{ -squared_reg_size, -squared_reg_size });
 
-	static Array<CELL_OBJECT*> collisionObjects;
-	static Array<const ModelRef_t*> collisionObjectModels;
+	static Array<CELL_OBJECT*> collisionObjects{ PP_SL };
+	static Array<const ModelRef_t*> collisionObjectModels{ PP_SL };
 	collisionObjects.reserve(32);
 	collisionObjectModels.reserve(32);
 	collisionObjects.clear();
@@ -823,7 +827,7 @@ int CWorld::PushCellObject(const CELL_OBJECT& object)
 	else
 	{
 		// alloc new list
-		Array<CELL_OBJECT> objs;
+		Array<CELL_OBJECT> objs{ PP_SL };
 		objs.append(object);
 
 		CellObjects.insert(cellIndex, objs);

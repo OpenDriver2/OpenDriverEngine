@@ -5,6 +5,7 @@
 
 void CRender_Util::TesselatedShadowQuad(CMeshBuilder& meshBuilder, Vector3D* v, Vector2D* tc)
 {
+#if 0
 	const int xCount = 8;
 	const int yCount = 10;
 	const int base = 9;
@@ -67,4 +68,5 @@ void CRender_Util::TesselatedShadowQuad(CMeshBuilder& meshBuilder, Vector3D* v, 
 			yFactor += one_by_ycount;
 		}
 	}
+#endif
 }

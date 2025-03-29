@@ -5,6 +5,44 @@
 #include "textures.h"
 #include "level.h"
 
+// 16 bit color to BGRA
+// originalTransparencyKey makes it pink
+TVec4D<ubyte> rgb5a1_ToBGRA8(ushort color, bool originalTransparencyKey /*= true*/)
+{
+	ubyte r = (color & 0x1F) * 8;
+	ubyte g = ((color >> 5) & 0x1F) * 8;
+	ubyte b = ((color >> 10) & 0x1F) * 8;
+
+	ubyte a = (color >> 15) * 255;
+
+	// restore source transparency key
+	if (originalTransparencyKey && color == 0)
+	{
+		return TVec4D<ubyte>(255, 0, 255, 0);
+	}
+
+	return TVec4D<ubyte>(b, g, r, a);
+}
+
+// 16 bit color to RGBA
+// originalTransparencyKey makes it pink
+TVec4D<ubyte> rgb5a1_ToRGBA8(ushort color, bool originalTransparencyKey /*= true*/)
+{
+	ubyte r = (color & 0x1F) * 8;
+	ubyte g = ((color >> 5) & 0x1F) * 8;
+	ubyte b = ((color >> 10) & 0x1F) * 8;
+
+	ubyte a = (color >> 15) * 255;
+
+	// restore source transparency key
+	if (originalTransparencyKey && color == 0)
+	{
+		return TVec4D<ubyte>(255, 0, 255, 0);
+	}
+
+	return TVec4D<ubyte>(r, g, b, a);
+}
+
 //-------------------------------------------------------------------------------
 
 // unpacks texture, returns new source pointer

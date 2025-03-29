@@ -10,6 +10,8 @@
 #include "render_model.h"
 #include "render_util.h"
 
+#include "materialsystem1/renderers/IGPUBuffer.h"
+
 /* TODO:
 	- Add car model rendering and denting stuff
 */
@@ -21,6 +23,7 @@ Vector4D CRender_Cars::ShadowUV(0.0f);
 
 void CRender_Cars::Init()
 {
+#if 0
 	ShadowVAO = GR_CreateVAO(8192, 8192);
 	ShadowDetail = CWorld::FindTextureDetail("CARSHAD");
 	if (ShadowDetail) 
@@ -31,12 +34,13 @@ void CRender_Cars::Init()
 		shadowWH -= 2;
 		ShadowUV = Vector4D(shadowUV / TEXPAGE_SIZE_Y, (shadowUV + shadowWH) / TEXPAGE_SIZE_Y);
 	}
+#endif
 }
 
 void CRender_Cars::Terminate()
 {
-	GR_DestroyVAO(ShadowVAO);
-	ShadowVAO = nullptr;
+	//GR_DestroyVAO(ShadowVAO);
+	//ShadowVAO = nullptr;
 }
 
 void CRender_Cars::MangleWheelModel(MODEL* model)
@@ -128,6 +132,7 @@ void CRender_Cars::MangleWheelModel(MODEL* model)
 
 void CRender_Cars::DrawCars(ArrayCRef<CCar*> cars, const CViewParams& view)
 {
+#if 0
 	if (!ShadowDetail)
 		return;
 
@@ -159,11 +164,13 @@ void CRender_Cars::DrawCars(ArrayCRef<CCar*> cars, const CViewParams& view)
 	// restore render states
 	GR_SetDepthMode(1, 1);
 	GR_SetPolygonOffset(0.0f, 0.0f);
+#endif
 }
 
 
 void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float distance)
 {
+#if 0
 	if (!ShadowDetail || !ShadowVAO)
 		return;
 
@@ -198,5 +205,6 @@ void CRender_Cars::AddCarShadow(CMeshBuilder& meshBuilder, CCar* car, float dist
 
 		meshBuilder.TexturedQuad3(verts[0], verts[1], verts[2], verts[3],
 									uvs[0], uvs[1], uvs[2], uvs[3]);
-	}	
+	}
+#endif
 }

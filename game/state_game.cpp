@@ -1,6 +1,9 @@
 #include "core/core_common.h"
+#include "sys/scripting/sys_esl.h"
+#include "sys/sys_host.h"
 
-#include "shared/input.h"
+#include "render/IDebugOverlay.h"
+#include "audio/eqSoundEmitterSystem.h"
 #include "luabinding/lua_init.h"
 #include "luabinding/luaengine.h"
 #include "shared/camera.h"
@@ -11,17 +14,17 @@
 
 #include "state_game.h"
 
-#if 0
-//---------------------------------------------------------------------------------------------------------------------------------
-
-sol::state g_luaState;
-
 // stats counters
 extern int g_drawnCells;
 extern int g_drawnModels;
 extern int g_drawnPolygons;
 extern int g_debugListCellsDrawn;
 extern int g_cellsDrawDistance;
+
+#if 0
+//---------------------------------------------------------------------------------------------------------------------------------
+
+sol::state g_luaState;
 
 bool g_quit = false;
 int g_currentModel = 0;
@@ -51,25 +54,6 @@ int UpdateFPSCounter(float deltaTime)
 	numFrames++;
 
 	return framesPerSecond;
-}
-
-//-------------------------------------------------------------
-// Displays Main menu bar, stats and child windows
-//-------------------------------------------------------------
-void UpdateStats(float deltaTime)
-{
-	CViewParams& view = CCamera::MainView;
-
-	auto engineTable = g_luaState["engine"].get_or_create<sol::table>();
-
-	auto statsTable = engineTable["Stats"].get_or_create<sol::table>();
-
-	statsTable["systemFPS"] = UpdateFPSCounter(deltaTime);
-	statsTable["cellsDrawDistance"] = g_cellsDrawDistance;
-	statsTable["drawnCells"] = g_drawnCells;
-	statsTable["drawnModels"] = g_drawnModels;
-	statsTable["drawnPolygons"] = g_drawnPolygons;
-	statsTable["debugListCellsDrawn"] = g_debugListCellsDrawn;
 }
 
 //-------------------------------------------------------------
@@ -349,10 +333,79 @@ void CState_Game::OnLeave(CAppStateBase* to)
 
 }
 
+//-------------------------------------------------------------
+// Displays Main menu bar, stats and child windows
+//-------------------------------------------------------------
+void UpdateStats()
+{
+	esl::ScriptState state = eslSys::GetScriptState();
+
+	esl::LuaTable engineTable = *state.GetGlobal<esl::LuaTable>("engine");
+	esl::LuaTable statsTable = engineTable["Stats"].As<esl::LuaTable>();
+	
+	if(!statsTable)
+		statsTable = engineTable["Stats"].CreateTable();
+
+	statsTable["cellsDrawDistance"] = g_cellsDrawDistance;
+	statsTable["drawnCells"] = g_drawnCells;
+	statsTable["drawnModels"] = g_drawnModels;
+	statsTable["drawnPolygons"] = g_drawnPolygons;
+	statsTable["debugListCellsDrawn"] = g_debugListCellsDrawn;
+}
+
 // when 'false' returned the next state goes on
 bool CState_Game::Update(float fDt)
 {
+	esl::ScriptState state = eslSys::GetScriptState();
+	esl::LuaTable engineHostTable = *state.GetGlobal<esl::LuaTable>("EngineHost");
 
+	CManager_Players::Net_Update();
+
+	if (engineHostTable)
+	{
+		esl::LuaFunctionRef updateFunc = engineHostTable["Frame"].As<esl::LuaFunctionRef>();
+		using UpdateFunc = esl::runtime::FunctionCall<void, float>;
+		auto result = UpdateFunc::Invoke(updateFunc, fDt);
+		LUA_CHECK_CALL(result, "Frame");
+	}
+
+	const CViewParams& curView = CCamera::MainView;
+
+	// render main view
+	if (CWorld::IsLevelLoaded())
+	{
+		Vector3D f, r, u;
+		AngleVectors(curView.GetAngles(), &f, &r, &u);
+
+		g_audioSystem->SetListener(curView.GetOrigin(), CCamera::MainViewVelocity, f, u);
+
+		CSky::Draw(curView);
+		CWorld::RenderLevelView(curView);
+		CManager_Cars::Draw(curView);
+
+		CManager_Cars::UpdateTime(0);
+	}
+
+	{
+		const Vector2D viewportSize = g_pHost->GetWindowSize();
+
+		Matrix4x4 proj, view;
+		curView.GetMatrices(proj, view, viewportSize.x, viewportSize.y, curView.GetZNear(), 10000.0f);
+		debugoverlay->SetMatrices(proj, view);
+	}
+
+	UpdateStats();
+
+	if (engineHostTable)
+	{
+		esl::LuaFunctionRef updateFunc = engineHostTable["PostFrame"].As<esl::LuaFunctionRef>();
+
+		using UpdateFunc = esl::runtime::FunctionCall<void, float>;
+		auto result = UpdateFunc::Invoke(updateFunc, fDt);
+		LUA_CHECK_CALL(result, "PostFrame");
+	}
+
+	return true;
 }
 
 void CState_Game::HandleKeyPress(int key, bool down)

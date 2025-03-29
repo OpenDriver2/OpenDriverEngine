@@ -1,4 +1,5 @@
 #include "core/core_common.h"
+#include "core/IFileSystem.h"
 
 #include "render/ViewParams.h"
 #include "render_sky.h"
@@ -55,8 +56,8 @@ const int SKY_TEX_CHANNELS = 4;
 
 // TODO: CSkyRenderer
 
-TextureID g_skyTexture = 0;
-ShaderID g_skyShader = 0;
+//TextureID g_skyTexture = 0;
+//ShaderID g_skyShader = 0;
 int g_skyColorConstantId = -1;
 
 UV g_skytexuv[28] = { 0 };
@@ -475,28 +476,21 @@ ColorRGB CSky::Color(1.0f);
 
 void CSky::Init()
 {
+#if 0
 	g_skyShader = GR_CompileShader(sky_shader);
 	g_skyColorConstantId = GR_GetShaderConstantIndex(g_skyShader, "u_skyColor");
+#endif
 }
 
 void CSky::Lua_Init(const esl::ScriptState& state)
 {
-	LUADOC_GLOBAL();
-
-	auto engine = lua["engine"].get_or_create<sol::table>();
+	esl::LuaTable engineTbl = eslSys::GetOrCreateGlobalTable(state, "engine");
 
 	{
-		LUADOC_TYPE("Sky");
-		auto sky = engine["Sky"].get_or_create<sol::table>();
-
-		sky[LUADOC_M("Load", "(filename: string, num: int) : boolean - Loads sky from file with specified index")]
-			= &Load;
-
-		sky[LUADOC_M("Unload", "(void)")]
-			= &Unload;
-
-		sky[LUADOC_P("color", "(vec3)")]
-			= &Color;
+		esl::LuaTable sky = engineTbl["Sky"].CreateTable();
+		sky["Load"] = EQSCRIPT_CFUNC(Load);
+		sky["Unload"] = EQSCRIPT_CFUNC(Unload);
+		sky["color"] = Color;
 	}
 }
 
@@ -506,19 +500,18 @@ bool CSky::Load(const char* filename, int skyNumber)
 	if (filename == nullptr)
 		return false;
 
-	String skyName = String::fromCString(filename);
-	tchar* subStr = const_cast<tchar*>(skyName.find('#', 0));
-
-	if (subStr)
+	EqString skyName(filename);
+	const int skyIndexStart = skyName.Find('#');
+	if (skyIndexStart != -1)
 	{
 		if (skyNumber > 2)
 			skyNumber = 2;
-		skyNumber += atoi(subStr + 1);
-		skyName.trim(subStr);
+		skyNumber += atoi(skyName.ToCString() + skyIndexStart + 1);
+		skyName = skyName.TrimChar("#", false, true);
 	}
 
-	File file;
-	if (!file.open(skyName, File::readFlag))
+	IFilePtr file = g_fileSystem->Open(skyName, FS_OPEN_READ);
+	if (!file)
 	{
 		MsgError("Unable to open '%s'\n", filename);
 		return false;
@@ -529,15 +522,15 @@ bool CSky::Load(const char* filename, int skyNumber)
 	GenerateSkyUVs();
 
 	// TODO: handle D1 sky texture files
-	int64 fileSize = file.size();
+	int64 fileSize = file->GetSize();
 	ubyte* data = new ubyte[fileSize];
 
-	file.read(data, fileSize);
-	file.close();
+	file->Read(data, fileSize, 1);
+	file = nullptr;
 
 	// Driver 1 skies?
-	String ext = File::extension(skyName);
-	if (ext.startsWith("BIN"))
+	EqString ext = fnmPathExtractExt(skyName);
+	if (!ext.CompareCaseIns("BIN"))
 	{
 		// should have 256x126 image
 		const int imgSize = D1_SKY_TEXPAGE_SIZE * SKY_TEX_CHANNELS;
@@ -582,7 +575,7 @@ bool CSky::Load(const char* filename, int skyNumber)
 		}
 
 		// Notice that it should be treated as 256x128 texture or UVs will be wrong!
-		g_skyTexture = GR_CreateRGBATexture(256, 128, (ubyte*)color_data);
+		//g_skyTexture = GR_CreateRGBATexture(256, 128, (ubyte*)color_data);
 		delete[] color_data;
 	}
 	else
@@ -602,7 +595,7 @@ bool CSky::Load(const char* filename, int skyNumber)
 		}
 
 		// Notice that it should be treated as 512x256 texture or UVs will be wrong!
-		g_skyTexture = GR_CreateRGBATexture(512, 256, (ubyte*)color_data);
+		//g_skyTexture = GR_CreateRGBATexture(512, 256, (ubyte*)color_data);
 		delete[] color_data;
 	}
 
@@ -614,13 +607,14 @@ bool CSky::Load(const char* filename, int skyNumber)
 // Destroys sky texture and UVs
 void CSky::Unload()
 {
-	GR_DestroyTexture(g_skyTexture);
-	g_skyTexture = -1;
+	//GR_DestroyTexture(g_skyTexture);
+	//g_skyTexture = -1;
 }
 
 // Renders sky
 void CSky::Draw(const CViewParams& view)
 {
+#if 0
 	CViewParams _view = view;
 	Volume dummy;
 	GR_SetShader(g_skyShader);
@@ -647,4 +641,5 @@ void CSky::Draw(const CViewParams& view)
 			renderModel->Draw(false);
 		}
 	}
+#endif
 }

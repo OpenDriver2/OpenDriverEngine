@@ -1,10 +1,12 @@
 #pragma once
-#include "scripting/esl.h"
+#include "sys/scripting/sys_esl.h"
 
 #include "math/Vector.h"
 #include "render/ViewParams.h"
 
 class Volume;
+
+EQSCRIPT_BIND_TYPE_NO_PARENT(CViewParams, "CViewParams", BY_REF)
 
 class CCamera
 {

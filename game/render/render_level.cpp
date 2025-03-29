@@ -8,6 +8,8 @@
 #include "game/shared/world.h"
 #include "render_util.h"
 
+#include "materialsystem1/renderers/IGPUBuffer.h"
+
 // extern some vars
 extern CDriverLevelModels		g_levModels;
 extern CBaseLevelMap*			g_levMap;
@@ -44,10 +46,10 @@ struct RenderLevelFrame
 		numObjects++;
 	}
 
-	Array<CELL_OBJECT*> object;
-	Array<ModelRef_t*> model;
-	Array<float> distance;
-	Array<int> listType;
+	Array<CELL_OBJECT*> object{ PP_SL };
+	Array<ModelRef_t*> model{ PP_SL };
+	Array<float> distance{ PP_SL };
+	Array<int> listType{ PP_SL };
 	int numObjects = 0;
 
 	int maxObjects = 0;
@@ -55,14 +57,14 @@ struct RenderLevelFrame
 
 void CRender_Level::Init()
 {
-	ShadowVAO = GR_CreateVAO(128, 128);
-	g_RenderLevelFrame.Clear();
+	//ShadowVAO = GR_CreateVAO(128, 128);
+	//g_RenderLevelFrame.Clear();
 }
 
 void CRender_Level::Terminate()
 {
-	GR_DestroyVAO(ShadowVAO);
-	ShadowVAO = nullptr;
+	//GR_DestroyVAO(ShadowVAO);
+	//ShadowVAO = nullptr;
 }
 
 int g_cellsDrawDistance = 441 * 10;
@@ -109,6 +111,7 @@ int g_debugListCellsDrawn;
 
 void CRender_Level::DrawObject(const DRAWABLE& drawable, const Vector3D& cameraPos, const Volume& frustrumVolume, bool buildingLighting)
 {
+#if 0
 	if (drawable.model >= MAX_MODELS)
 		return;
 
@@ -156,6 +159,7 @@ void CRender_Level::DrawObject(const DRAWABLE& drawable, const Vector3D& cameraP
 
 	g_drawnModels++;
 	g_drawnPolygons += ref->model->num_polys;
+#endif
 }
 
 void CRender_Level::DrawCellObject(
@@ -197,6 +201,7 @@ void CRender_Level::DrawCellObject(
 	float cameraAngleY,
 	bool buildingLighting)
 {
+#if 0
 	if (co.type >= MAX_MODELS)
 	{
 		// WHAT THE FUCK?
@@ -239,10 +244,12 @@ void CRender_Level::DrawCellObject(
 
 	g_drawnModels++;
 	g_drawnPolygons += ref->model->num_polys;
+#endif
 }
 
 void CRender_Level::DrawObjectShadow(CMeshBuilder& shadowMesh, const Matrix3x3& shadowMat, const ModelRef_t* ref, const Vector3D& position, float distance)
 {
+#if 0
 	const bool highDetail = distance < 2.0f;
 	const float shadowAlpha = 1.0 - clamp(pow(distance / g_maxShadowDistance, 2.0f), 0.0f, 1.0f);
 
@@ -293,6 +300,7 @@ void CRender_Level::DrawObjectShadow(CMeshBuilder& shadowMesh, const Matrix3x3& 
 		GR_SetTexture(shadowPage);
 		shadowMesh.End();
 	}
+#endif
 }
 
 //-------------------------------------------------------
@@ -328,8 +336,8 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 	}
 
 	// drawing state
-	static Array<int> shadowObjectIds;
-	static Array<Vector3D> shadowObjectPos;
+	static Array<int> shadowObjectIds{ PP_SL };
+	static Array<Vector3D> shadowObjectPos{ PP_SL };
 	int numObjectShadows = 0;
 
 	if(needMapIteration)
@@ -513,6 +521,7 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 			CRenderModel::DrawModelCollisionBox(g_RenderLevelFrame.model[i], g_RenderLevelFrame.object[i]->pos, g_RenderLevelFrame.object[i]->yang);
 	}
 
+#if 0
 	if (ShadowVAO && numObjectShadows > 0)
 	{
 		// compulte shadow matrix
@@ -543,4 +552,5 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 		GR_SetPolygonOffset(0.0f, 0.0f);
 		GR_SetBlendMode(BM_NONE);
 	}
+#endif
 }
