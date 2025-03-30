@@ -53,7 +53,7 @@ static char* unpackTexture(char* src, char* dest)
 	char* ptr = dest + TEXPAGE_4BIT_SIZE - 1;
 
 	do {
-		char pix = *src++;
+		int8 pix = *src++;
 
 		if (pix & 0x80)
 		{
