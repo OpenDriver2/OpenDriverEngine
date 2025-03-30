@@ -21,10 +21,10 @@ struct RenderLevelFrame
 {
 	void Reserve(int num)
 	{
-		object.reserve(num);
-		model.reserve(num);
-		distance.reserve(num);
-		listType.reserve(num);
+		object.setNum(num);
+		model.setNum(num);
+		distance.setNum(num);
+		listType.setNum(num);
 		maxObjects = num;
 	}
 
@@ -347,8 +347,8 @@ void CRender_Level::DrawMap(const Vector3D& cameraPos, float cameraAngleY, const
 		g_RenderLevelFrame.Clear();
 		g_RenderLevelFrame.Reserve(totalObjects);
 
-		shadowObjectIds.reserve(totalObjects);
-		shadowObjectPos.reserve(totalObjects);
+		shadowObjectIds.setNum(totalObjects);
+		shadowObjectPos.setNum(totalObjects);
 	}
 
 	if (needMapIteration)
