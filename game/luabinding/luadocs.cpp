@@ -41,7 +41,7 @@ CLuaDocumentation::NamespaceGuard::~NamespaceGuard()
 CLuaDocumentation::TypeGuard::TypeGuard(NamespaceGuard& ns, const char* name /*= nullptr*/, const char* docText /*= nullptr*/)
 	: m_ns(ns)
 {
-	m_item = new LuaDocItem();
+	m_item = PPNew LuaDocItem();
 	m_item->namespaceName = m_ns.m_name;
 
 	if (name)

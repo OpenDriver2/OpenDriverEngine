@@ -55,7 +55,7 @@ static char* unpackTexture(char* src, char* dest)
 	do {
 		char pix = *src++;
 
-		if ((pix & 0x80) != 0)
+		if (pix & 0x80)
 		{
 			char p = *src++;
 
@@ -174,7 +174,7 @@ void CTexturePage::InitFromFile(int id, TEXPAGE_POS& tp, IVirtualStream* pFile)
 	if (m_numDetails)
 	{
 		// read texture detail info
-		m_details = new TexDetailInfo_t[m_numDetails];
+		m_details = PPNew TexDetailInfo_t[m_numDetails];
 
 		for(int i = 0; i < m_numDetails; i++)
 		{
@@ -196,7 +196,7 @@ void CTexturePage::LoadCompressedTexture(IVirtualStream* pFile)
 	pFile->Read( &m_bitmap.numPalettes, 1, sizeof(int) );
 
 	// allocate palettes
-	m_bitmap.clut = new TEXCLUT[m_bitmap.numPalettes];
+	m_bitmap.clut = PPNew TEXCLUT[m_bitmap.numPalettes];
 
 	for(int i = 0; i < m_bitmap.numPalettes; i++)
 	{
@@ -207,7 +207,7 @@ void CTexturePage::LoadCompressedTexture(IVirtualStream* pFile)
 	int imageStart = pFile->Tell();
 
 	// read compression data
-	ubyte* compressedData = new ubyte[TEXPAGE_4BIT_SIZE];
+	ubyte* compressedData = PPNew ubyte[TEXPAGE_4BIT_SIZE];
 	pFile->Read(compressedData, 1, TEXPAGE_4BIT_SIZE);
 
 	char* unpackEnd = unpackTexture((char*)compressedData, (char*)m_bitmap.data);
@@ -236,18 +236,18 @@ bool CTexturePage::LoadTPageAndCluts(IVirtualStream* pFile, bool isSpooled)
 		return true;
 	}
 
-	m_bitmap.data = new ubyte[TEXPAGE_4BIT_SIZE];
+	m_bitmap.data = PPNew ubyte[TEXPAGE_4BIT_SIZE];
 
 	if( isSpooled )
 	{
 		// non-compressed textures loads different way, with a fixed size
-		SpooledTextureData_t* texData = new SpooledTextureData_t;
+		SpooledTextureData_t* texData = PPNew SpooledTextureData_t;
 		pFile->Read( texData, 1, sizeof(SpooledTextureData_t) );
 
 		// palettes are after them
 		m_bitmap.numPalettes = texData->numPalettes;
 
-		m_bitmap.clut = new TEXCLUT[m_bitmap.numPalettes];
+		m_bitmap.clut = PPNew TEXCLUT[m_bitmap.numPalettes];
 		memcpy(m_bitmap.clut, texData->palettes, sizeof(TEXCLUT)* m_bitmap.numPalettes);
 
 		memcpy(m_bitmap.data, texData->texels, TEXPAGE_4BIT_SIZE);
@@ -389,7 +389,7 @@ void CDriverLevelTextures::LoadPermanentTPagesD1Demo(IVirtualStream* pFile)
 	TEXPAGE_POS tpage_position[128];
 	pFile->Read(tpage_position, numTpages + 1, sizeof(XYPAIR));
 	
-	m_texPages = new CTexturePage[numTpages];
+	m_texPages = PPNew CTexturePage[numTpages];
 	m_numPermanentPages = numTpages;
 	m_numTexPages = numTpages;
 
@@ -404,7 +404,7 @@ void CDriverLevelTextures::LoadPermanentTPagesD1Demo(IVirtualStream* pFile)
 		tp.m_id = i;
 		tp.m_tp = tpage_position[i];
 		tp.m_owner = this;
-		tp.m_details = new TexDetailInfo_t[detailCount];
+		tp.m_details = PPNew TexDetailInfo_t[detailCount];
 		tp.m_numDetails = detailCount;
 
 		for (int j = 0; j < detailCount; ++j)
@@ -452,7 +452,7 @@ void CDriverLevelTextures::LoadTextureInfoLump(IVirtualStream* pFile)
 
 	// read page details
 	m_numTexPages = numPages;
-	m_texPages = new CTexturePage[numPages];
+	m_texPages = PPNew CTexturePage[numPages];
 
 	for(int i = 0; i < numPages; i++) 
 	{
@@ -479,7 +479,7 @@ void CDriverLevelTextures::LoadTextureInfoLump(IVirtualStream* pFile)
 //-------------------------------------------------------------
 void CDriverLevelTextures::LoadTextureNamesLump(IVirtualStream* pFile, int size)
 {
-	m_textureNamesData = new char[size+1];
+	m_textureNamesData = PPNew char[size+1];
 	memset(m_textureNamesData, 0, size + 1);
 
 	pFile->Read(m_textureNamesData, size, 1);
@@ -499,7 +499,7 @@ void CDriverLevelTextures::LoadTextureNamesLump(IVirtualStream* pFile, int size)
 
 void CDriverLevelTextures::LoadOverlayMapLump(IVirtualStream* pFile, int lumpSize)
 {
-	m_overlayMapData = new char[lumpSize];
+	m_overlayMapData = PPNew char[lumpSize];
 	pFile->Read(m_overlayMapData, 1, lumpSize);
 }
 
@@ -520,7 +520,7 @@ void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
 	if (total_cluts == 0)
 		return;
 
-	m_extraPalettes = new ExtClutData_t[total_cluts + 1];
+	m_extraPalettes = PPNew ExtClutData_t[total_cluts + 1];
 	memset(m_extraPalettes, 0, sizeof(ExtClutData_t) * total_cluts);
 
 	DevMsg(SPEW_NORM, "total_cluts: %d\n", total_cluts);

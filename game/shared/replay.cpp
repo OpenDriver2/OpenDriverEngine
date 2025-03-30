@@ -194,7 +194,7 @@ CReplayStream* CReplayStream::Clone() const
 {
 	const int bufferSize = m_padRecordBuffer - m_initialPadRecordBuffer;
 
-	CReplayStream* cloned = new CReplayStream(bufferSize);
+	CReplayStream* cloned = PPNew CReplayStream(bufferSize);
 
 	if(m_initialPadRecordBuffer)
 		memcpy(cloned->m_initialPadRecordBuffer, m_initialPadRecordBuffer, bufferSize * sizeof(PADRECORD));

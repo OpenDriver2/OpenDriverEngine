@@ -416,7 +416,7 @@ CPlayer* CManager_Players::GetPlayerByCar(CCar* car)
 
 CPlayer* CManager_Players::CreatePlayer()
 {
-	CPlayer* newPlayer = new CPlayer();
+	CPlayer* newPlayer = PPNew CPlayer();
 	Players.append(newPlayer);
 
 	return newPlayer;

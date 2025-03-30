@@ -283,8 +283,8 @@ void CBaseLevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 	pFile->Read(&m_numAreas, 1, sizeof(int));
 	DevMsg(SPEW_NORM, "NumAreas = %d\n", m_numAreas);
 
-	m_areaData = new AreaDataStr[m_numAreas];
-	m_areaTPages = new AreaTpageList[m_numAreas];
+	m_areaData = PPNew AreaDataStr[m_numAreas];
+	m_areaTPages = PPNew AreaTpageList[m_numAreas];
 
 	// read area data stream infos
 	pFile->Read(m_areaData, m_numAreas, sizeof(AreaDataStr));
@@ -343,7 +343,7 @@ void CBaseLevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 		DevMsg(SPEW_NORM, "numRegionOffsets: %d\n", m_numSpoolInfoOffsets);
 	}
 
-	m_regionSpoolInfoOffsets = new ushort[m_numSpoolInfoOffsets];
+	m_regionSpoolInfoOffsets = PPNew ushort[m_numSpoolInfoOffsets];
 	pFile->Read(m_regionSpoolInfoOffsets, m_numSpoolInfoOffsets, sizeof(short));
 
 	int regionsInfoSize;
@@ -358,7 +358,7 @@ void CBaseLevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 	if(regionsInfoSize > 0)
 		pFile->Read(m_regionSpoolInfo, 1, regionsInfoSize);
 
-	m_areaDataStates = new bool[m_numAreas];
+	m_areaDataStates = PPNew bool[m_numAreas];
 	memset(m_areaDataStates, 0, m_numAreas);
 }
 
@@ -416,7 +416,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 	ctx.dataStream->Read(&numModels, 1, sizeof(ushort));
 
 	// read model indexes
-	ushort* new_model_numbers = new ushort[numModels];
+	ushort* new_model_numbers = PPNew ushort[numModels];
 	ctx.dataStream->Read(new_model_numbers, numModels, sizeof(short));
 
 	DevMsg(SPEW_INFO, "	model count: %d\n", numModels);

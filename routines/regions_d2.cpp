@@ -374,9 +374,9 @@ void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 		cellObjectsOffset = cellDataOffset + m_spoolInfo->cell_data_size[0];
 	}
 
-	char* packed_cell_pointers = new char[m_spoolInfo->cell_data_size[1] * SPOOL_CD_BLOCK_SIZE];
+	char* packed_cell_pointers = PPNew char[m_spoolInfo->cell_data_size[1] * SPOOL_CD_BLOCK_SIZE];
 
-	m_cellPointers = new ushort[m_owner->m_cell_objects_add[5]];
+	m_cellPointers = PPNew ushort[m_owner->m_cell_objects_add[5]];
 	memset(m_cellPointers, 0xFF, sizeof(ushort) * m_owner->m_cell_objects_add[5]);
 
 	// read packed cell pointers
@@ -601,10 +601,10 @@ void CDriver2LevelMap::LoadMapLump(IVirtualStream* pFile)
 
 	// read straddlers
 	// Driver 2 PCO
-	m_packedStraddlers = new PACKED_CELL_OBJECT[m_numStraddlers];
+	m_packedStraddlers = PPNew PACKED_CELL_OBJECT[m_numStraddlers];
 	pFile->Read(m_packedStraddlers, m_numStraddlers, sizeof(PACKED_CELL_OBJECT));
 
-	m_straddlers = new CELL_OBJECT[m_numStraddlers];
+	m_straddlers = PPNew CELL_OBJECT[m_numStraddlers];
 	memset(m_straddlers, 0, m_numStraddlers * sizeof(CELL_OBJECT));
 }
 
@@ -618,7 +618,7 @@ void CDriver2LevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 	// Init regions
 	int total_regions = m_regions_across * m_regions_down;
 
-	m_regions = new CDriver2LevelRegion[total_regions];
+	m_regions = PPNew CDriver2LevelRegion[total_regions];
 
 	for (int i = 0; i < total_regions; i++)
 		InitRegion(&m_regions[i], i);
@@ -627,7 +627,7 @@ void CDriver2LevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 void CDriver2LevelMap::LoadStraightsLump(IVirtualStream* pFile)
 {
 	pFile->Read(&m_numStraights, 1, sizeof(int));
-	m_straights = new DRIVER2_STRAIGHT[m_numStraights];
+	m_straights = PPNew DRIVER2_STRAIGHT[m_numStraights];
 
 	pFile->Read(m_straights, m_numStraights, sizeof(DRIVER2_STRAIGHT));
 }
@@ -643,12 +643,12 @@ void CDriver2LevelMap::LoadCurvesLump(IVirtualStream* pFile)
 void CDriver2LevelMap::LoadJunctionsLump(IVirtualStream* pFile, bool oldFormat)
 {
 	pFile->Read(&m_numJunctions, 1, sizeof(int));
-	m_junctions = new DRIVER2_JUNCTION[m_numJunctions];
+	m_junctions = PPNew DRIVER2_JUNCTION[m_numJunctions];
 
 	// convert old format to new format
 	if (oldFormat)
 	{
-		OLD_DRIVER2_JUNCTION* oldJunctions = new OLD_DRIVER2_JUNCTION[m_numJunctions];
+		OLD_DRIVER2_JUNCTION* oldJunctions = PPNew OLD_DRIVER2_JUNCTION[m_numJunctions];
 
 		pFile->Read(oldJunctions, m_numJunctions, sizeof(DRIVER2_JUNCTION));
 

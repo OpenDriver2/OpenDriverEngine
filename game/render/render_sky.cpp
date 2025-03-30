@@ -523,7 +523,7 @@ bool CSky::Load(const char* filename, int skyNumber)
 
 	// TODO: handle D1 sky texture files
 	int64 fileSize = file->GetSize();
-	ubyte* data = new ubyte[fileSize];
+	ubyte* data = PPNew ubyte[fileSize];
 
 	file->Read(data, fileSize, 1);
 	file = nullptr;
@@ -534,7 +534,7 @@ bool CSky::Load(const char* filename, int skyNumber)
 	{
 		// should have 256x126 image
 		const int imgSize = D1_SKY_TEXPAGE_SIZE * SKY_TEX_CHANNELS;
-		uint* color_data = new uint[imgSize / sizeof(uint)];
+		uint* color_data = PPNew uint[imgSize / sizeof(uint)];
 
 		// total 15 sky textures
 		int* offsetInfo = (int*)(data + skyNumber * 48);
@@ -583,7 +583,7 @@ bool CSky::Load(const char* filename, int skyNumber)
 		ubyte* skyImage = data + skyNumber * D2_SKY_OFFSET_STEP;
 
 		const int imgSize = D2_SKY_TEXPAGE_SIZE * SKY_TEX_CHANNELS;
-		uint* color_data = new uint[imgSize / sizeof(uint)];
+		uint* color_data = PPNew uint[imgSize / sizeof(uint)];
 
 		// 3x4 images (128x84 makes 512x252 tpage)
 		for (int y = 0; y < 3; y++)

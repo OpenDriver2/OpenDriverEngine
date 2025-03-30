@@ -123,12 +123,12 @@ int CManager_Cars::LoadModel(int modelNumber, CDriverLevelModels* levelModels)
 	if (!carModel->cleanmodel)
 		return -1;
 
-	ModelRef_t* ref = new ModelRef_t();
+	ModelRef_t* ref = PPNew ModelRef_t();
 	ref->model = carModel->cleanmodel;
 	ref->size = carModel->cleanSize;
 	ref->index = modelNumber;
 
-	CRenderModel* renderModel = new CRenderModel();
+	CRenderModel* renderModel = PPNew CRenderModel();
 
 	if (renderModel->Initialize(ref))
 		ref->userData = renderModel;
@@ -209,7 +209,7 @@ CCar* CManager_Cars::Create(const CarCosmetics& cosmetic, ECarControlType contro
 	if (control == CONTROL_TYPE_NONE)
 		return nullptr;
 
-	CCar* cp = new CCar();
+	CCar* cp = PPNew CCar();
 	VECTOR_NOPAD tmpStart;
 
 	cp->m_owner = this;

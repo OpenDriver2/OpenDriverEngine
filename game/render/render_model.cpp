@@ -240,7 +240,7 @@ void CRenderModel::GenerateBuffers(FindVertexFn lookupFn /*= FindGrVertexIndex*/
 		
 		if (!batch)
 		{
-			batch = new genBatch_t;
+			batch = PPNew genBatch_t;
 			batch->tpage = tpageId;
 			batches.append(batch);
 		}
@@ -601,7 +601,7 @@ void CRenderModel::OnModelLoaded(ModelRef_t* ref)
 		CRender_Cars::MangleWheelModel(ref->model);
 	}
 
-	CRenderModel* renderModel = new CRenderModel();
+	CRenderModel* renderModel = PPNew CRenderModel();
 
 	if (renderModel->Initialize(ref))
 		ref->userData = renderModel;

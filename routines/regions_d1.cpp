@@ -63,9 +63,9 @@ void CDriver1LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	pFile->Seek(ctx.lumpInfo->spooled_offset + roadHOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
 	LoadRoadHeightMapData(pFile);
 
-	char* packed_cell_pointers = new char[m_spoolInfo->cell_data_size[1] * SPOOL_CD_BLOCK_SIZE];
+	char* packed_cell_pointers = PPNew char[m_spoolInfo->cell_data_size[1] * SPOOL_CD_BLOCK_SIZE];
 
-	m_cellPointers = new ushort[m_owner->m_cell_objects_add[5]];
+	m_cellPointers = PPNew ushort[m_owner->m_cell_objects_add[5]];
 	memset(m_cellPointers, 0xFF, sizeof(ushort) * m_owner->m_cell_objects_add[5]);
 
 	// read packed cell pointers
@@ -104,7 +104,7 @@ void CDriver1LevelRegion::LoadRoadHeightMapData(IVirtualStream* pFile)
 
 	int roadMapSize = (m_spoolInfo->roadm_size + m_spoolInfo->roadh_size) * SPOOL_CD_BLOCK_SIZE;
 
-	char* roadMapData = new char[m_owner->m_PVS_size[m_regionBarrelNumber]];
+	char* roadMapData = PPNew char[m_owner->m_PVS_size[m_regionBarrelNumber]];
 	pFile->Read(roadMapData, m_spoolInfo->roadh_size * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 
 	// roadh needs to be post-processed
@@ -112,7 +112,7 @@ void CDriver1LevelRegion::LoadRoadHeightMapData(IVirtualStream* pFile)
 	int i = double_region_size * double_region_size;
 
 	// road map is in cell size
-	m_roadMap = new uint[double_region_size * double_region_size];
+	m_roadMap = PPNew uint[double_region_size * double_region_size];
 	memset(m_roadMap, 0, sizeof(m_roadMap));
 
 	uint* src = (uint*)roadMapData;
@@ -137,7 +137,7 @@ void CDriver1LevelRegion::LoadRoadHeightMapData(IVirtualStream* pFile)
 
 void CDriver1LevelRegion::LoadRoadCellsData(IVirtualStream* pFile)
 {
-	m_surfaceRoads = new ushort[ROAD_MAP_REGION_CELLS];
+	m_surfaceRoads = PPNew ushort[ROAD_MAP_REGION_CELLS];
 	ushort* pRoadIds = m_surfaceRoads;
 	int i = ROAD_MAP_REGION_CELLS;
 
@@ -212,7 +212,7 @@ void CDriver1LevelMap::LoadMapLump(IVirtualStream* pFile)
 
 	// read straddlers
 	// Driver 1 CO
-	m_straddlers = new CELL_OBJECT[m_numStraddlers];
+	m_straddlers = PPNew CELL_OBJECT[m_numStraddlers];
 	pFile->Read(m_straddlers, m_numStraddlers, sizeof(CELL_OBJECT));
 }
 
@@ -226,7 +226,7 @@ void CDriver1LevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 	// Init regions
 	const int total_regions = m_regions_across * m_regions_down;
 
-	m_regions = new CDriver1LevelRegion[total_regions];
+	m_regions = PPNew CDriver1LevelRegion[total_regions];
 
 	for (int i = 0; i < total_regions; i++)
 		InitRegion(&m_regions[i], i);
@@ -253,14 +253,14 @@ void CDriver1LevelMap::LoadRoadMapLump(IVirtualStream* pFile)
 void CDriver1LevelMap::LoadRoadsLump(IVirtualStream* pFile)
 {
 	pFile->Read(&m_numRoads, 1, sizeof(int));
-	m_roads = new DRIVER1_ROAD[m_numRoads];
+	m_roads = PPNew DRIVER1_ROAD[m_numRoads];
 	pFile->Read(m_roads, m_numRoads, sizeof(DRIVER1_ROAD));
 }
 
 void CDriver1LevelMap::LoadJunctionsLump(IVirtualStream* pFile)
 {
 	pFile->Read(&m_numJunctions, 1, sizeof(int));
-	m_junctions = new DRIVER1_JUNCTION[m_numJunctions];
+	m_junctions = PPNew DRIVER1_JUNCTION[m_numJunctions];
 	pFile->Read(m_junctions, m_numJunctions, sizeof(DRIVER1_JUNCTION));
 }
 
@@ -268,7 +268,7 @@ void CDriver1LevelMap::LoadRoadBoundsLump(IVirtualStream* pFile)
 {
 	int numRoadBounds;
 	pFile->Read(&numRoadBounds, 1, sizeof(int));
-	m_roadBounds = new DRIVER1_ROADBOUNDS[numRoadBounds];
+	m_roadBounds = PPNew DRIVER1_ROADBOUNDS[numRoadBounds];
 	pFile->Read(m_roadBounds, numRoadBounds, sizeof(DRIVER1_ROADBOUNDS));
 }
 
@@ -276,7 +276,7 @@ void CDriver1LevelMap::LoadJuncBoundsLump(IVirtualStream* pFile)
 {
 	int numJuncBounds;
 	pFile->Read(&numJuncBounds, 1, sizeof(int));
-	m_junctionBounds = new XYPAIR[numJuncBounds];
+	m_junctionBounds = PPNew XYPAIR[numJuncBounds];
 	pFile->Read(m_junctionBounds, numJuncBounds, sizeof(XYPAIR));
 }
 

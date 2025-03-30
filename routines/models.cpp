@@ -149,7 +149,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 //-------------------------------------------------------------
 void CDriverLevelModels::LoadModelNamesLump(IVirtualStream* pFile, int size)
 {
-	char* modelnames = new char[size];
+	char* modelnames = PPNew char[size];
 	pFile->Read(modelnames, size, 1);
 
 	int len = CString::Length(modelnames);

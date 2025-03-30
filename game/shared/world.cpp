@@ -448,13 +448,12 @@ bool CWorld::LoadLevel(const char* fileName)
 	MsgWarning("-----------\nLoading LEV file '%s'\n", fileName);
 
 	ELevelFormat levFormat = CDriverLevelLoader::DetectLevelFormat(g_levFile);
-	g_levFile->Seek(0, VS_SEEK_SET);
 
 	// create map accordingly
 	if (levFormat >= LEV_FORMAT_DRIVER2_ALPHA16 || levFormat == LEV_FORMAT_AUTODETECT)
-		g_levMap = new CDriver2LevelMap();
+		g_levMap = PPNew CDriver2LevelMap();
 	else
-		g_levMap = new CDriver1LevelMap();
+		g_levMap = PPNew CDriver1LevelMap();
 
 	CDriverLevelLoader loader;
 	loader.Initialize(g_levInfo, &g_levTextures, &g_levModels, g_levMap);
