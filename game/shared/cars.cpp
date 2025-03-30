@@ -157,7 +157,7 @@ int wetness = 0;					// TODO: CWorld::GetWetness()
 
 GEAR_DESC GEAR_DESC::FromTable(const esl::LuaTable & table)
 {
-	return GEAR_DESC{
+	return GEAR_DESC {
 		table["lowidl_ws"],
 		table["low_ws"],
 		table["hi_ws"],
@@ -221,9 +221,9 @@ CarCosmetics CarCosmetics::FromTable(const esl::LuaTable& table)
 {
 	esl::ScriptState state(table.GetState());
 
-	esl::LuaTable wheelDispTable = table["wheelDisp"].As<esl::LuaTable>();
-	esl::LuaTable cPointsTable = table["cPoints"].As<esl::LuaTable>();
-	esl::LuaTable gearsTable = table["gears"].As<esl::LuaTable>();
+	esl::LuaTable wheelDispTable = table["wheelDisp"];
+	esl::LuaTable cPointsTable = table["cPoints"];
+	esl::LuaTable gearsTable = table["gears"];
 
 	CarCosmetics newCosmetics;
 
@@ -259,12 +259,12 @@ CarCosmetics CarCosmetics::FromTable(const esl::LuaTable& table)
 		newCosmetics.gears.clear();
 		for (int i = 0; i < gearsTable.Length(); i++)
 		{
-			GEAR_DESC newGear = gearsTable[i + 1];
+			GEAR_DESC& newGear = gearsTable[i + 1];
 			newCosmetics.gears.append(newGear);
 		}
 	}
 
-	if (table["handlingType"])
+	if (table["handlingType"].As<bool>())
 		newCosmetics.handlingType = table["handlingType"];
 
 	newCosmetics.headLight = table["headLight"];
@@ -2113,7 +2113,7 @@ int	CCar::GetDirection() const
 	return m_hd.direction;
 }
 
-void CCar::SetDirection(const int& newDir)
+void CCar::SetDirection(int newDir)
 {
 	m_hd.direction = newDir;
 	TempBuildHandlingMatrix(0);
@@ -2166,7 +2166,7 @@ int8 CCar::GetAutobrake() const
 	return m_hd.autoBrake;
 }
 
-void CCar::SetAutobrake(const int8& value)
+void CCar::SetAutobrake(int8 value)
 {
 	m_hd.autoBrake = value;
 }

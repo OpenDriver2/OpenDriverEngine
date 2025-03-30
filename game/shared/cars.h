@@ -339,7 +339,7 @@ public:
 	void					SetPosition(const VECTOR_NOPAD& value);
 
 	int						GetDirection() const;
-	void					SetDirection(const int& newDir);
+	void					SetDirection(int newDir);
 
 	const VECTOR_NOPAD&		GetLinearVelocity() const;
 	const VECTOR_NOPAD&		GetAngularVelocity() const;
@@ -391,7 +391,7 @@ protected:
 	int					GetSpeed() const;
 
 	int8				GetAutobrake() const;
-	void				SetAutobrake(const int8& value);
+	void				SetAutobrake(int8 value);
 
 	void				StartStaticSound(const char* type, float refDist, float volume, float pitch);
 

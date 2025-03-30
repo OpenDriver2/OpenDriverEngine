@@ -53,9 +53,9 @@ static Vector3D L_FromFixedVector(const esl::ScriptState& state)
 
 	if (a)
 		return FromFixedVector(a.Get());
-	if (b)
+	else if (b)
 		return FromFixedVector(b.Get());
-	//if (c)
+	//else if (c)
 	//	return FromFixedVector(c.Get());
 
 	state.ThrowError("FromFixedVector expects VECTOR_NOPAD or SVECTOR or SVECTOR_NOPAD");
@@ -86,11 +86,11 @@ bool Math_Lua_Init(const esl::ScriptState& state)
 		fix.Set("ONE_BITS", ONE_BITS);
 		fix.Set("toRadian", TO_RADIAN);
 		fix.Set("toGTEAngle", TO_GTE_ANGLE);
-		fix.Set("ToFixed", EQSCRIPT_CFUNC(+[](const float a) { return int(a * ONE_F); }));
-		fix.Set("FromFixed", EQSCRIPT_CFUNC(+[](const int a) { return float(a) * ONE_F_RECIP; }));
-		fix.Set("DivHalfRound", EQSCRIPT_CFUNC(+[](const int a, const int bits) { return FixDivHalfRound(a, bits); }));
-		fix.Set("DIFF_ANGLES_F", EQSCRIPT_CFUNC(+[](const float x, const float y) { return DIFF_ANGLES_F(x, y); }));
-		fix.Set("DIFF_ANGLES", EQSCRIPT_CFUNC(+[](const int x, const int y) { return DIFF_ANGLES(x, y); }));
+		fix.Set("ToFixed", EQSCRIPT_CFUNC(+[](float a) { return int(a * ONE_F); }));
+		fix.Set("FromFixed", EQSCRIPT_CFUNC(+[](int a) { return float(a) * ONE_F_RECIP; }));
+		fix.Set("DivHalfRound", EQSCRIPT_CFUNC(+[](int a, int bits) { return FixDivHalfRound(a, bits); }));
+		fix.Set("DIFF_ANGLES_F", EQSCRIPT_CFUNC(+[](float x, float y) { return DIFF_ANGLES_F(x, y); }));
+		fix.Set("DIFF_ANGLES", EQSCRIPT_CFUNC(+[](int x, int y) { return DIFF_ANGLES(x, y); }));
 
 		fix.Set("ToFixedVector", EQSCRIPT_CFUNC(ToFixedVector));
 		fix.Set("FromFixedVector", EQSCRIPT_CFUNC(L_FromFixedVector));
