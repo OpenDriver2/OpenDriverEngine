@@ -23,6 +23,9 @@
 #include "state_game.h"
 #include "physics/IStudioShapeCache.h"
 
+DECLARE_CVAR(lua_gcStepSize, "1", nullptr, CV_ARCHIVE);
+DECLARE_CVAR(lua_gcFrames, "60", nullptr, CV_ARCHIVE);
+
 #define GAME_WINDOW_TITLE	"Driver"
 
 enum ESoundChannelType
@@ -65,14 +68,16 @@ bool InitScriptState()
 {
 	const esl::ScriptState state = eslSys::GetScriptState();
 	ESL_SYS_INIT(eslSysInit);
-	//ESL_SYS_INIT(eslSysOpenDriverInit);
+	ESL_SYS_INIT_EXT(eslSysOpenDriverInit);
 	return true;
 }
 
 namespace eqAppStateMng
 {
 static CAppStateBase* s_appStates[APP_STATE_COUNT] = { nullptr };
+static StatePreUpdateEvent::Sub s_statePreUpdateSub;
 static StatePostUpdateEvent::Sub s_statePostUpdateSub;
+static StateFrameEvent::Sub s_onEndFrame;
 
 const char* GetAppNameTitle()
 {
@@ -84,10 +89,34 @@ CAppStateBase* GetAppStateByType(int stateType)
 	return s_appStates[stateType];
 }
 
+void PreUpdateState(float fDt)
+{
+	PROF_EVENT("Lua stateUpdate");
+	const esl::ScriptState state = eslSys::GetScriptState();
+	state.GCStop();
+	if (!state.CallFunction<void, float>("stateUpdate", fDt))
+		ErrorMsg("PreUpdateState error:\n\n%s\n", eslSys::GetLastLuaError());
+}
+
 void PostUpdateState(float fDt)
 {
 	PROF_EVENT("SoundSystem update");
 	g_sounds->Update();
+}
+
+void EndFrame(float fDt)
+{
+	const esl::ScriptState state = eslSys::GetScriptState();
+	state.GCRestart();
+
+	static int frames = 0;
+	++frames;
+
+	if (lua_gcFrames.GetInt() == 0 || (frames % lua_gcFrames.GetInt()) == 0)
+	{
+		PROF_EVENT("Lua GCStep");
+		state.GCStep(lua_gcStepSize.GetInt());
+	}
 }
 
 bool InitAppStates()
@@ -100,7 +129,9 @@ bool InitAppStates()
 	g_sounds->Init(OpenDriverUnits::DefaultSoundDistance, s_soundChannels);
 	g_studioCache->Init(g_parallelJobs->GetJobMng());
 
+	s_statePreUpdateSub = g_onPreUpdateState.Subscribe(PreUpdateState);
 	s_statePostUpdateSub = g_onPostUpdateState.Subscribe(PostUpdateState);
+	s_onEndFrame = g_onEndFrame.Subscribe(EndFrame);
 
 #ifdef ENABLE_MULTIPLAYER
 	Networking::InitNetworking();
@@ -142,7 +173,9 @@ bool InitAppStates()
 
 void ShutdownAppStates()
 {
+	s_statePreUpdateSub.Unsubscribe();
 	s_statePostUpdateSub.Unsubscribe();
+	s_onEndFrame.Unsubscribe();
 
 	for (int i = 0; i < APP_STATE_COUNT; ++i)
 		s_appStates[i] = nullptr;

@@ -26,9 +26,9 @@ EQSCRIPT_TYPE_BEGIN(CPlayer)
 	EQSCRIPT_BIND_VAR_NAMED("controlType", m_controlType)
 	EQSCRIPT_BIND_VAR_EX_SET_NAMED("input", m_currentInputs, UpdateControls)
 
-	EQSCRIPT_BIND_VAR_EX_GET_SET("rubberbandPowerRatio", GetRubberbandPowerRatio, SetRubberbandPowerRatio)
-	EQSCRIPT_BIND_VAR_EX_GET_SET("rubberbandPoint", GetRubberbandPoint, SetRubberbandPoint)
-	EQSCRIPT_BIND_VAR_EX_GET_SET("rubberbandMode", GetRubberbandMode, SetRubberbandMode)
+	EQSCRIPT_BIND_VAR_EX_GET_SET(rubberbandPowerRatio, GetRubberbandPowerRatio, SetRubberbandPowerRatio)
+	EQSCRIPT_BIND_VAR_EX_GET_SET(rubberbandPoint, GetRubberbandPoint, SetRubberbandPoint)
+	EQSCRIPT_BIND_VAR_EX_GET_SET(rubberbandMode, GetRubberbandMode, SetRubberbandMode)
 
 	EQSCRIPT_BIND_VAR_NAMED("playbackStream", m_playbackStream)
 	EQSCRIPT_BIND_VAR_NAMED("recordStream", m_recordStream)

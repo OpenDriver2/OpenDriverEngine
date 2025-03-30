@@ -408,7 +408,7 @@ EQSCRIPT_TYPE_BEGIN(CCar)
 	EQSCRIPT_BIND_VAR_NAMED("wheelAngle", m_wheel_angle)
 	EQSCRIPT_BIND_VAR_NAMED("handbrake", m_handbrake)
 	EQSCRIPT_BIND_VAR_NAMED("wheelspin", m_wheelspin)
-	EQSCRIPT_BIND_VAR_EX_GET_SET("autobrake", GetAutobrake, SetAutobrake)
+	EQSCRIPT_BIND_VAR_EX_GET_SET(autobrake, GetAutobrake, SetAutobrake)
 
 	// driving properties
 	EQSCRIPT_BIND_FUNC(GetChangingGear)
@@ -420,11 +420,11 @@ EQSCRIPT_TYPE_BEGIN(CCar)
 	EQSCRIPT_BIND_FUNC(GetAngularVelocity)
 
 	// transform
-	EQSCRIPT_BIND_VAR_EX_GET_SET("position", GetPosition, SetPosition)
+	EQSCRIPT_BIND_VAR_EX_GET_SET(position, GetPosition, SetPosition)
 
 	EQSCRIPT_BIND_FUNC(GetCogPosition)
 
-	EQSCRIPT_BIND_VAR_EX_GET_SET("direction", GetDirection, SetDirection)
+	EQSCRIPT_BIND_VAR_EX_GET_SET(direction, GetDirection, SetDirection)
 
 	// interpolated transform
 	EQSCRIPT_BIND_FUNC(GetInterpolatedPosition)

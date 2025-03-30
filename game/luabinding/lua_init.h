@@ -1,4 +1,4 @@
 #pragma once
 #include "scripting/esl.h"
 
-void LuaInit(const esl::ScriptState& state);
+bool eslSysOpenDriverInit(const esl::ScriptState& state);
