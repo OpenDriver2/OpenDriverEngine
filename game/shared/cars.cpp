@@ -356,6 +356,9 @@ esl::LuaTable CarCosmetics::ToTable(const esl::ScriptState& state) const
 }
 
 EQSCRIPT_TYPE_BEGIN(CarCosmetics)
+	EQSCRIPT_BIND_STATIC_FUNC("FromTable", CarCosmetics::FromTable)
+	EQSCRIPT_BIND_FUNC(ToTable)
+	
 	EQSCRIPT_BIND_VAR(handlingType)
 	EQSCRIPT_BIND_VAR(headLight)
 	EQSCRIPT_BIND_VAR(frontInd)
