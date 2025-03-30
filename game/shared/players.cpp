@@ -20,7 +20,7 @@ EQSCRIPT_TYPE_BEGIN(PlayerInputData)
 EQSCRIPT_TYPE_END
 
 EQSCRIPT_TYPE_BEGIN(CPlayer)
-	EQSCRIPT_BIND_FUNC(CPlayer::InitReplay)
+	EQSCRIPT_BIND_FUNC(InitReplay)
 
 	EQSCRIPT_BIND_VAR_EX_GET_SET(currentCar, GetCurrentCar, SetCurrentCar)
 	EQSCRIPT_BIND_VAR_NAMED("controlType", m_controlType)
