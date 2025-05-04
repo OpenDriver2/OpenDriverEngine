@@ -8,7 +8,7 @@
 //-------------------------------------------------------------
 // Auto-detects level format
 //-------------------------------------------------------------
-ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
+ELevelFormat CDriverLevelLoader::DetectLevelFormat(IFileStream* pFile)
 {
 	long curPos = pFile->Tell();
 	int lump_count = 255;
@@ -29,7 +29,7 @@ ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
 		{
 			case LUMP_PERMANENTPAGES:
 				MsgInfo("Detected old 'Driver 1 DEMO' LEV file\n");
-				pFile->Seek(curPos, VS_SEEK_SET);
+				pFile->Seek(curPos, FS_SEEK_SET);
 				return LEV_FORMAT_DRIVER1_OLD;
 			case LUMP_MODELS:
 			case LUMP_MAP:
@@ -49,14 +49,14 @@ ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
 			case LUMP_JUNCTIONS2:
 			{
 				MsgInfo("Detected 'Driver 2 DEMO' 1.6 alpha LEV file\n");
-				pFile->Seek(curPos, VS_SEEK_SET);
+				pFile->Seek(curPos, FS_SEEK_SET);
 				return LEV_FORMAT_DRIVER2_ALPHA16; // as it is an old junction format - it's clearly a alpha 1.6 level
 				break;
 			}
 			case LUMP_JUNCTIONS2_NEW:
 			{
 				MsgInfo("Detected 'Driver 2' final LEV file\n");
-				pFile->Seek(curPos, VS_SEEK_SET);
+				pFile->Seek(curPos, FS_SEEK_SET);
 				return LEV_FORMAT_DRIVER2_RETAIL; // most recent LEV file
 				break;
 			}
@@ -67,7 +67,7 @@ ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
 			{
 				int loadtime_data_ofs;
 				pFile->Read(&cityLumps, 1, sizeof(cityLumps));
-				pFile->Seek(cityLumps.inmem_offset, VS_SEEK_SET);
+				pFile->Seek(cityLumps.inmem_offset, FS_SEEK_SET);
 				break;
 			}
 			case LUMP_ROADMAP:
@@ -80,7 +80,7 @@ ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
 			default: // maybe Lump 11?
 			{
 				MsgInfo("Detected 'Driver 1' LEV file\n");
-				pFile->Seek(curPos, VS_SEEK_SET);
+				pFile->Seek(curPos, FS_SEEK_SET);
 				return LEV_FORMAT_DRIVER1;
 				break;
 			}
@@ -97,14 +97,14 @@ ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
 		}
 
 		// skip lump
-		pFile->Seek(lump.size, VS_SEEK_CUR);
+		pFile->Seek(lump.size, FS_SEEK_CUR);
 
 		// position alignment
 		if ((pFile->Tell() % 4) != 0)
-			pFile->Seek(4 - (pFile->Tell() % 4), VS_SEEK_CUR);
+			pFile->Seek(4 - (pFile->Tell() % 4), FS_SEEK_CUR);
 	}
 
-	pFile->Seek(curPos, VS_SEEK_SET);
+	pFile->Seek(curPos, FS_SEEK_SET);
 
 	return LEV_FORMAT_INVALID;
 }
@@ -112,7 +112,7 @@ ELevelFormat CDriverLevelLoader::DetectLevelFormat(IVirtualStream* pFile)
 //-------------------------------------------------------------
 // Iterates LEV file lumps and loading data from them
 //-------------------------------------------------------------
-void CDriverLevelLoader::ProcessLumps(IVirtualStream* pFile)
+void CDriverLevelLoader::ProcessLumps(IFileStream* pFile)
 {
 	int lump_count = 255; // Driver 2 difference: you not need to read lump count
 
@@ -257,14 +257,14 @@ void CDriverLevelLoader::ProcessLumps(IVirtualStream* pFile)
 		}
 
 		// seek back to initial position
-		pFile->Seek(l_ofs, VS_SEEK_SET);
+		pFile->Seek(l_ofs, FS_SEEK_SET);
 
 		// skip lump
-		pFile->Seek(lump.size, VS_SEEK_CUR);
+		pFile->Seek(lump.size, FS_SEEK_CUR);
 
 		// position alignment
 		if ((pFile->Tell() % 4) != 0)
-			pFile->Seek(4 - (pFile->Tell() % 4), VS_SEEK_CUR);
+			pFile->Seek(4 - (pFile->Tell() % 4), FS_SEEK_CUR);
 	}
 }
 
@@ -303,7 +303,7 @@ void CDriverLevelLoader::Release()
 //-------------------------------------------------------------
 // Loads the LEV file data
 //-------------------------------------------------------------
-bool CDriverLevelLoader::Load(IVirtualStream* pStream)
+bool CDriverLevelLoader::Load(IFileStream* pStream)
 {
 	if (!pStream)
 		return false;
@@ -354,7 +354,7 @@ bool CDriverLevelLoader::Load(IVirtualStream* pStream)
 
 	//-----------------------------------------------------
 	// seek to section 1 - lump data 1
-	pStream->Seek(m_lumpInfo->loadtime_offset, VS_SEEK_SET);
+	pStream->Seek(m_lumpInfo->loadtime_offset, FS_SEEK_SET);
 
 	// read lump
 	pStream->Read(&curLump, sizeof(curLump), 1);
@@ -375,13 +375,13 @@ bool CDriverLevelLoader::Load(IVirtualStream* pStream)
 
 	if (m_textures)
 	{
-		pStream->Seek(m_lumpInfo->tpage_offset, VS_SEEK_SET);
+		pStream->Seek(m_lumpInfo->tpage_offset, FS_SEEK_SET);
 		m_textures->LoadPermanentTPages(pStream);
 	}
 
 	//-----------------------------------------------------
 	// seek to section 3 - lump data 2
-	pStream->Seek(m_lumpInfo->inmem_offset, VS_SEEK_SET);
+	pStream->Seek(m_lumpInfo->inmem_offset, FS_SEEK_SET);
 
 	// read lump
 	pStream->Read(&curLump, sizeof(curLump), 1);

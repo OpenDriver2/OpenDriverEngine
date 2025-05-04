@@ -8,7 +8,7 @@ static constexpr int MAX_MODELS = 1536;	// maximum models (this is limited by PA
 //------------------------------------------------------------------------------------------------------------
 
 // forward
-class IVirtualStream;
+class IFileStream;
 struct ModelRef_t;
 struct CarModelData_t;
 
@@ -89,10 +89,10 @@ public:
 
 	//----------------------------------------------
 	
-	void				LoadCarModelsLump(IVirtualStream* pFile, int size);
-	void				LoadModelNamesLump(IVirtualStream* pFile, int size);
-	void				LoadLevelModelsLump(IVirtualStream* pFile);
-	void				LoadLowDetailTableLump(IVirtualStream* pFile, int size);
+	void				LoadCarModelsLump(IFileStream* pFile, int size);
+	void				LoadModelNamesLump(IFileStream* pFile, int size);
+	void				LoadLevelModelsLump(IFileStream* pFile);
+	void				LoadLowDetailTableLump(IFileStream* pFile, int size);
 
 	ModelRef_t*			GetModelByIndex(int nIndex) const;
 	int					FindModelIndexByName(const char* name) const;

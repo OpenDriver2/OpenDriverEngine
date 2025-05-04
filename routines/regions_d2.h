@@ -115,12 +115,12 @@ public:
 	
 	//----------------------------------------
 
-	void 					LoadMapLump(IVirtualStream* pFile) override;
-	void					LoadSpoolInfoLump(IVirtualStream* pFile) override;
+	void 					LoadMapLump(IFileStream* pFile) override;
+	void					LoadSpoolInfoLump(IFileStream* pFile) override;
 
-	void					LoadStraightsLump(IVirtualStream* pFile);
-	void					LoadCurvesLump(IVirtualStream* pFile);
-	void					LoadJunctionsLump(IVirtualStream* pFile, bool oldFormat);
+	void					LoadStraightsLump(IFileStream* pFile);
+	void					LoadCurvesLump(IFileStream* pFile);
+	void					LoadJunctionsLump(IFileStream* pFile, bool oldFormat);
 
 	//----------------------------------------
 

@@ -62,7 +62,7 @@ enum ELevelFormat
 };
 
 // forward
-class IVirtualStream;
+class IFileStream;
 class CDriverLevelTextures;
 class CDriverLevelModels;
 class CBaseLevelMap;
@@ -72,7 +72,7 @@ class CBaseLevelMap;
 class CDriverLevelLoader
 {
 public:
-	static ELevelFormat		DetectLevelFormat(IVirtualStream* pFile);
+	static ELevelFormat		DetectLevelFormat(IFileStream* pFile);
 
 	//------------------------------------------------------
 
@@ -84,10 +84,10 @@ public:
 
 	ELevelFormat			GetFormat() const;
 
-	bool					Load(IVirtualStream* pStream);
+	bool					Load(IFileStream* pStream);
 
 protected:
-	void					ProcessLumps(IVirtualStream* pFile);
+	void					ProcessLumps(IFileStream* pFile);
 
 	ELevelFormat			m_format{ LEV_FORMAT_AUTODETECT };
 	EqString				m_fileName;

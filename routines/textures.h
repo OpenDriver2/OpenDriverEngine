@@ -5,7 +5,7 @@
 #include "math/psx_math_types.h"
 
 // forward
-class IVirtualStream;
+class IFileStream;
 class CDriverLevelTextures;
 class CTexturePage;
 
@@ -54,10 +54,10 @@ public:
 	void					FreeBitmap();
 
 	// loading texture page properties from file
-	void					InitFromFile(int id, TEXPAGE_POS& tp, IVirtualStream* pFile);
+	void					InitFromFile(int id, TEXPAGE_POS& tp, IFileStream* pFile);
 	
 	// loading texture page from lump
-	bool					LoadTPageAndCluts(IVirtualStream* pFile, bool isSpooled);
+	bool					LoadTPageAndCluts(IFileStream* pFile, bool isSpooled);
 
 	// converting 4bit texture page to 32 bit full color RGBA/BGRA
 	void					ConvertIndexedTextureToRGBA(uint* dest_color_data, 
@@ -76,7 +76,7 @@ public:
 	int						GetFlags() const;
 protected:
 
-	void					LoadCompressedTexture(IVirtualStream* pFile);
+	void					LoadCompressedTexture(IFileStream* pFile);
 
 	TexBitmap_t				m_bitmap;
 	TEXPAGE_POS				m_tp;
@@ -106,12 +106,12 @@ public:
 
 	//----------------------------------------
 	// loaders
-	void					LoadTextureInfoLump(IVirtualStream* pFile);
-	void					LoadPermanentTPages(IVirtualStream* pFile);
-	void					LoadPermanentTPagesD1Demo(IVirtualStream* pFile);
-	void					LoadTextureNamesLump(IVirtualStream* pFile, int size);
-	void					LoadOverlayMapLump(IVirtualStream* pFile, int size);
-	void					LoadPalletLump(IVirtualStream* pFile);
+	void					LoadTextureInfoLump(IFileStream* pFile);
+	void					LoadPermanentTPages(IFileStream* pFile);
+	void					LoadPermanentTPagesD1Demo(IFileStream* pFile);
+	void					LoadTextureNamesLump(IFileStream* pFile, int size);
+	void					LoadOverlayMapLump(IFileStream* pFile, int size);
+	void					LoadPalletLump(IFileStream* pFile);
 
 	// release all data
 	void					FreeAll();

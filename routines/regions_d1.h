@@ -32,8 +32,8 @@ public:
 	CELL_OBJECT*			StartIterator(CELL_ITERATOR_D1* iterator, int cellNumber) const;
 
 protected:
-	void					LoadRoadHeightMapData(IVirtualStream* pFile);
-	void					LoadRoadCellsData(IVirtualStream* pFile);
+	void					LoadRoadHeightMapData(IFileStream* pFile);
+	void					LoadRoadCellsData(IFileStream* pFile);
 
 	CELL_DATA_D1*			m_cells{ nullptr };				// cell data that holding information about cell pointers. 3D world seeks cells first here
 	uint*					m_roadMap{ nullptr };
@@ -50,16 +50,16 @@ public:
 
 	//----------------------------------------
 
-	void 					LoadMapLump(IVirtualStream* pFile) override;
-	void					LoadSpoolInfoLump(IVirtualStream* pFile) override;
+	void 					LoadMapLump(IFileStream* pFile) override;
+	void					LoadSpoolInfoLump(IFileStream* pFile) override;
 
-	void					LoadRoadsLump(IVirtualStream* pFile);
-	void					LoadJunctionsLump(IVirtualStream* pFile);
-	void					LoadRoadBoundsLump(IVirtualStream* pFile);
-	void					LoadJuncBoundsLump(IVirtualStream* pFile);
+	void					LoadRoadsLump(IFileStream* pFile);
+	void					LoadJunctionsLump(IFileStream* pFile);
+	void					LoadRoadBoundsLump(IFileStream* pFile);
+	void					LoadJuncBoundsLump(IFileStream* pFile);
 
-	void					LoadRoadMapLump(IVirtualStream* pFile); // or NewProcessRoadMapLump in D1 & D2
-	void					LoadRoadSurfaceLump(IVirtualStream* pFile, int size);
+	void					LoadRoadMapLump(IFileStream* pFile); // or NewProcessRoadMapLump in D1 & D2
+	void					LoadRoadSurfaceLump(IFileStream* pFile, int size);
 
 	bool					SpoolRegion(const SPOOL_CONTEXT& ctx, const XZPAIR& cell) override;
 	bool					SpoolRegion(const SPOOL_CONTEXT& ctx, int regionIdx) override;

@@ -331,7 +331,7 @@ void CDriver2LevelRegion::FreeAll()
 
 void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 {
-	IVirtualStream* pFile = ctx.dataStream;
+	IFileStream* pFile = ctx.dataStream;
 
 	DevMsg(SPEW_NORM,"---------\nSpool %d %d\n", m_regionX, m_regionZ);
 	DevMsg(SPEW_NORM," - offset: %d\n", m_spoolInfo->offset);
@@ -380,7 +380,7 @@ void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	memset(m_cellPointers, 0xFF, sizeof(ushort) * m_owner->m_cell_objects_add[5]);
 
 	// read packed cell pointers
-	pFile->Seek(ctx.lumpInfo->spooled_offset + cellPointersOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
+	pFile->Seek(ctx.lumpInfo->spooled_offset + cellPointersOffset * SPOOL_CD_BLOCK_SIZE, FS_SEEK_SET);
 	pFile->Read(packed_cell_pointers, m_spoolInfo->cell_data_size[1] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 
 	// unpack cell pointers so we can use them
@@ -388,12 +388,12 @@ void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 	{
 		// read cell data
 		m_cells = (CELL_DATA*)PPAlloc(m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE);
-		pFile->Seek(ctx.lumpInfo->spooled_offset + cellDataOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
+		pFile->Seek(ctx.lumpInfo->spooled_offset + cellDataOffset * SPOOL_CD_BLOCK_SIZE, FS_SEEK_SET);
 		pFile->Read(m_cells, m_spoolInfo->cell_data_size[0] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 
 		// read cell objects
 		m_packedCellObjects = (PACKED_CELL_OBJECT*)PPAlloc(m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE);
-		pFile->Seek(ctx.lumpInfo->spooled_offset + cellObjectsOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
+		pFile->Seek(ctx.lumpInfo->spooled_offset + cellObjectsOffset * SPOOL_CD_BLOCK_SIZE, FS_SEEK_SET);
 		pFile->Read(m_packedCellObjects, m_spoolInfo->cell_data_size[2] * SPOOL_CD_BLOCK_SIZE, sizeof(char));
 	}
 	else
@@ -404,7 +404,7 @@ void CDriver2LevelRegion::LoadRegionData(const SPOOL_CONTEXT& ctx)
 
 	delete [] packed_cell_pointers;
 
-	pFile->Seek(ctx.lumpInfo->spooled_offset + pvsHeightmapDataOffset * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
+	pFile->Seek(ctx.lumpInfo->spooled_offset + pvsHeightmapDataOffset * SPOOL_CD_BLOCK_SIZE, FS_SEEK_SET);
 	ReadHeightmapData(ctx);
 
 	// TODO: PVS data for LEV_FORMAT_DRIVER2_ALPHA, which in separate spool offset
@@ -464,7 +464,7 @@ void CDriver2LevelRegion::UnpackAllCellObjects()
 
 void CDriver2LevelRegion::ReadHeightmapData(const SPOOL_CONTEXT& ctx)
 {
-	IVirtualStream* pFile = ctx.dataStream;
+	IFileStream* pFile = ctx.dataStream;
 
 	int pvsDataSize = 0;
 	m_pvsData = (char*)PPAlloc(m_spoolInfo->roadm_size * SPOOL_CD_BLOCK_SIZE);
@@ -595,7 +595,7 @@ void CDriver2LevelMap::FreeAll()
 //-------------------------------------------------------------
 // Loads map lump, Driver 2 version
 //-------------------------------------------------------------
-void CDriver2LevelMap::LoadMapLump(IVirtualStream* pFile)
+void CDriver2LevelMap::LoadMapLump(IFileStream* pFile)
 {
 	CBaseLevelMap::LoadMapLump(pFile);
 
@@ -611,7 +611,7 @@ void CDriver2LevelMap::LoadMapLump(IVirtualStream* pFile)
 //-------------------------------------------------------------
 // Load spool info, Driver 2 version
 //-------------------------------------------------------------
-void CDriver2LevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
+void CDriver2LevelMap::LoadSpoolInfoLump(IFileStream* pFile)
 {
 	CBaseLevelMap::LoadSpoolInfoLump(pFile);
 
@@ -624,7 +624,7 @@ void CDriver2LevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 		InitRegion(&m_regions[i], i);
 }
 
-void CDriver2LevelMap::LoadStraightsLump(IVirtualStream* pFile)
+void CDriver2LevelMap::LoadStraightsLump(IFileStream* pFile)
 {
 	pFile->Read(&m_numStraights, 1, sizeof(int));
 	m_straights = PPNew DRIVER2_STRAIGHT[m_numStraights];
@@ -632,7 +632,7 @@ void CDriver2LevelMap::LoadStraightsLump(IVirtualStream* pFile)
 	pFile->Read(m_straights, m_numStraights, sizeof(DRIVER2_STRAIGHT));
 }
 
-void CDriver2LevelMap::LoadCurvesLump(IVirtualStream* pFile)
+void CDriver2LevelMap::LoadCurvesLump(IFileStream* pFile)
 {
 	pFile->Read(&m_numCurves, 1, sizeof(int));
 	m_curves = new DRIVER2_CURVE[m_numCurves];
@@ -640,7 +640,7 @@ void CDriver2LevelMap::LoadCurvesLump(IVirtualStream* pFile)
 	pFile->Read(m_curves, m_numCurves, sizeof(DRIVER2_CURVE));
 }
 
-void CDriver2LevelMap::LoadJunctionsLump(IVirtualStream* pFile, bool oldFormat)
+void CDriver2LevelMap::LoadJunctionsLump(IFileStream* pFile, bool oldFormat)
 {
 	pFile->Read(&m_numJunctions, 1, sizeof(int));
 	m_junctions = PPNew DRIVER2_JUNCTION[m_numJunctions];

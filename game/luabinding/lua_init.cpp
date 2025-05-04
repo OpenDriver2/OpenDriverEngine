@@ -19,7 +19,7 @@ static bool eslLoadMainOpenDriverScript(lua_State* L)
 {
 	esl::runtime::StackGuard g(L);
 	esl::ScriptState state(L);
-	IFilePtr mainScriptFile = g_fileSystem->Open(MAIN_SCRIPT_FILE);
+	IFileStreamPtr mainScriptFile = g_fileSystem->Open(MAIN_SCRIPT_FILE, FS_OPEN_READ);
 	if (!mainScriptFile)
 	{
 		esl::runtime::ResetErrorValue(L);

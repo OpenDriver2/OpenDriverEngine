@@ -428,7 +428,7 @@ extern CDriverLevelTextures		g_levTextures;
 extern CDriverLevelModels		g_levModels;
 extern CBaseLevelMap*			g_levMap;
 
-static IFilePtr g_levFile = nullptr;
+static IFileStreamPtr g_levFile = nullptr;
 
 //-------------------------------------------------------
 // Perorms level loading and renderer data initialization

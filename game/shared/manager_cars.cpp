@@ -147,7 +147,7 @@ bool CManager_Cars::LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const c
 		return false;
 	}
 
-	IFilePtr fp = g_fileSystem->Open(filename, FS_OPEN_READ);
+	IFileStreamPtr fp = g_fileSystem->Open(filename, FS_OPEN_READ);
 	if (!fp)
 	{
 		MsgError("Cannot open '%s'\n", filename);
@@ -160,7 +160,7 @@ bool CManager_Cars::LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const c
 
 	CAR_COSMETICS_D2 cosmetics;
 
-	fp->Seek(offsetTable[residentModel], VS_SEEK_SET);
+	fp->Seek(offsetTable[residentModel], FS_SEEK_SET);
 	fp->Read(&cosmetics, sizeof(cosmetics), 1);
 
 	outCosmetics.InitFrom(cosmetics);
@@ -170,7 +170,7 @@ bool CManager_Cars::LoadDriver2CosmeticsFile(CarCosmetics& outCosmetics, const c
 
 bool CManager_Cars::LoadDriver1CosmeticsFile(CarCosmetics& outCosmetics, const char* filename, int cosmeticIndex)
 {
-	IFilePtr fp = g_fileSystem->Open(filename, FS_OPEN_READ);
+	IFileStreamPtr fp = g_fileSystem->Open(filename, FS_OPEN_READ);
 	if (!fp)
 	{
 		MsgError("Cannot open '%s'\n", filename);
@@ -179,7 +179,7 @@ bool CManager_Cars::LoadDriver1CosmeticsFile(CarCosmetics& outCosmetics, const c
 
 	CAR_COSMETICS_D1 cosmetics;
 
-	fp->Seek(sizeof(CAR_COSMETICS_D1) * cosmeticIndex, VS_SEEK_SET);
+	fp->Seek(sizeof(CAR_COSMETICS_D1) * cosmeticIndex, FS_SEEK_SET);
 	fp->Read(&cosmetics, sizeof(cosmetics), 1);
 
 	outCosmetics.InitFrom(cosmetics);

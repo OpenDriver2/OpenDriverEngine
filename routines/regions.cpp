@@ -235,7 +235,7 @@ void CBaseLevelMap::WorldPositionToCellXZ(XZPAIR& cell, const VECTOR_NOPAD& posi
 //-------------------------------------------------------------
 // parses LUMP_MAP and it's straddler objects
 //-------------------------------------------------------------
-void CBaseLevelMap::LoadMapLump(IVirtualStream* pFile)
+void CBaseLevelMap::LoadMapLump(IFileStream* pFile)
 {
 	pFile->Read(&m_mapInfo, 1, sizeof(OUT_CELL_FILE_HEADER));
 
@@ -266,7 +266,7 @@ void CBaseLevelMap::LoadMapLump(IVirtualStream* pFile)
 //-------------------------------------------------------------
 // parses LUMP_SPOOLINFO, and also loads region data
 //-------------------------------------------------------------
-void CBaseLevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
+void CBaseLevelMap::LoadSpoolInfoLump(IFileStream* pFile)
 {
 	int model_spool_buffer_size;
 	pFile->Read(&model_spool_buffer_size, 1, sizeof(int));
@@ -278,7 +278,7 @@ void CBaseLevelMap::LoadSpoolInfoLump(IVirtualStream* pFile)
 
 	// move further
 	// this was probably used in early D1 level files for sound banks
-	pFile->Seek(Music_And_AmbientOffsetsSize, VS_SEEK_CUR);
+	pFile->Seek(Music_And_AmbientOffsetsSize, FS_SEEK_CUR);
 
 	pFile->Read(&m_numAreas, 1, sizeof(int));
 	DevMsg(SPEW_NORM, "NumAreas = %d\n", m_numAreas);
@@ -375,7 +375,7 @@ void CBaseLevelMap::LoadInAreaTPages(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 
 	const int texturesOffset = ctx.lumpInfo->spooled_offset + SPOOL_CD_BLOCK_SIZE * areaData.gfx_offset;
 
-	ctx.dataStream->Seek(texturesOffset, VS_SEEK_SET);
+	ctx.dataStream->Seek(texturesOffset, FS_SEEK_SET);
 
 	for (int i = 0; areaData.num_tpages; i++)
 	{
@@ -391,7 +391,7 @@ void CBaseLevelMap::LoadInAreaTPages(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 			tpage->LoadTPageAndCluts(ctx.dataStream, true);
 
 		if (ctx.dataStream->Tell() % SPOOL_CD_BLOCK_SIZE)
-			ctx.dataStream->Seek(SPOOL_CD_BLOCK_SIZE - (ctx.dataStream->Tell() % SPOOL_CD_BLOCK_SIZE), VS_SEEK_CUR);
+			ctx.dataStream->Seek(SPOOL_CD_BLOCK_SIZE - (ctx.dataStream->Tell() % SPOOL_CD_BLOCK_SIZE), FS_SEEK_CUR);
 	}
 }
 
@@ -412,7 +412,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 
 	ushort numModels;
 
-	ctx.dataStream->Seek(modelsCountOffset, VS_SEEK_SET);
+	ctx.dataStream->Seek(modelsCountOffset, FS_SEEK_SET);
 	ctx.dataStream->Read(&numModels, 1, sizeof(ushort));
 
 	// read model indexes
@@ -420,7 +420,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 	ctx.dataStream->Read(new_model_numbers, numModels, sizeof(short));
 
 	DevMsg(SPEW_INFO, "	model count: %d\n", numModels);
-	ctx.dataStream->Seek(modelsOffset, VS_SEEK_SET);
+	ctx.dataStream->Seek(modelsOffset, FS_SEEK_SET);
 
 	for (int i = 0; i < numModels; i++)
 	{
@@ -438,7 +438,7 @@ void CBaseLevelMap::LoadInAreaModels(const SPOOL_CONTEXT& ctx, int areaDataNum) 
 				if (ref->size != modelSize)
 					MsgError("Spool model in slot %d OVERLAP!\n", new_model_numbers[i]);
 
-				ctx.dataStream->Seek(modelSize, VS_SEEK_CUR);
+				ctx.dataStream->Seek(modelSize, FS_SEEK_CUR);
 				continue;
 			}
 

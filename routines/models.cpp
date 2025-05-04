@@ -73,7 +73,7 @@ CarModelData_t* CDriverLevelModels::GetCarModel(int index) const
 //-------------------------------------------------------------
 // parses model lumps and exports models to OBJ
 //-------------------------------------------------------------
-void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
+void CDriverLevelModels::LoadCarModelsLump(IFileStream* pFile, int size)
 {
 	int modelCount;
 	pFile->Read(&modelCount, sizeof(int), 1);
@@ -106,7 +106,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 		
 		if (model_entries[i].cleanOffset != -1)
 		{
-			pFile->Seek(r_ofs + model_entries[i].cleanOffset, VS_SEEK_SET);
+			pFile->Seek(r_ofs + model_entries[i].cleanOffset, FS_SEEK_SET);
 
 			pFile->Read(&carModelData.cleanSize, 1, sizeof(int));
 
@@ -118,7 +118,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 
 		if (model_entries[i].damOffset != -1)
 		{
-			pFile->Seek(r_ofs + model_entries[i].damOffset, VS_SEEK_SET);
+			pFile->Seek(r_ofs + model_entries[i].damOffset, FS_SEEK_SET);
 
 			pFile->Read(&carModelData.damSize, 1, sizeof(int));
 
@@ -130,7 +130,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 
 		if (model_entries[i].lowOffset != -1)
 		{
-			pFile->Seek(r_ofs + model_entries[i].lowOffset, VS_SEEK_SET);
+			pFile->Seek(r_ofs + model_entries[i].lowOffset, FS_SEEK_SET);
 
 			pFile->Read(&carModelData.lowSize, 1, sizeof(int));
 
@@ -147,7 +147,7 @@ void CDriverLevelModels::LoadCarModelsLump(IVirtualStream* pFile, int size)
 //-------------------------------------------------------------
 // load model names
 //-------------------------------------------------------------
-void CDriverLevelModels::LoadModelNamesLump(IVirtualStream* pFile, int size)
+void CDriverLevelModels::LoadModelNamesLump(IFileStream* pFile, int size)
 {
 	char* modelnames = PPNew char[size];
 	pFile->Read(modelnames, size, 1);
@@ -182,7 +182,7 @@ void CDriverLevelModels::LoadModelNamesLump(IVirtualStream* pFile, int size)
 //-------------------------------------------------------------
 // loads low detail tables
 //-------------------------------------------------------------
-void CDriverLevelModels::LoadLowDetailTableLump(IVirtualStream* pFile, int size)
+void CDriverLevelModels::LoadLowDetailTableLump(IFileStream* pFile, int size)
 {
 	// read high detail table
 	for (int i = 0; i < m_numModelsInPack; i++)
@@ -208,7 +208,7 @@ void CDriverLevelModels::LoadLowDetailTableLump(IVirtualStream* pFile, int size)
 //-------------------------------------------------------------
 // loads level models lump
 //-------------------------------------------------------------
-void CDriverLevelModels::LoadLevelModelsLump(IVirtualStream* pFile)
+void CDriverLevelModels::LoadLevelModelsLump(IFileStream* pFile)
 {
 	// initialize to dummies
 	for (int i = 0; i < MAX_MODELS; i++)

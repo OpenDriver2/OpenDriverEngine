@@ -163,7 +163,7 @@ void CTexturePage::ConvertIndexedTextureToRGBA(uint* dest_color_data, int detail
 	}
 }
 
-void CTexturePage::InitFromFile(int id, TEXPAGE_POS& tp, IVirtualStream* pFile)
+void CTexturePage::InitFromFile(int id, TEXPAGE_POS& tp, IFileStream* pFile)
 {
 	m_id = id;
 	m_tp = tp;
@@ -191,7 +191,7 @@ void CTexturePage::InitFromFile(int id, TEXPAGE_POS& tp, IVirtualStream* pFile)
 }
 
 
-void CTexturePage::LoadCompressedTexture(IVirtualStream* pFile)
+void CTexturePage::LoadCompressedTexture(IFileStream* pFile)
 {
 	pFile->Read( &m_bitmap.numPalettes, 1, sizeof(int) );
 
@@ -219,20 +219,20 @@ void CTexturePage::LoadCompressedTexture(IVirtualStream* pFile)
 
 	// seek to the right position
 	// this is necessary because it's aligned to CD block size
-	pFile->Seek(imageStart + m_bitmap.rsize, VS_SEEK_SET);
+	pFile->Seek(imageStart + m_bitmap.rsize, FS_SEEK_SET);
 }
 
 //-------------------------------------------------------------------------------
 // Loads Texture page itself with it's color lookup tables
 //-------------------------------------------------------------------------------
-bool CTexturePage::LoadTPageAndCluts(IVirtualStream* pFile, bool isSpooled)
+bool CTexturePage::LoadTPageAndCluts(IFileStream* pFile, bool isSpooled)
 {
 	int rStart = pFile->Tell();
 
 	if(m_bitmap.data)
 	{
 		// skip already loaded data
-		pFile->Seek(m_bitmap.rsize, VS_SEEK_CUR);
+		pFile->Seek(m_bitmap.rsize, FS_SEEK_CUR);
 		return true;
 	}
 
@@ -323,7 +323,7 @@ CDriverLevelTextures::~CDriverLevelTextures()
 //
 // loads global textures (pre-loading stage)
 //
-void CDriverLevelTextures::LoadPermanentTPages(IVirtualStream* pFile)
+void CDriverLevelTextures::LoadPermanentTPages(IFileStream* pFile)
 {
 	DevMsg(SPEW_NORM,"Loading permanent texture pages (%d)\n", m_numPermanentPages);
 
@@ -344,12 +344,12 @@ void CDriverLevelTextures::LoadPermanentTPages(IVirtualStream* pFile)
 		// permanents are also compressed
 		m_texPages[tpage].LoadTPageAndCluts(pFile, false);
 
-		pFile->Seek(curOfs + ((m_permsList[i].y + SPOOL_CD_BLOCK_SIZE-1) & -SPOOL_CD_BLOCK_SIZE), VS_SEEK_SET);
+		pFile->Seek(curOfs + ((m_permsList[i].y + SPOOL_CD_BLOCK_SIZE-1) & -SPOOL_CD_BLOCK_SIZE), FS_SEEK_SET);
 	}
 
 	// simulate sectors
 	sector += nsectors;
-	pFile->Seek(sector * SPOOL_CD_BLOCK_SIZE, VS_SEEK_SET);
+	pFile->Seek(sector * SPOOL_CD_BLOCK_SIZE, FS_SEEK_SET);
 
 	// Driver 2 - special cars only
 	// Driver 1 - only player cars
@@ -365,11 +365,11 @@ void CDriverLevelTextures::LoadPermanentTPages(IVirtualStream* pFile)
 		// permanents are compressed
 		m_texPages[tpage].LoadTPageAndCluts(pFile, false);
 
-		pFile->Seek(curOfs + ((m_specList[i].y + SPOOL_CD_BLOCK_SIZE-1) & -SPOOL_CD_BLOCK_SIZE), VS_SEEK_SET);
+		pFile->Seek(curOfs + ((m_specList[i].y + SPOOL_CD_BLOCK_SIZE-1) & -SPOOL_CD_BLOCK_SIZE), FS_SEEK_SET);
 	}
 }
 
-void CDriverLevelTextures::LoadPermanentTPagesD1Demo(IVirtualStream* pFile)
+void CDriverLevelTextures::LoadPermanentTPagesD1Demo(IFileStream* pFile)
 {
 	long lumpOffset = pFile->Tell() + 8;
 
@@ -426,7 +426,7 @@ void CDriverLevelTextures::LoadPermanentTPagesD1Demo(IVirtualStream* pFile)
 	// load permanent pages
 	for (int i = 0; i < numTpages; i++)
 	{
-		pFile->Seek(lumpOffset + tpage_position[i].offset, VS_SEEK_SET);
+		pFile->Seek(lumpOffset + tpage_position[i].offset, FS_SEEK_SET);
 		// permanents are also compressed
 		m_texPages[i].LoadTPageAndCluts(pFile, false);
 	}
@@ -435,7 +435,7 @@ void CDriverLevelTextures::LoadPermanentTPagesD1Demo(IVirtualStream* pFile)
 //-------------------------------------------------------------
 // parses texture info lumps. Quite simple
 //-------------------------------------------------------------
-void CDriverLevelTextures::LoadTextureInfoLump(IVirtualStream* pFile)
+void CDriverLevelTextures::LoadTextureInfoLump(IFileStream* pFile)
 {
 	int numPages;
 	pFile->Read(&numPages, 1, sizeof(int));
@@ -477,7 +477,7 @@ void CDriverLevelTextures::LoadTextureInfoLump(IVirtualStream* pFile)
 //-------------------------------------------------------------
 // load texture names, same as model names
 //-------------------------------------------------------------
-void CDriverLevelTextures::LoadTextureNamesLump(IVirtualStream* pFile, int size)
+void CDriverLevelTextures::LoadTextureNamesLump(IFileStream* pFile, int size)
 {
 	m_textureNamesData = PPNew char[size+1];
 	memset(m_textureNamesData, 0, size + 1);
@@ -497,7 +497,7 @@ void CDriverLevelTextures::LoadTextureNamesLump(IVirtualStream* pFile, int size)
 	} while (sz < size);
 }
 
-void CDriverLevelTextures::LoadOverlayMapLump(IVirtualStream* pFile, int lumpSize)
+void CDriverLevelTextures::LoadOverlayMapLump(IFileStream* pFile, int lumpSize)
 {
 	m_overlayMapData = PPNew char[lumpSize];
 	pFile->Read(m_overlayMapData, 1, lumpSize);
@@ -506,7 +506,7 @@ void CDriverLevelTextures::LoadOverlayMapLump(IVirtualStream* pFile, int lumpSiz
 //-------------------------------------------------------------
 // Loads car and pedestrians palletes
 //-------------------------------------------------------------
-void CDriverLevelTextures::LoadPalletLump(IVirtualStream* pFile)
+void CDriverLevelTextures::LoadPalletLump(IFileStream* pFile)
 {
 	// temporary not working. Maybe it's incorrect
 	if (m_format < LEV_FORMAT_DRIVER1)

@@ -5,7 +5,7 @@
 
 //------------------------------------------------------------------------------------------------------------
 
-class IVirtualStream;
+class IFileStream;
 class CBaseLevelRegion;
 class CBaseLevelMap;
 
@@ -16,7 +16,7 @@ using OnRegionFreed_t = void (*)(CBaseLevelRegion* region);
 
 struct SPOOL_CONTEXT
 {
-	IVirtualStream*			dataStream;
+	IFileStream*			dataStream;
 	OUT_CITYLUMP_INFO*		lumpInfo;
 };
 
@@ -83,8 +83,8 @@ public:
 	
 	//----------------------------------------
 
-	virtual void				LoadMapLump(IVirtualStream* pFile);
-	virtual void				LoadSpoolInfoLump(IVirtualStream* pFile);
+	virtual void				LoadMapLump(IFileStream* pFile);
+	virtual void				LoadSpoolInfoLump(IFileStream* pFile);
 
 	virtual int					GetAreaDataCount() const;
 	virtual void				LoadInAreaTPages(const SPOOL_CONTEXT& ctx, int areaDataNum) const;

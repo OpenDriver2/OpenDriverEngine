@@ -510,7 +510,7 @@ bool CSky::Load(const char* filename, int skyNumber)
 		skyName = skyName.TrimChar("#", false, true);
 	}
 
-	IFilePtr file = g_fileSystem->Open(skyName, FS_OPEN_READ);
+	IFileStreamPtr file = g_fileSystem->Open(skyName, FS_OPEN_READ);
 	if (!file)
 	{
 		MsgError("Unable to open '%s'\n", filename);
